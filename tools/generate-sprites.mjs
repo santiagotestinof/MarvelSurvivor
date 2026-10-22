@@ -357,7 +357,8 @@ function makeGround() {
 function makeTree() {
   const cv = new Canvas(32, 40);
   const rnd = mulberry32(7);
-  cv.shaded(14, 28, 4, 10, hex('#7a4f2a'), hex('#946236'), hex('#4f3118'));
+  // El tronco arranca dentro de la copa (que se dibuja encima) para que no queden separados.
+  cv.shaded(14, 22, 4, 16, hex('#7a4f2a'), hex('#946236'), hex('#4f3118'));
   const blobs = [[16, 13, 11], [9, 18, 8], [23, 18, 8]];
   const dark = hex('#2c6a2e');
   const mid = hex('#3f8a3a');
