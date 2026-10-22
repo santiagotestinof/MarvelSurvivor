@@ -152,7 +152,7 @@ export class GameScene extends Phaser.Scene {
         let dx = enemy.x - other.x;
         let dy = enemy.y - other.y;
         let distance = Math.hypot(dx, dy);
-        const spacing = enemy.kind.id === 'overlord' || other.kind.id === 'overlord' ? 54 : 34;
+        const spacing = enemy.kind.id === 'overlord' || other.kind.id === 'overlord' ? 27 : 17;
         if (distance < spacing) {
           if (distance < 0.001) {
             const angle = ((activeEnemies.indexOf(enemy) + 1) * 2.399963229728653 + (otherIndex + 1)) % (Math.PI * 2);
