@@ -227,6 +227,14 @@ export class HudScene extends Phaser.Scene {
       new UpgradeCard(this, choice, index, () => this.pickUpgrade(index)).setDepth(21),
     );
     this.layoutUpgrades();
+    this.upgradeDim.setAlpha(0);
+    this.tweens.add({ targets: this.upgradeDim, alpha: 1, duration: 150 });
+    this.upgradeTitle.setScale(0.4);
+    this.tweens.add({ targets: this.upgradeTitle, scale: 1, duration: 320, ease: 'Back.easeOut' });
+    this.upgradeCards.forEach((card, index) => {
+      card.setAlpha(0).setScale(0.85);
+      this.tweens.add({ targets: card, alpha: 1, scale: 1, duration: 220, delay: 90 + index * 70, ease: 'Back.easeOut' });
+    });
   }
 
   private layoutUpgrades(): void {
