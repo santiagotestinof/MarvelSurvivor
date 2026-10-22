@@ -4,6 +4,7 @@ import { ASSET_PATHS, TEXTURES } from '../config/assetKeys';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds';
 import { loadCharacterAssets, registerCharacterAnimations } from '../systems/AnimationSystem';
+import { registerUpgradeIcons } from '../ui/upgradeIcons';
 
 /** Carga todos los recursos, registra las animaciones y pasa a la escena de juego. */
 export class BootScene extends Phaser.Scene {
@@ -39,6 +40,7 @@ export class BootScene extends Phaser.Scene {
       registerCharacterAnimations(this, definition);
     }
     registerEnemyAnimations(this);
+    registerUpgradeIcons(this);
     this.scene.start(SCENE_KEYS.menu);
   }
 
