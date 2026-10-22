@@ -54,6 +54,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, map.obstacles);
 
     this.enemies = this.physics.add.group();
+    this.physics.add.collider(this.enemies, map.obstacles);
     this.attack = new AutoAttackSystem(this, this.player, this.player.definition.stats.attack, this.enemies, this.stats);
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
       this.dropGem(e);
@@ -140,8 +141,23 @@ export class GameScene extends Phaser.Scene {
     this.player.step(this.moveInput.getVector());
     this.attack.update(now);
     this.updateGems(delta);
-    for (const enemy of this.enemies.getChildren() as Enemy[]) {
-      if (enemy.active) enemy.chase(this.player.x, this.player.y - 6);
+    const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);
+    for (const enemy of activeEnemies) {
+      let separationX = 0;
+      let separationY = 0;
+      for (const other of activeEnemies) {
+        if (enemy === other) continue;
+        const dx = enemy.x - other.x;
+        const dy = enemy.y - other.y;
+        const distance = Math.hypot(dx, dy);
+        const spacing = enemy.kind.texture === 'overlord' || other.kind.texture === 'overlord' ? 42 : 22;
+        if (distance > 0 && distance < spacing) {
+          const strength = (spacing - distance) / spacing;
+          separationX += (dx / distance) * strength;
+          separationY += (dy / distance) * strength;
+        }
+      }
+      enemy.chase(this.player.x, this.player.y - 6, separationX * 1.4, separationY * 1.4);
     }
     this.round.update(now);
 
