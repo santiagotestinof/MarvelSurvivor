@@ -83,7 +83,7 @@ export class HudScene extends Phaser.Scene {
 
     this.pauseDim = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.68).setOrigin(0).setDepth(30).setVisible(false);
     this.pauseTitle = this.add.text(0, 0, 'PAUSA', textStyle(40, '#ffffff')).setOrigin(0.5).setDepth(31).setVisible(false);
-    this.pauseButton = createButton(this, 'PAUSAR', 18, () => this.togglePause()).setDepth(5);
+    this.pauseButton = createButton(this, 'PAUSAR [ESC]', 18, () => this.togglePause()).setDepth(5);
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
@@ -120,12 +120,12 @@ export class HudScene extends Phaser.Scene {
       this.scene.pause(SCENE_KEYS.game);
       this.pauseDim.setVisible(true);
       this.pauseTitle.setText('PAUSA\nESC para continuar').setVisible(true);
-      this.pauseButton.setDepth(32).setText('CONTINUAR');
+      this.pauseButton.setDepth(32).setText('SEGUIR [ESC]');
     } else {
       this.scene.resume(SCENE_KEYS.game);
       this.pauseDim.setVisible(false);
       this.pauseTitle.setVisible(false);
-      this.pauseButton.setDepth(5).setText('PAUSAR');
+      this.pauseButton.setDepth(5).setText('PAUSAR [ESC]');
     }
   }
 
@@ -148,7 +148,8 @@ export class HudScene extends Phaser.Scene {
     this.resultTitle.setFontSize(Math.max(28, Math.round(12 * ui))).setPosition(width / 2, height * 0.34);
     this.resultStats.setFontSize(Math.max(14, Math.round(4 * ui))).setPosition(width / 2, height * 0.5);
     this.menuButton.setFontSize(Math.max(16, Math.round(5 * ui))).setPosition(width / 2, height * 0.68);
-    this.pauseButton.setFontSize(Math.max(12, Math.round(3.5 * ui))).setPosition(width - this.margin - 42 * ui, height - this.margin - 18 * ui);
+    this.pauseButton.setFontSize(Math.max(12, Math.round(3.5 * ui)));
+    this.pauseButton.setPosition(width - this.margin - this.pauseButton.width / 2, this.margin + 34 * ui);
     this.pauseDim.setSize(width, height);
     this.pauseTitle.setFontSize(Math.max(28, Math.round(12 * ui))).setPosition(width / 2, height * 0.42);
 
