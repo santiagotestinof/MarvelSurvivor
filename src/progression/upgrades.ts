@@ -15,17 +15,8 @@ export const UPGRADE_CATEGORIES: Record<UpgradeCategory, { label: string; color:
   utility: { label: 'UTILIDAD', color: 0x37b6ff },
 };
 
-export type UpgradeCategory = 'attack' | 'defense' | 'utility';
-
-export const UPGRADE_CATEGORIES: Record<UpgradeCategory, { label: string; color: number }> = {
-  attack: { label: 'ATAQUE', color: 0xff6b4a },
-  defense: { label: 'DEFENSA', color: 0x3ddc84 },
-  utility: { label: 'UTILIDAD', color: 0x37b6ff },
-};
-
 export interface UpgradeDefinition {
   id: string;
-  category: UpgradeCategory;
   category: UpgradeCategory;
   name: string;
   description: string;
