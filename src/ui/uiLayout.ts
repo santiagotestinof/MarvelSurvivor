@@ -43,21 +43,6 @@ export function drawPanel(
   g.lineStyle(lineWidth, border, borderAlpha).strokeRoundedRect(x, y, w, h, radius);
 }
 
-/** Panel semitransparente con borde para tarjetas y recuadros. */
-export function drawPanel(
-  g: Phaser.GameObjects.Graphics,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  options: { fill?: number; alpha?: number; border?: number; borderAlpha?: number; radius?: number; lineWidth?: number } = {},
-): void {
-  const { fill = 0x0b1410, alpha = 0.82, border = 0xffffff, borderAlpha = 0.18, radius = 8, lineWidth = 2 } = options;
-  g.fillStyle(0x000000, 0.35).fillRoundedRect(x + 3, y + 4, w, h, radius);
-  g.fillStyle(fill, alpha).fillRoundedRect(x, y, w, h, radius);
-  g.lineStyle(lineWidth, border, borderAlpha).strokeRoundedRect(x, y, w, h, radius);
-}
-
 /** Botón de texto que responde a mouse, toque y teclado (si se pasa `hotkeys`). */
 export function createButton(
   scene: Phaser.Scene,
