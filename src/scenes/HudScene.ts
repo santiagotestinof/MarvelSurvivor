@@ -24,6 +24,10 @@ export class HudScene extends Phaser.Scene {
   private resultTitle!: Phaser.GameObjects.Text;
   private resultStats!: Phaser.GameObjects.Text;
   private menuButton!: Phaser.GameObjects.Text;
+  private pauseButton!: Phaser.GameObjects.Text;
+  private pauseDim!: Phaser.GameObjects.Rectangle;
+  private pauseTitle!: Phaser.GameObjects.Text;
+  private pausedByUser = false;
 
   private levelText!: Phaser.GameObjects.Text;
   private upgradeDim!: Phaser.GameObjects.Rectangle;
@@ -46,6 +50,7 @@ export class HudScene extends Phaser.Scene {
     this.gameScene = this.scene.get(SCENE_KEYS.game) as GameScene;
     this.resultScheduled = false;
     this.resultShown = false;
+    this.pausedByUser = false;
     this.latest = null;
     this.touchVector.set(0, 0);
     this.upgradeCards = [];
@@ -65,6 +70,7 @@ export class HudScene extends Phaser.Scene {
     const keyboard = this.input.keyboard;
     if (keyboard) {
       ['ONE', 'TWO', 'THREE'].forEach((name, index) => keyboard.addKey(name).on('down', () => this.pickUpgrade(index)));
+      keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC).on('down', () => this.togglePause());
     }
 
     this.dim = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.65).setOrigin(0).setDepth(10).setVisible(false);
@@ -74,6 +80,10 @@ export class HudScene extends Phaser.Scene {
       .setDepth(11)
       .setVisible(false);
     this.menuButton.disableInteractive();
+
+    this.pauseDim = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.68).setOrigin(0).setDepth(30).setVisible(false);
+    this.pauseTitle = this.add.text(0, 0, 'PAUSA', textStyle(40, '#ffffff')).setOrigin(0.5).setDepth(31).setVisible(false);
+    this.pauseButton = createButton(this, 'PAUSAR', 18, () => this.togglePause(), ['ESC']).setDepth(5);
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
@@ -85,16 +95,37 @@ export class HudScene extends Phaser.Scene {
 
   update(): void {
     this.touchVector.copy(this.joystick.vector);
+    if (this.pausedByUser) return;
 
     const state = this.gameScene.getHudState();
     this.latest = state;
     this.drawState(state);
 
+    this.pauseButton.setVisible(state.phase !== 'won' && state.phase !== 'lost' && this.upgradeChoices.length === 0);
     if ((state.phase === 'won' || state.phase === 'lost') && !this.resultScheduled) {
       this.resultScheduled = true;
       this.joystick.disabled = true;
       this.joystick.release();
       this.time.delayedCall(700, () => this.showResult(state));
+    }
+  }
+
+  private togglePause(): void {
+    if (this.latest?.phase === 'won' || this.latest?.phase === 'lost' || this.upgradeChoices.length > 0) return;
+    this.pausedByUser = !this.pausedByUser;
+    this.joystick.disabled = this.pausedByUser;
+    if (this.pausedByUser) {
+      this.joystick.release();
+      this.touchVector.set(0, 0);
+      this.scene.pause(SCENE_KEYS.game);
+      this.pauseDim.setVisible(true);
+      this.pauseTitle.setText('PAUSA\nESC para continuar').setVisible(true);
+      this.pauseButton.setText('CONTINUAR');
+    } else {
+      this.scene.resume(SCENE_KEYS.game);
+      this.pauseDim.setVisible(false);
+      this.pauseTitle.setVisible(false);
+      this.pauseButton.setText('PAUSAR');
     }
   }
 
@@ -117,6 +148,9 @@ export class HudScene extends Phaser.Scene {
     this.resultTitle.setFontSize(Math.max(28, Math.round(12 * ui))).setPosition(width / 2, height * 0.34);
     this.resultStats.setFontSize(Math.max(14, Math.round(4 * ui))).setPosition(width / 2, height * 0.5);
     this.menuButton.setFontSize(Math.max(16, Math.round(5 * ui))).setPosition(width / 2, height * 0.68);
+    this.pauseButton.setFontSize(Math.max(12, Math.round(3.5 * ui))).setPosition(width - this.margin - 42 * ui, height - this.margin - 18 * ui);
+    this.pauseDim.setSize(width, height);
+    this.pauseTitle.setFontSize(Math.max(28, Math.round(12 * ui))).setPosition(width / 2, height * 0.42);
 
     if (this.latest) this.drawState(this.latest);
   }
@@ -173,6 +207,7 @@ export class HudScene extends Phaser.Scene {
     this.joystick.disabled = true;
     this.joystick.release();
     this.upgradeChoices = choices;
+    this.pauseButton.setVisible(false);
     this.onUpgradePicked = onPick;
     this.upgradeOpenedAt = this.time.now;
     this.upgradeTitle.setText(`¡NIVEL ${level}!\nElegí una mejora`).setVisible(true);
@@ -238,6 +273,7 @@ export class HudScene extends Phaser.Scene {
     this.upgradeTitle.setVisible(false);
     this.upgradeDim.setVisible(false);
     this.joystick.disabled = false;
+    this.pauseButton.setVisible(true);
     callback(choice);
   }
 
@@ -249,6 +285,7 @@ export class HudScene extends Phaser.Scene {
       .setText(`Tiempo: ${formatTime(state.elapsedMs)}\nEnemigos derrotados: ${state.kills}`)
       .setVisible(true);
     this.dim.setVisible(true);
+    this.pauseButton.setVisible(false);
     this.menuButton.setVisible(true).setInteractive({ useHandCursor: true });
   }
 
