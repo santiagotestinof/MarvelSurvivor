@@ -8,7 +8,8 @@ export const CAMERA_CONFIG = {
   maxZoom: 6,
 } as const;
 
-export function computeZoom(viewportHeight: number): number {
-  const zoom = Math.round(viewportHeight / CAMERA_CONFIG.targetViewHeight);
-  return Math.min(CAMERA_CONFIG.maxZoom, Math.max(CAMERA_CONFIG.minZoom, zoom));
+/** Zoom entero que muestra al menos ~360×270 unidades del mundo (sirve también para celulares en vertical). */
+export function computeZoom(viewportWidth: number, viewportHeight: number): number {
+  const zoom = Math.round(Math.min(viewportWidth / 360, viewportHeight / CAMERA_CONFIG.targetViewHeight));
+  return Math.min(CAMERA_CONFIG.maxZoom, Math.max(1, zoom));
 }

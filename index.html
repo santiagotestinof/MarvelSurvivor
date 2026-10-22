@@ -12,6 +12,10 @@
         overflow: hidden;
         background: #0e1a12;
         font-family: system-ui, sans-serif;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
       }
       #game {
         position: fixed;
@@ -36,7 +40,7 @@
   </head>
   <body>
     <div id="game"></div>
-    <div id="hint">Mover: WASD o flechas</div>
+    
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

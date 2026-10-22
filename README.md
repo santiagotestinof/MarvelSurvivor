@@ -33,7 +33,15 @@ El juego queda en `https://santiagotestinof.github.io/MarvelSurvivor/`. Las ruta
 
 ## Controles
 
-`W A S D` o flechas del teclado. Ocho direcciones, velocidad constante también en diagonal.
+- PC: `W A S D` o flechas. Ocho direcciones, velocidad constante también en diagonal.
+- Celular: tocá y deslizá en la mitad izquierda de la pantalla (joystick virtual flotante).
+- Iron Man dispara solo al enemigo más cercano.
+
+Parámetros de URL para probar: `?ronda=30` (ronda de 30 segundos), `?joystick` (joystick también con mouse), `?debug` (cajas de colisión).
+
+## Fase 2: ronda de juego
+
+Menú principal → ronda de 5 minutos (`ROUND.durationMs` en `src/config/gameplayConfig.ts`) con oleadas de un enemigo genérico (Dron) cada vez más frecuentes → aparece un jefe genérico (Overlord) → se gana al derrotarlo. Si la vida llega a 0, derrota. En ambos casos se vuelve al menú.
 
 ## Estructura
 
@@ -118,7 +126,9 @@ Completo:
 
 Provisional:
 
-- Sprites de Iron Man, suelo, árboles, rocas y cajas (arte generado por código).
+- Sprites de Iron Man, enemigos, jefe, proyectil, suelo, árboles, rocas y cajas (arte generado por código).
 - El mapa de pruebas.
 
-Fuera de alcance en esta fase (por pedido): enemigos, combate, habilidades, experiencia, gacha y guardado.
+Fase 2 incluida: menú, oleadas, jefe, vida y daño por contacto, ataque automático, joystick táctil, pantalla de resultado.
+
+Fuera de alcance por ahora: experiencia y niveles, mejoras, más tipos de enemigos, habilidades únicas, gacha, más héroes/mapas y guardado.

@@ -1,17 +1,19 @@
 import Phaser from 'phaser';
 import type { CharacterAction, CharacterDefinition } from '../characters/CharacterDefinition';
 import { TEXTURES } from '../config/assetKeys';
+import { PLAYER_HIT } from '../config/gameplayConfig';
 import { Direction, directionFromVector } from '../core/direction';
 import { CharacterAnimator } from '../systems/AnimationSystem';
 import { MovementSystem } from '../systems/MovementSystem';
 
 /**
  * Entidad base de todos los personajes jugables.
- * Toda la lógica común (movimiento, orientación, animación, sombra, colisión) vive acá;
+ * Toda la lógica común (movimiento, orientación, animación, vida, sombra, colisión) vive acá;
  * cada personaje solo aporta su CharacterDefinition y, más adelante, sus habilidades.
  */
 export class Character extends Phaser.Physics.Arcade.Sprite {
   readonly definition: CharacterDefinition;
+  readonly maxHealth: number;
 
   private readonly movement: MovementSystem;
   private readonly animator: CharacterAnimator;
@@ -19,10 +21,14 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
 
   private facing: Direction = Direction.Down;
   private action: CharacterAction = 'idle';
+  private currentHealth: number;
+  private invulnerableUntil = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, definition: CharacterDefinition) {
     super(scene, x, y, definition.sheets.idle.textureKey, 0);
     this.definition = definition;
+    this.maxHealth = definition.stats.maxHealth;
+    this.currentHealth = this.maxHealth;
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -55,6 +61,14 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     return this.action;
   }
 
+  get health(): number {
+    return this.currentHealth;
+  }
+
+  get isDead(): boolean {
+    return this.currentHealth <= 0;
+  }
+
   /** Avanza un cuadro de lógica: mueve, actualiza la orientación y elige la animación. */
   step(moveIntent: Phaser.Math.Vector2): void {
     const moving = this.movement.apply(this.body as Phaser.Physics.Arcade.Body, moveIntent);
@@ -64,6 +78,39 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
 
     this.action = moving ? 'walk' : 'idle';
     this.animator.play(this.action, this.facing);
+  }
+
+  /** Aplica daño salvo durante la invulnerabilidad posterior a un golpe. Devuelve true si lo recibió. */
+  takeDamage(amount: number): boolean {
+    const now = this.scene.time.now;
+    if (this.isDead || now < this.invulnerableUntil) return false;
+
+    this.currentHealth = Math.max(0, this.currentHealth - amount);
+    this.invulnerableUntil = now + PLAYER_HIT.invulnerabilityMs;
+
+    this.setTintFill(0xff3b30);
+    this.scene.time.delayedCall(80, () => {
+      if (this.active && !this.isDead) this.clearTint();
+    });
+    this.scene.tweens.add({
+      targets: this,
+      alpha: 0.4,
+      duration: 90,
+      yoyo: true,
+      repeat: 3,
+      onComplete: () => {
+        if (this.active) this.setAlpha(1);
+      },
+    });
+    return true;
+  }
+
+  /** Congela al personaje cuando termina la ronda (derrota). */
+  defeat(): void {
+    this.setVelocity(0, 0);
+    this.anims.pause();
+    this.setAlpha(1);
+    this.setTint(0x555555);
   }
 
   private syncVisuals(): void {

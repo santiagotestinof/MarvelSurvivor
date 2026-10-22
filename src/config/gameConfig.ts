@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { BootScene } from '../scenes/BootScene';
 import { GameScene } from '../scenes/GameScene';
+import { HudScene } from '../scenes/HudScene';
+import { MenuScene } from '../scenes/MenuScene';
 
 export function createGameConfig(): Phaser.Types.Core.GameConfig {
   const debugPhysics = new URLSearchParams(window.location.search).has('debug');
@@ -22,6 +24,7 @@ export function createGameConfig(): Phaser.Types.Core.GameConfig {
       default: 'arcade',
       arcade: { gravity: { x: 0, y: 0 }, debug: debugPhysics },
     },
-    scene: [BootScene, GameScene],
+    input: { activePointers: 3 },
+    scene: [BootScene, MenuScene, GameScene, HudScene],
   };
 }

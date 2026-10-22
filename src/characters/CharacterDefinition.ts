@@ -19,6 +19,19 @@ export interface ActionSheet {
   loop: boolean;
 }
 
+/** Ataque automático básico: dispara al enemigo más cercano dentro de `aimRange`. */
+export interface AttackDefinition {
+  cooldownMs: number;
+  damage: number;
+  projectileTexture: string;
+  /** Píxeles por segundo. */
+  projectileSpeed: number;
+  /** Distancia máxima a la que elige objetivo. */
+  aimRange: number;
+  /** Distancia máxima que recorre el disparo. */
+  maxDistance: number;
+}
+
 export interface CharacterDefinition {
   id: string;
   displayName: string;
@@ -28,6 +41,6 @@ export interface CharacterDefinition {
   origin: { x: number; y: number };
   /** Caja de colisión (solo los pies), en píxeles desde la esquina superior izquierda del cuadro. */
   body: { width: number; height: number; offsetX: number; offsetY: number };
-  stats: { moveSpeed: number };
+  stats: { moveSpeed: number; maxHealth: number; attack: AttackDefinition };
   sheets: Record<'idle' | 'walk', ActionSheet> & Partial<Record<CharacterAction, ActionSheet>>;
 }

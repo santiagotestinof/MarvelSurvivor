@@ -405,6 +405,85 @@ function makeCrate() {
   return addOutline(cv, hex('#2a1a09'));
 }
 
+// ---------------------------------------------------------------- enemigos y proyectil (provisional)
+
+function fillEllipse(cv, cx, cy, rx, ry, colorAt) {
+  for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++)
+    for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+      const dx = (x - cx) / rx;
+      const dy = (y - cy) / ry;
+      if (dx * dx + dy * dy > 1) continue;
+      cv.set(x, y, colorAt(dx, dy));
+    }
+}
+
+// Dron genérico: hoja de 2 cuadros de 24x24.
+function makeDrone() {
+  const sheet = new Canvas(48, 24);
+  const steel = [hex('#98a2b3'), hex('#667085'), hex('#4a5568')];
+  const eye = hex('#ff4444');
+  for (let f = 0; f < 2; f++) {
+    const cv = new Canvas(24, 24);
+    const bob = f;
+    cv.rect(f ? 8 : 7, 19, 3, f ? 2 : 3, steel[2]); // patas
+    cv.rect(f ? 13 : 14, 19, 3, f ? 3 : 2, steel[2]);
+    fillEllipse(cv, 12, 12 - bob, 8.5, 7.5, (dx, dy) => {
+      const t = dy + dx * 0.35;
+      return t > 0.5 ? steel[2] : t > -0.25 ? steel[1] : steel[0];
+    });
+    cv.rect(5, 9 - bob, 14, 4, hex('#161b29')); // visor
+    cv.rect(7, 10 - bob, 3, 2, eye);
+    cv.rect(14, 10 - bob, 3, 2, eye);
+    cv.rect(7, 10 - bob, 3, 1, hex('#ff9a9a'));
+    cv.rect(14, 10 - bob, 3, 1, hex('#ff9a9a'));
+    cv.rect(12, 3 - bob, 1, 3, steel[0]); // antena
+    cv.set(12, 2 - bob, eye);
+    sheet.blit(addOutline(cv, hex('#0d111b')), f * 24, 0);
+  }
+  return sheet;
+}
+
+// Jefe genérico: hoja de 2 cuadros de 48x48.
+function makeOverlord() {
+  const sheet = new Canvas(96, 48);
+  const purple = [hex('#7a5cc4'), hex('#4b3378'), hex('#2b1d45')];
+  const steel = [hex('#c9c1e8'), hex('#8b84a8'), hex('#5a5478')];
+  const red = hex('#ff3b3b');
+  for (let f = 0; f < 2; f++) {
+    const cv = new Canvas(48, 48);
+    const bob = f;
+    cv.rect(f ? 13 : 12, 41, 8, f ? 4 : 5, purple[2]); // patas
+    cv.rect(f ? 27 : 28, 41, 8, f ? 5 : 4, purple[2]);
+    cv.shaded(13, 6 - bob, 3, 9, steel[1], steel[0], steel[2]); // cuernos
+    cv.shaded(32, 6 - bob, 3, 9, steel[1], steel[0], steel[2]);
+    cv.shaded(2, 22 - bob, 8, 12, steel[1], steel[0], steel[2]); // cañones
+    cv.shaded(38, 22 - bob, 8, 12, steel[1], steel[0], steel[2]);
+    cv.rect(0, 26 - bob, 3, 4, steel[2]);
+    cv.rect(45, 26 - bob, 3, 4, steel[2]);
+    fillEllipse(cv, 24, 27 - bob, 17, 15, (dx, dy) => {
+      const t = dy + dx * 0.35;
+      return t > 0.5 ? purple[2] : t > -0.25 ? purple[1] : purple[0];
+    });
+    cv.rect(10, 20 - bob, 28, 7, hex('#161027')); // visor
+    cv.rect(13, 22 - bob, 6, 3, red);
+    cv.rect(29, 22 - bob, 6, 3, red);
+    cv.rect(13, 22 - bob, 6, 1, hex('#ff9a9a'));
+    cv.rect(29, 22 - bob, 6, 1, hex('#ff9a9a'));
+    cv.rect(21, 31 - bob, 6, 6, hex('#ff7a3d')); // núcleo
+    cv.rect(23, 33 - bob, 2, 2, hex('#ffd9a8'));
+    sheet.blit(addOutline(cv, hex('#0d0816')), f * 48, 0);
+  }
+  return sheet;
+}
+
+// Disparo del repulsor, apuntando a la derecha (se rota en el juego).
+function makeBolt() {
+  const cv = new Canvas(8, 8);
+  fillEllipse(cv, 3.5, 3.5, 3.9, 2.4, () => hex('#6fd8ff'));
+  fillEllipse(cv, 3.5, 3.5, 2.6, 1.3, () => hex('#e9fcff'));
+  return cv;
+}
+
 // ---------------------------------------------------------------- vista previa (solo desarrollo)
 
 function previewOf(cv, scale, bg = hex('#5f8f58')) {
@@ -428,6 +507,11 @@ save(makeGround(), 'tiles/ground.png');
 save(makeTree(), 'props/tree.png');
 save(makeRock(), 'props/rock.png');
 save(makeCrate(), 'props/crate.png');
+const drone = makeDrone();
+const overlord = makeOverlord();
+save(drone, 'enemies/drone.png');
+save(overlord, 'enemies/overlord.png');
+save(makeBolt(), 'projectiles/repulsor.png');
 
 const previewIdx = process.argv.indexOf('--preview');
 if (previewIdx !== -1) {
@@ -435,5 +519,7 @@ if (previewIdx !== -1) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'idle.png'), encodePng(previewOf(idle, 4)));
   writeFileSync(join(dir, 'walk.png'), encodePng(previewOf(walk, 4)));
+  writeFileSync(join(dir, 'drone.png'), encodePng(previewOf(drone, 8)));
+  writeFileSync(join(dir, 'overlord.png'), encodePng(previewOf(overlord, 6)));
   console.log('  vistas previas en', dir);
 }

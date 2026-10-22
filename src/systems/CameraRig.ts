@@ -23,6 +23,6 @@ export class CameraRig {
   }
 
   private applyZoom(): void {
-    this.camera.setZoom(computeZoom(this.scene.scale.height));
+    this.camera.setZoom(computeZoom(this.scene.scale.width, this.scene.scale.height));
   }
 }

@@ -1,12 +1,14 @@
 import Phaser from 'phaser';
 import { CHARACTER_REGISTRY } from '../characters/registry';
 import { ASSET_PATHS, TEXTURES } from '../config/assetKeys';
+import { SCENE_KEYS } from '../config/sceneKeys';
+import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds';
 import { loadCharacterAssets, registerCharacterAnimations } from '../systems/AnimationSystem';
 
 /** Carga todos los recursos, registra las animaciones y pasa a la escena de juego. */
 export class BootScene extends Phaser.Scene {
   constructor() {
-    super('BootScene');
+    super(SCENE_KEYS.boot);
   }
 
   preload(): void {
@@ -16,6 +18,9 @@ export class BootScene extends Phaser.Scene {
     this.load.image(TEXTURES.tree, ASSET_PATHS.tree);
     this.load.image(TEXTURES.rock, ASSET_PATHS.rock);
     this.load.image(TEXTURES.crate, ASSET_PATHS.crate);
+
+    this.load.image(TEXTURES.repulsor, ASSET_PATHS.repulsor);
+    loadEnemyAssets(this);
 
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       loadCharacterAssets(this, definition);
@@ -32,7 +37,8 @@ export class BootScene extends Phaser.Scene {
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       registerCharacterAnimations(this, definition);
     }
-    this.scene.start('GameScene');
+    registerEnemyAnimations(this);
+    this.scene.start(SCENE_KEYS.menu);
   }
 
   /** Sombra elíptica compartida por todos los personajes. */
