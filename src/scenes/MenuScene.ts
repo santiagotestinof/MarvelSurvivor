@@ -22,7 +22,7 @@ export class MenuScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#0e1a12');
 
     this.title = this.add.text(0, 0, 'MARVEL SURVIVORS', textStyle(40, '#f5c518')).setOrigin(0.5);
-    this.subtitle = this.add.text(0, 0, 'Fase 2 · prototipo', textStyle(14, '#cfe8d2')).setOrigin(0.5);
+    this.subtitle = this.add.text(0, 0, 'Fase 3 · prototipo', textStyle(14, '#cfe8d2')).setOrigin(0.5);
 
     this.hero = this.add
       .sprite(0, 0, ironManDefinition.sheets.idle.textureKey, 0)

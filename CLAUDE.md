@@ -19,7 +19,8 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 - Fase 2 (hecha): menú, ronda de 5 min con oleadas de un enemigo (Dron), jefe (Overlord), vida y daño por contacto, ataque automático, joystick táctil, pantalla de resultado.
 - Fase 3 (hecha): gemas de XP, niveles, elegir 1 de 3 mejoras de stats.
 - Pendiente / fuera de alcance por ahora: armas nuevas, más tipos de enemigos, habilidades únicas por héroe, gacha, más héroes (objetivo: 10) y mapas, guardado de progreso.
-- Sin verificar: joystick en un celular real, pantalla de VICTORIA, botón "Volver al menú" y balance de dificultad (falta jugarlo).
+- Verificado en el navegador (`npm run dev`, con el juego avanzado cuadro por cuadro y eventos simulados): pantalla de VICTORIA, pantalla de DERROTA, botón "Volver al menú" (desde las dos; la ronda siguiente arranca de cero) y joystick con `?joystick` (8 direcciones, diagonal a la misma velocidad, se frena al soltar, ignora la mitad derecha).
+- Sin verificar: joystick en un celular real, cómo se siente en tiempo real y balance de dificultad (quieto se pierde en ~30 s; al jefe solo le pega cuando no hay drones más cerca).
 
 ## Dónde tocar qué
 - Balance (oleadas, XP, duración): `src/config/gameplayConfig.ts`

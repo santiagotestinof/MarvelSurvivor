@@ -139,9 +139,10 @@ export class HudScene extends Phaser.Scene {
     g.fillStyle(ratio > 0.35 ? 0x3ddc84 : 0xff4d4d, 1).fillRect(m, m, barW * ratio, barH);
     this.healthText.setText(`${Math.ceil(state.health)} / ${state.maxHealth}`).setPosition(m + barW / 2, m + barH / 2);
 
-    // Tiempo
-    this.timerText.setText(state.phase === 'waves' ? formatTime(state.remainingMs) : '¡JEFE!');
-    this.timerText.setColor(state.phase === 'waves' ? '#ffffff' : '#ff8a8a');
+    // Tiempo (o aviso de jefe, solo si el jefe llegó a aparecer: perder en las oleadas deja el reloj)
+    const bossAppeared = state.bossMaxHealth > 0;
+    this.timerText.setText(bossAppeared ? '¡JEFE!' : formatTime(state.remainingMs));
+    this.timerText.setColor(bossAppeared ? '#ff8a8a' : '#ffffff');
     this.killsText.setText(`Derrotados: ${state.kills}`);
 
     // Experiencia (barra fina abajo de todo)
