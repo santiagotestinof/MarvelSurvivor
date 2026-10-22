@@ -146,19 +146,31 @@ export class GameScene extends Phaser.Scene {
     for (const enemy of activeEnemies) {
       let separationX = 0;
       let separationY = 0;
-      for (const other of activeEnemies) {
+      for (let otherIndex = 0; otherIndex < activeEnemies.length; otherIndex++) {
+        const other = activeEnemies[otherIndex];
         if (enemy === other) continue;
-        const dx = enemy.x - other.x;
-        const dy = enemy.y - other.y;
-        const distance = Math.hypot(dx, dy);
-        const spacing = enemy.kind.texture === 'overlord' || other.kind.texture === 'overlord' ? 42 : 22;
-        if (distance > 0 && distance < spacing) {
+        let dx = enemy.x - other.x;
+        let dy = enemy.y - other.y;
+        let distance = Math.hypot(dx, dy);
+        const spacing = enemy.kind.id === 'overlord' || other.kind.id === 'overlord' ? 54 : 34;
+        if (distance < spacing) {
+          if (distance < 0.001) {
+            const angle = ((activeEnemies.indexOf(enemy) + 1) * 2.399963229728653 + (otherIndex + 1)) % (Math.PI * 2);
+            dx = Math.cos(angle);
+            dy = Math.sin(angle);
+            distance = 1;
+          }
           const strength = (spacing - distance) / spacing;
           separationX += (dx / distance) * strength;
           separationY += (dy / distance) * strength;
         }
       }
-      enemy.chase(this.player.x, this.player.y - 6, separationX * 1.2, separationY * 1.2);
+      const separationLength = Math.hypot(separationX, separationY);
+      if (separationLength > 0) {
+        separationX /= separationLength;
+        separationY /= separationLength;
+      }
+      enemy.chase(this.player.x, this.player.y - 6, separationX, separationY);
     }
     this.round.update(now);
 
