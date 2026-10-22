@@ -13,6 +13,9 @@ function readRoundDurationMs(): number {
 export const ROUND = {
   /** Duración de las oleadas. Al terminar aparece el jefe. */
   durationMs: readRoundDurationMs(),
+  bossHealthMultiplier: 2.5,
+  bossSpeedMultiplier: 1.15,
+  bossMinionIntervalMs: 4500,
 };
 
 export const PLAYER_HIT = {
