@@ -476,6 +476,76 @@ function makeOverlord() {
   return sheet;
 }
 
+// Explorador: dron chico y rápido, hoja de 2 cuadros de 20x20 (las alas aletean).
+function makeScout() {
+  const sheet = new Canvas(40, 20);
+  const shell = [hex('#ffd166'), hex('#f4a52a'), hex('#b86a12')];
+  const wing = hex('#c8f1ff');
+  const eye = hex('#ff3b3b');
+  for (let f = 0; f < 2; f++) {
+    const cv = new Canvas(20, 20);
+    const bob = f;
+    if (f === 0) {
+      cv.rect(1, 6, 5, 2, wing);
+      cv.rect(14, 6, 5, 2, wing);
+    } else {
+      cv.rect(2, 10, 4, 2, wing);
+      cv.rect(14, 10, 4, 2, wing);
+    }
+    cv.rect(9, 14 - bob, 2, 3, shell[2]); // aguijón
+    fillEllipse(cv, 10, 10 - bob, 5.5, 4.5, (dx, dy) => {
+      const t = dy + dx * 0.35;
+      return t > 0.5 ? shell[2] : t > -0.25 ? shell[1] : shell[0];
+    });
+    cv.rect(6, 9 - bob, 8, 2, hex('#1b1206')); // visor
+    cv.rect(9, 9 - bob, 2, 2, eye);
+    cv.set(9, 9 - bob, hex('#ff9a9a'));
+    sheet.blit(addOutline(cv, hex('#1a0f04')), f * 20, 0);
+  }
+  return sheet;
+}
+
+// Blindado: robot pesado y lento, hoja de 2 cuadros de 32x32.
+function makeBrute() {
+  const sheet = new Canvas(64, 32);
+  const armor = [hex('#8fa06a'), hex('#5f6e3f'), hex('#3a4426')];
+  const steel = [hex('#b9bec8'), hex('#7c8291'), hex('#4f5462')];
+  for (let f = 0; f < 2; f++) {
+    const cv = new Canvas(32, 32);
+    const bob = f;
+    cv.rect(f ? 9 : 8, 25, 6, f ? 4 : 5, steel[2]); // piernas
+    cv.rect(f ? 17 : 18, 25, 6, f ? 5 : 4, steel[2]);
+    cv.shaded(2, 10 - bob, 7, 9, steel[1], steel[0], steel[2]); // hombreras
+    cv.shaded(23, 10 - bob, 7, 9, steel[1], steel[0], steel[2]);
+    fillEllipse(cv, 16, 17 - bob, 10.5, 9.5, (dx, dy) => {
+      const t = dy + dx * 0.35;
+      return t > 0.5 ? armor[2] : t > -0.25 ? armor[1] : armor[0];
+    });
+    cv.rect(9, 12 - bob, 14, 4, hex('#14180c')); // visor
+    cv.rect(11, 13 - bob, 10, 2, hex('#ff8a2a'));
+    cv.rect(11, 13 - bob, 10, 1, hex('#ffd0a0'));
+    cv.shaded(12, 19 - bob, 8, 5, armor[1], armor[0], armor[2]); // placa frontal
+    cv.rect(15, 20 - bob, 2, 2, steel[0]);
+    sheet.blit(addOutline(cv, hex('#0e1108')), f * 32, 0);
+  }
+  return sheet;
+}
+
+// Minimisil, apuntando a la derecha (se rota en el juego).
+function makeMissile() {
+  const cv = new Canvas(12, 8);
+  cv.rect(1, 3, 2, 2, hex('#ff8a2a')); // llama
+  cv.set(1, 3, hex('#ffd166'));
+  cv.rect(3, 3, 6, 2, hex('#d9dde6')); // cuerpo
+  cv.rect(3, 3, 6, 1, hex('#ffffff'));
+  cv.rect(3, 2, 2, 1, hex('#8b93a3')); // aletas
+  cv.rect(3, 5, 2, 1, hex('#8b93a3'));
+  cv.rect(9, 3, 1, 2, hex('#e23b3b')); // punta
+  cv.set(10, 3, hex('#e23b3b'));
+  cv.set(10, 4, hex('#a51f1f'));
+  return addOutline(cv, hex('#1a1a22'));
+}
+
 // Disparo del repulsor, apuntando a la derecha (se rota en el juego).
 function makeBolt() {
   const cv = new Canvas(8, 8);
@@ -511,7 +581,13 @@ const drone = makeDrone();
 const overlord = makeOverlord();
 save(drone, 'enemies/drone.png');
 save(overlord, 'enemies/overlord.png');
+const scout = makeScout();
+const brute = makeBrute();
+save(scout, 'enemies/scout.png');
+save(brute, 'enemies/brute.png');
 save(makeBolt(), 'projectiles/repulsor.png');
+const missile = makeMissile();
+save(missile, 'projectiles/missile.png');
 
 const previewIdx = process.argv.indexOf('--preview');
 if (previewIdx !== -1) {
@@ -521,5 +597,8 @@ if (previewIdx !== -1) {
   writeFileSync(join(dir, 'walk.png'), encodePng(previewOf(walk, 4)));
   writeFileSync(join(dir, 'drone.png'), encodePng(previewOf(drone, 8)));
   writeFileSync(join(dir, 'overlord.png'), encodePng(previewOf(overlord, 6)));
+  writeFileSync(join(dir, 'scout.png'), encodePng(previewOf(scout, 8)));
+  writeFileSync(join(dir, 'brute.png'), encodePng(previewOf(brute, 8)));
+  writeFileSync(join(dir, 'missile.png'), encodePng(previewOf(missile, 10)));
   console.log('  vistas previas en', dir);
 }

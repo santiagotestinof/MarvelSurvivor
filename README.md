@@ -39,6 +39,20 @@ El juego queda en `https://santiagotestinof.github.io/MarvelSurvivor/`. Las ruta
 
 Parámetros de URL para probar: `?ronda=30` (ronda de 30 segundos), `?joystick` (joystick también con mouse), `?debug` (cajas de colisión).
 
+## Enemigos y armas
+
+Enemigos de oleada (`src/enemies/enemyKinds.ts`). Cada uno declara en `spawn` desde qué punto de la ronda aparece y su peso; las oleadas eligen al azar entre los disponibles:
+
+| Enemigo | Aparece desde | Rasgo |
+| --- | --- | --- |
+| Dron | el inicio | equilibrado |
+| Explorador | 15% de la ronda | rápido y frágil |
+| Blindado | 40% de la ronda | lento, mucha vida, pega fuerte; suelta una gema grande (4 XP) |
+
+Para sumar un enemigo: dibujarlo en `tools/generate-sprites.mjs` (o poner su PNG) y agregar una entrada con `spawn` en `enemyKinds.ts`.
+
+Armas: el repulsor (automático, al más cercano) y los **minimisiles**, que se desbloquean con la mejora "Minimisiles". Cada vez que se vuelve a elegir suma un misil por ráfaga (hasta 4). Persiguen al enemigo y explotan con daño en área. Sus números están en `MISSILES` (`src/config/gameplayConfig.ts`) y la lógica en `src/systems/MissileWeapon.ts`. Las mejoras de daño, cadencia y alcance también los afectan.
+
 ## Fase 3: experiencia y mejoras
 
 Los Drones sueltan gemas de XP que se acercan al jugador (radio de imán). Al subir de nivel el juego se pausa y se eligen 1 de 3 mejoras (teclas 1/2/3 o toque). Las mejoras son solo de stats y están en `src/progression/upgrades.ts` (agregar una = sumar una entrada). La curva de XP y el balance de oleadas están en `src/config/gameplayConfig.ts`.
@@ -137,4 +151,6 @@ Fase 2 incluida: menú, oleadas, jefe, vida y daño por contacto, ataque automá
 
 Fase 3 incluida: XP, gemas, niveles y mejoras de stats.
 
-Fuera de alcance por ahora: armas nuevas, más tipos de enemigos, habilidades únicas, gacha, más héroes/mapas y guardado.
+Incluido después: dos enemigos nuevos (Explorador y Blindado) y el arma Minimisiles.
+
+Fuera de alcance por ahora: enemigos a distancia, habilidades únicas por héroe, gacha, más héroes/mapas y guardado.

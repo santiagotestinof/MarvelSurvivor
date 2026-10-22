@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { WAVES } from '../config/gameplayConfig';
-import { DRONE, type EnemyKind } from '../enemies/enemyKinds';
+import { pickWaveEnemy, type EnemyKind } from '../enemies/enemyKinds';
 import type { Character } from '../entities/Character';
 import { Enemy, type EnemyScaling } from '../entities/Enemy';
 
@@ -33,7 +33,7 @@ export class WaveSystem {
       speed: 1 + progress * WAVES.speedGrowth,
     };
     for (let i = 0; i < batch && this.aliveCount() < WAVES.maxAlive; i++) {
-      this.spawnEnemy(DRONE, scaling);
+      this.spawnEnemy(pickWaveEnemy(progress), scaling);
     }
   }
 

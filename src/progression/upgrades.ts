@@ -1,9 +1,11 @@
 import type { Character } from '../entities/Character';
+import type { MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
 
 export interface UpgradeContext {
   stats: PlayerStats;
   player: Character;
+  missiles: MissileWeapon;
 }
 
 export type UpgradeCategory = 'attack' | 'defense' | 'utility';
@@ -25,6 +27,10 @@ export interface UpgradeDefinition {
   description: string;
   category: UpgradeCategory;
   apply: (ctx: UpgradeContext) => void;
+  /** Texto según el estado actual (reemplaza a `description` en la tarjeta). */
+  describe?: (ctx: UpgradeContext) => string;
+  /** Si devuelve false no se ofrece (por ejemplo, un arma al nivel máximo). */
+  isAvailable?: (ctx: UpgradeContext) => boolean;
 }
 
 export const UPGRADES: readonly UpgradeDefinition[] = [
@@ -77,14 +83,27 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     category: 'attack',
     apply: ({ stats }) => (stats.rangeMult *= 1.2),
   },
+  {
+    id: 'missiles',
+    name: 'Minimisiles',
+    description: 'Misiles teledirigidos que explotan',
+    category: 'attack',
+    describe: ({ missiles }) =>
+      missiles.level === 0
+        ? 'ARMA NUEVA: misiles teledirigidos que explotan'
+        : `+1 misil por ráfaga (${missiles.level} → ${missiles.level + 1})`,
+    isAvailable: ({ missiles }) => !missiles.maxed,
+    apply: ({ missiles }) => missiles.levelUp(),
+  },
 ];
 
-/** Elige `count` mejoras distintas al azar. */
-export function pickUpgradeChoices(count: number): UpgradeDefinition[] {
-  const pool = [...UPGRADES];
+/** Elige `count` mejoras distintas al azar entre las disponibles, con el texto según el estado actual. */
+export function pickUpgradeChoices(count: number, ctx: UpgradeContext): UpgradeDefinition[] {
+  const pool = UPGRADES.filter((upgrade) => upgrade.isAvailable?.(ctx) ?? true);
   const picked: UpgradeDefinition[] = [];
   while (picked.length < count && pool.length > 0) {
-    picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    const upgrade = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    picked.push(upgrade.describe ? { ...upgrade, description: upgrade.describe(ctx) } : upgrade);
   }
   return picked;
 }

@@ -13,6 +13,8 @@ export class XpGem extends Phaser.GameObjects.Image {
     this.value = value;
     scene.add.existing(this);
     this.setDepth(y - 1);
+    // Las gemas que valen más (de enemigos grandes) son más grandes y verdes.
+    if (value > 1) this.setScale(1.5).setTint(0x7dff9a);
     this.bob = scene.tweens.add({ targets: this, y: y - 2, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 

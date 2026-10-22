@@ -6,6 +6,7 @@ export const TEXTURES = {
   crate: 'crate',
   shadow: 'shadow',
   repulsor: 'repulsor',
+  missile: 'missile',
   gem: 'xp-gem',
 } as const;
 
@@ -16,4 +17,5 @@ export const ASSET_PATHS = {
   rock: 'assets/props/rock.png',
   crate: 'assets/props/crate.png',
   repulsor: 'assets/projectiles/repulsor.png',
+  missile: 'assets/projectiles/missile.png',
 } as const;

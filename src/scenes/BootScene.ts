@@ -21,6 +21,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image(TEXTURES.crate, ASSET_PATHS.crate);
 
     this.load.image(TEXTURES.repulsor, ASSET_PATHS.repulsor);
+    this.load.image(TEXTURES.missile, ASSET_PATHS.missile);
     loadEnemyAssets(this);
 
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {

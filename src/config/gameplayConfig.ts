@@ -41,3 +41,23 @@ export const WAVES = {
   healthGrowth: 1.5,
   speedGrowth: 0.4,
 };
+
+/** Minimisiles teledirigidos (se desbloquean con la mejora "Minimisiles"). */
+export const MISSILES = {
+  /** Tiempo entre ráfagas (lo acorta la mejora de cadencia). */
+  cooldownMs: 2400,
+  damage: 22,
+  /** Píxeles por segundo. */
+  speed: 170,
+  /** Cuánto puede girar por segundo para seguir al objetivo. */
+  turnRateDeg: 300,
+  /** Si no pega en este tiempo, explota igual. */
+  lifetimeMs: 2600,
+  /** Distancia a la que busca objetivos (la sube la mejora de alcance). */
+  aimRange: 240,
+  /** La explosión daña a los cercanos con esta fracción del daño. */
+  splashRadius: 24,
+  splashDamageRatio: 0.5,
+  /** Nivel máximo = misiles por ráfaga. */
+  maxLevel: 4,
+};
