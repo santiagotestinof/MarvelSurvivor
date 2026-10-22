@@ -51,7 +51,13 @@ Enemigos de oleada (`src/enemies/enemyKinds.ts`). Cada uno declara en `spawn` de
 
 Para sumar un enemigo: dibujarlo en `tools/generate-sprites.mjs` (o poner su PNG) y agregar una entrada con `spawn` en `enemyKinds.ts`.
 
-Armas: el repulsor (automático, al más cercano) y los **minimisiles**, que se desbloquean con la mejora "Minimisiles". Cada vez que se vuelve a elegir suma un misil por ráfaga (hasta 4). Persiguen al enemigo y explotan con daño en área. Sus números están en `MISSILES` (`src/config/gameplayConfig.ts`) y la lógica en `src/systems/MissileWeapon.ts`. Las mejoras de daño, cadencia y alcance también los afectan.
+Armas:
+
+- **Repulsor** (automático, al más cercano). Mejoras propias: Disparo múltiple (abanico, hasta 4), Perforación (atraviesa hasta 3 enemigos), Velocidad del disparo (hasta 4 veces) y Crítico (+10% por nivel, hasta 50%, doble daño; el disparo crítico se ve dorado y más grande). Límites en `BASIC_ATTACK_LIMITS`.
+- **Minimisiles**, que se desbloquean con la mejora "Minimisiles". Cada vez que se vuelve a elegir suma un misil por ráfaga (hasta 4). Persiguen al enemigo y explotan con daño en área. Sus números están en `MISSILES` y la lógica en `src/systems/MissileWeapon.ts`.
+- **Evolución: Misiles incendiarios.** Con los misiles al máximo y "Más daño" elegido 3 veces (`MISSILES.evolutionDamagePicks`), aparece la carta dorada de evolución (con más peso en el sorteo). Desde ahí cada explosión deja fuego en el piso (`FIRE`) y se suman 4 mejoras de fuego, hasta 5 niveles cada una: duración, daño, cadencia y tamaño.
+
+Las mejoras de daño, cadencia y alcance afectan a todas las armas (el daño también al fuego). Todos los números están en `src/config/gameplayConfig.ts`.
 
 ## Fase 3: experiencia y mejoras
 
@@ -151,6 +157,6 @@ Fase 2 incluida: menú, oleadas, jefe, vida y daño por contacto, ataque automá
 
 Fase 3 incluida: XP, gemas, niveles y mejoras de stats.
 
-Incluido después: dos enemigos nuevos (Explorador y Blindado) y el arma Minimisiles.
+Incluido después: dos enemigos nuevos (Explorador y Blindado), el arma Minimisiles con su evolución (Misiles incendiarios) y mejoras del repulsor.
 
 Fuera de alcance por ahora: enemigos a distancia, habilidades únicas por héroe, gacha, más héroes/mapas y guardado.

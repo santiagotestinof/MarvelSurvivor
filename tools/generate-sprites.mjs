@@ -546,6 +546,30 @@ function makeMissile() {
   return addOutline(cv, hex('#1a1a22'));
 }
 
+// Fuego en el piso (misiles incendiarios): círculo plano de brasas, hoja de 3 cuadros de 32x32
+// (las chispas cambian de lugar para que titile). Sin contorno: brilla.
+function makeFire() {
+  const sheet = new Canvas(96, 32);
+  const cols = [hex('#7a1d12'), hex('#c4321c'), hex('#ff6a1f'), hex('#ffb23a'), hex('#fff3c4')];
+  for (let f = 0; f < 3; f++) {
+    const cv = new Canvas(32, 32);
+    const rnd = mulberry32(77 + f * 13);
+    fillEllipse(cv, 15.5, 15.5, 15, 15, (dx, dy) => {
+      const d = Math.sqrt(dx * dx + dy * dy);
+      return d > 0.85 ? cols[0] : d > 0.6 ? cols[1] : d > 0.3 ? cols[2] : cols[3];
+    });
+    for (let i = 0; i < 14; i++) {
+      const a = rnd() * Math.PI * 2;
+      const r = rnd() * 11;
+      const x = 15.5 + Math.cos(a) * r;
+      const y = 15.5 + Math.sin(a) * r;
+      cv.set(x, y, r < 6 ? cols[4] : cols[3]);
+    }
+    sheet.blit(cv, f * 32, 0);
+  }
+  return sheet;
+}
+
 // Disparo del repulsor, apuntando a la derecha (se rota en el juego).
 function makeBolt() {
   const cv = new Canvas(8, 8);
@@ -588,6 +612,8 @@ save(brute, 'enemies/brute.png');
 save(makeBolt(), 'projectiles/repulsor.png');
 const missile = makeMissile();
 save(missile, 'projectiles/missile.png');
+const fire = makeFire();
+save(fire, 'effects/fire.png');
 
 const previewIdx = process.argv.indexOf('--preview');
 if (previewIdx !== -1) {
@@ -600,5 +626,6 @@ if (previewIdx !== -1) {
   writeFileSync(join(dir, 'scout.png'), encodePng(previewOf(scout, 8)));
   writeFileSync(join(dir, 'brute.png'), encodePng(previewOf(brute, 8)));
   writeFileSync(join(dir, 'missile.png'), encodePng(previewOf(missile, 10)));
+  writeFileSync(join(dir, 'fire.png'), encodePng(previewOf(fire, 8)));
   console.log('  vistas previas en', dir);
 }

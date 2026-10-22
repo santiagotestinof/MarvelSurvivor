@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CHARACTER_REGISTRY } from '../characters/registry';
-import { ASSET_PATHS, TEXTURES } from '../config/assetKeys';
+import { ASSET_PATHS, EFFECT_ANIMS, TEXTURES } from '../config/assetKeys';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds';
 import { loadCharacterAssets, registerCharacterAnimations } from '../systems/AnimationSystem';
@@ -22,6 +22,7 @@ export class BootScene extends Phaser.Scene {
 
     this.load.image(TEXTURES.repulsor, ASSET_PATHS.repulsor);
     this.load.image(TEXTURES.missile, ASSET_PATHS.missile);
+    this.load.spritesheet(TEXTURES.fire, ASSET_PATHS.fire, { frameWidth: 32, frameHeight: 32 });
     loadEnemyAssets(this);
 
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
@@ -42,6 +43,14 @@ export class BootScene extends Phaser.Scene {
       registerCharacterAnimations(this, definition);
     }
     registerEnemyAnimations(this);
+    if (!this.anims.exists(EFFECT_ANIMS.fire)) {
+      this.anims.create({
+        key: EFFECT_ANIMS.fire,
+        frames: this.anims.generateFrameNumbers(TEXTURES.fire, { start: 0, end: 2 }),
+        frameRate: 8,
+        repeat: -1,
+      });
+    }
     this.scene.start(SCENE_KEYS.menu);
   }
 

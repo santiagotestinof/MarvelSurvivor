@@ -1,20 +1,29 @@
 import Phaser from 'phaser';
-import { MISSILES } from '../config/gameplayConfig';
+import { FIRE, MISSILES } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
-import { HomingMissile } from '../entities/HomingMissile';
 import type { Enemy } from '../entities/Enemy';
+import { FireZone } from '../entities/FireZone';
+import { HomingMissile } from '../entities/HomingMissile';
 import type { PlayerStats } from '../progression/PlayerStats';
+
+export type FireUpgrade = 'duration' | 'damage' | 'rate' | 'size';
 
 /**
  * Minimisiles: cada `MISSILES.cooldownMs` lanza una ráfaga de `level` misiles hacia los enemigos
  * más cercanos. Al pegar explotan y dañan también a los que estén alrededor.
  * Arranca bloqueada (nivel 0); la mejora "Minimisiles" la desbloquea y la sube de nivel.
+ * Evolucionada (Misiles incendiarios), cada explosión deja un charco de fuego (`FIRE`).
  */
 export class MissileWeapon {
   level = 0;
+  evolved = false;
+  /** Niveles de las mejoras de fuego (solo después de evolucionar). */
+  readonly fireLevels: Record<FireUpgrade, number> = { duration: 0, damage: 0, rate: 0, size: 0 };
 
   private readonly missiles: Phaser.Physics.Arcade.Group;
+  private fires: FireZone[] = [];
   private lastFiredAt = -Infinity;
+  private now = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -38,7 +47,37 @@ export class MissileWeapon {
     this.level = Math.min(MISSILES.maxLevel, this.level + 1);
   }
 
+  evolve(): void {
+    this.evolved = true;
+  }
+
+  upgradeFire(kind: FireUpgrade): void {
+    this.fireLevels[kind] = Math.min(FIRE.upgradeMaxLevel, this.fireLevels[kind] + 1);
+  }
+
+  // Valores actuales del fuego: cada nivel de mejora suma un porcentaje sobre la base.
+  get fireDurationMs(): number {
+    return FIRE.durationMs * (1 + 0.3 * this.fireLevels.duration);
+  }
+
+  get fireDamage(): number {
+    return FIRE.damage * (1 + 0.3 * this.fireLevels.damage) * this.stats.damageMult;
+  }
+
+  get fireTickMs(): number {
+    return FIRE.tickMs * 0.82 ** this.fireLevels.rate;
+  }
+
+  get fireRadius(): number {
+    return FIRE.radius * (1 + 0.2 * this.fireLevels.size);
+  }
+
   update(now: number, deltaMs: number): void {
+    this.now = now;
+    const enemies = this.enemies.getChildren() as Enemy[];
+    for (const fire of this.fires) fire.update(now, enemies, this.fireDamage, this.fireTickMs);
+    this.fires = this.fires.filter((fire) => !fire.expired);
+
     for (const missile of this.missiles.getChildren() as HomingMissile[]) {
       if (!missile.active) continue;
       if (now >= missile.expiresAt) this.explode(missile, null);
@@ -97,6 +136,10 @@ export class MissileWeapon {
     for (const enemy of this.enemies.getChildren() as Enemy[]) {
       if (enemy === hit || !enemy.active || enemy.dying) continue;
       if ((enemy.x - x) ** 2 + (enemy.y - 6 - y) ** 2 <= splashSq) enemy.takeDamage(damage * MISSILES.splashDamageRatio);
+    }
+
+    if (this.evolved) {
+      this.fires.push(new FireZone(this.scene, x, y + 6, this.fireRadius, this.now + this.fireDurationMs, this.now));
     }
 
     const blast = this.scene.add.circle(x, y, MISSILES.splashRadius, 0xffa53a, 0.55).setDepth(999_999).setScale(0.3);

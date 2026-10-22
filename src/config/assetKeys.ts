@@ -7,7 +7,13 @@ export const TEXTURES = {
   shadow: 'shadow',
   repulsor: 'repulsor',
   missile: 'missile',
+  fire: 'fire',
   gem: 'xp-gem',
+} as const;
+
+/** Animaciones de efectos (no de personajes ni enemigos). */
+export const EFFECT_ANIMS = {
+  fire: 'fire:burn',
 } as const;
 
 /** Rutas relativas a /public (la base se aplica en BootScene). */
@@ -18,4 +24,6 @@ export const ASSET_PATHS = {
   crate: 'assets/props/crate.png',
   repulsor: 'assets/projectiles/repulsor.png',
   missile: 'assets/projectiles/missile.png',
+  /** Hoja de 3 cuadros de 32x32 (círculo plano). */
+  fire: 'assets/effects/fire.png',
 } as const;

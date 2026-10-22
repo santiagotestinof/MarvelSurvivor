@@ -60,4 +60,29 @@ export const MISSILES = {
   splashDamageRatio: 0.5,
   /** Nivel máximo = misiles por ráfaga. */
   maxLevel: 4,
+  /** Veces que hay que haber elegido "Más daño" para que aparezca la evolución (con los misiles al máximo). */
+  evolutionDamagePicks: 3,
+};
+
+/** Fuego que dejan los misiles evolucionados (Misiles incendiarios). Las mejoras de fuego lo multiplican. */
+export const FIRE = {
+  durationMs: 2500,
+  /** Tiempo entre quemaduras a los enemigos que están dentro. */
+  tickMs: 500,
+  /** Daño por quemadura (también lo sube "Más daño"). */
+  damage: 6,
+  radius: 22,
+  /** Niveles máximos de cada mejora de fuego. */
+  upgradeMaxLevel: 5,
+};
+
+/** Mejoras del ataque básico: cuántas veces se puede elegir cada una. */
+export const BASIC_ATTACK_LIMITS = {
+  /** Disparos por ataque como máximo. */
+  maxProjectiles: 4,
+  maxPierce: 3,
+  maxSpeedUpgrades: 4,
+  maxCritChance: 0.5,
+  /** Ángulo entre disparos del abanico (radianes). */
+  spread: 0.2,
 };

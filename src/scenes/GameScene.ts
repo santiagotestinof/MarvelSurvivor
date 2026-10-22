@@ -33,6 +33,8 @@ export class GameScene extends Phaser.Scene {
   private frozen = false;
   private stats = new PlayerStats();
   private progression = new ProgressionSystem();
+  /** Veces que se eligió cada mejora en esta ronda (algunas tienen requisitos, como la evolución). */
+  private taken: Record<string, number> = {};
   private gems: XpGem[] = [];
   private hud!: HudScene;
   /** Reloj de la ronda: no avanza mientras se elige una mejora. */
@@ -47,6 +49,7 @@ export class GameScene extends Phaser.Scene {
     this.clock = 0;
     this.stats = new PlayerStats();
     this.progression = new ProgressionSystem();
+    this.taken = {};
     this.gems = [];
     const map = new TestMap(this);
     map.build();
@@ -73,9 +76,9 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.attack.projectiles, this.enemies, (p, e) => {
       const projectile = p as Projectile;
       const enemy = e as Enemy;
-      if (!projectile.active || enemy.dying) return;
+      if (enemy.dying || !projectile.canHit(enemy)) return;
       enemy.takeDamage(projectile.damage);
-      projectile.destroy();
+      if (projectile.registerHit(enemy)) projectile.destroy();
     });
 
     // HUD (vida, tiempo, joystick táctil) en una escena aparte encima.
@@ -120,11 +123,12 @@ export class GameScene extends Phaser.Scene {
   /** Pausa la ronda y ofrece mejoras al HUD; al elegir, se aplica y se sigue. */
   private openLevelUp(): void {
     this.progression.pendingLevelUps--;
-    const ctx: UpgradeContext = { stats: this.stats, player: this.player, missiles: this.missiles };
+    const ctx: UpgradeContext = { stats: this.stats, player: this.player, missiles: this.missiles, taken: this.taken };
     const choices = pickUpgradeChoices(PROGRESSION.upgradeChoices, ctx);
     this.scene.pause();
     this.hud.showUpgrades(this.progression.level, choices, (choice: UpgradeDefinition) => {
       choice.apply(ctx);
+      this.taken[choice.id] = (this.taken[choice.id] ?? 0) + 1;
       this.scene.resume();
     });
   }

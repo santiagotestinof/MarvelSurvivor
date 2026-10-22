@@ -1,20 +1,24 @@
+import { BASIC_ATTACK_LIMITS, FIRE, MISSILES } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
-import type { MissileWeapon } from '../systems/MissileWeapon';
+import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
 
 export interface UpgradeContext {
   stats: PlayerStats;
   player: Character;
   missiles: MissileWeapon;
+  /** Cuántas veces se eligió cada mejora en esta ronda (por `id`). */
+  taken: Readonly<Record<string, number>>;
 }
 
-export type UpgradeCategory = 'attack' | 'defense' | 'utility';
+export type UpgradeCategory = 'attack' | 'defense' | 'utility' | 'evolution';
 
 /** Nombre y color de cada categoría en la tarjeta de mejora. */
 export const UPGRADE_CATEGORIES: Record<UpgradeCategory, { label: string; color: number }> = {
   attack: { label: 'ATAQUE', color: 0xff6b4a },
   defense: { label: 'DEFENSA', color: 0x3ddc84 },
   utility: { label: 'UTILIDAD', color: 0x37b6ff },
+  evolution: { label: 'EVOLUCIÓN', color: 0xf5c518 },
 };
 
 /**
@@ -31,9 +35,28 @@ export interface UpgradeDefinition {
   describe?: (ctx: UpgradeContext) => string;
   /** Si devuelve false no se ofrece (por ejemplo, un arma al nivel máximo). */
   isAvailable?: (ctx: UpgradeContext) => boolean;
+  /** Peso al sortear las 3 opciones (1 por defecto). Más alto = sale más seguido. */
+  weight?: number;
+}
+
+const times = (ctx: UpgradeContext, id: string): number => ctx.taken[id] ?? 0;
+const pct = (value: number): string => `${Math.round(value * 100)}%`;
+
+/** Mejora de fuego: solo existe después de evolucionar los misiles. */
+function fireUpgrade(kind: FireUpgrade, id: string, name: string, text: string): UpgradeDefinition {
+  return {
+    id,
+    name,
+    description: text,
+    category: 'attack',
+    describe: ({ missiles }) => `${text} (nv ${missiles.fireLevels[kind]} → ${missiles.fireLevels[kind] + 1})`,
+    isAvailable: ({ missiles }) => missiles.evolved && missiles.fireLevels[kind] < FIRE.upgradeMaxLevel,
+    apply: ({ missiles }) => missiles.upgradeFire(kind),
+  };
 }
 
 export const UPGRADES: readonly UpgradeDefinition[] = [
+  // ---- Stats generales
   {
     id: 'damage',
     name: 'Más daño',
@@ -83,26 +106,85 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     category: 'attack',
     apply: ({ stats }) => (stats.rangeMult *= 1.2),
   },
+
+  // ---- Ataque básico (repulsor)
+  {
+    id: 'multishot',
+    name: 'Disparo múltiple',
+    description: '+1 disparo en abanico',
+    category: 'attack',
+    describe: ({ stats }) => `+1 disparo en abanico (${stats.projectileCount} → ${stats.projectileCount + 1})`,
+    isAvailable: ({ stats }) => stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
+    apply: ({ stats }) => stats.projectileCount++,
+  },
+  {
+    id: 'pierce',
+    name: 'Perforación',
+    description: 'El disparo atraviesa +1 enemigo',
+    category: 'attack',
+    describe: ({ stats }) => `El disparo atraviesa +1 enemigo (${stats.pierce} → ${stats.pierce + 1})`,
+    isAvailable: ({ stats }) => stats.pierce < BASIC_ATTACK_LIMITS.maxPierce,
+    apply: ({ stats }) => stats.pierce++,
+  },
+  {
+    id: 'shot-speed',
+    name: 'Velocidad del disparo',
+    description: '+25% de velocidad de los disparos',
+    category: 'attack',
+    isAvailable: (ctx) => times(ctx, 'shot-speed') < BASIC_ATTACK_LIMITS.maxSpeedUpgrades,
+    apply: ({ stats }) => (stats.projectileSpeedMult *= 1.25),
+  },
+  {
+    id: 'crit',
+    name: 'Crítico',
+    description: '+10% de probabilidad de doble daño',
+    category: 'attack',
+    describe: ({ stats }) => `+10% de probabilidad de doble daño (${pct(stats.critChance)} → ${pct(stats.critChance + 0.1)})`,
+    isAvailable: ({ stats }) => stats.critChance < BASIC_ATTACK_LIMITS.maxCritChance - 1e-6,
+    apply: ({ stats }) => (stats.critChance = Math.min(BASIC_ATTACK_LIMITS.maxCritChance, stats.critChance + 0.1)),
+  },
+
+  // ---- Minimisiles y su evolución
   {
     id: 'missiles',
     name: 'Minimisiles',
     description: 'Misiles teledirigidos que explotan',
     category: 'attack',
-    describe: ({ missiles }) =>
-      missiles.level === 0
-        ? 'ARMA NUEVA: misiles teledirigidos que explotan'
-        : `+1 misil por ráfaga (${missiles.level} → ${missiles.level + 1})`,
+    describe: ({ missiles }) => {
+      if (missiles.level === 0) return 'ARMA NUEVA: misiles teledirigidos que explotan';
+      const text = `+1 misil por ráfaga (${missiles.level} → ${missiles.level + 1})`;
+      return missiles.level + 1 === MISSILES.maxLevel ? `${text}. Al máximo, con Más daño x${MISSILES.evolutionDamagePicks}, evolucionan` : text;
+    },
     isAvailable: ({ missiles }) => !missiles.maxed,
     apply: ({ missiles }) => missiles.levelUp(),
   },
+  {
+    id: 'missiles-evolution',
+    name: 'Misiles incendiarios',
+    description: 'Las explosiones dejan fuego que quema',
+    category: 'evolution',
+    isAvailable: (ctx) =>
+      ctx.missiles.maxed && !ctx.missiles.evolved && times(ctx, 'damage') >= MISSILES.evolutionDamagePicks,
+    apply: ({ missiles }) => missiles.evolve(),
+    // Es la recompensa de juntar los requisitos: que no tarde en salir.
+    weight: 4,
+  },
+  fireUpgrade('duration', 'burn-duration', 'Fuego duradero', '+30% de duración del fuego'),
+  fireUpgrade('damage', 'burn-damage', 'Fuego intenso', '+30% de daño del fuego'),
+  fireUpgrade('rate', 'burn-rate', 'Fuego voraz', 'Quema 18% más seguido'),
+  fireUpgrade('size', 'burn-size', 'Fuego expansivo', '+20% de tamaño del área'),
 ];
 
-/** Elige `count` mejoras distintas al azar entre las disponibles, con el texto según el estado actual. */
+/** Elige `count` mejoras distintas al azar (según su peso) entre las disponibles, con el texto según el estado. */
 export function pickUpgradeChoices(count: number, ctx: UpgradeContext): UpgradeDefinition[] {
   const pool = UPGRADES.filter((upgrade) => upgrade.isAvailable?.(ctx) ?? true);
   const picked: UpgradeDefinition[] = [];
   while (picked.length < count && pool.length > 0) {
-    const upgrade = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    const total = pool.reduce((sum, upgrade) => sum + (upgrade.weight ?? 1), 0);
+    let roll = Math.random() * total;
+    let index = pool.findIndex((upgrade) => (roll -= upgrade.weight ?? 1) <= 0);
+    if (index < 0) index = pool.length - 1;
+    const upgrade = pool.splice(index, 1)[0];
     picked.push(upgrade.describe ? { ...upgrade, description: upgrade.describe(ctx) } : upgrade);
   }
   return picked;
