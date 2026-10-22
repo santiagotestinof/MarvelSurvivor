@@ -27,8 +27,8 @@ Agregando `?debug` a la URL (`http://localhost:5173/?debug`) se dibujan las caja
 
 ## Jugar online (GitHub Pages)
 
-El workflow `.github/workflows/deploy.yml` compila y publica el juego cada vez que se hace push a la rama `villa`.
-Para activarlo, una sola vez: en GitHub → **Settings → Pages → Source: GitHub Actions**.
+El workflow `.github/workflows/deploy.yml` compila y publica el juego cada vez que se hace push a la rama `main` o `villa`.
+Para activarlo, una sola vez: en GitHub → **Settings → Pages → Source: GitHub Actions**, y en **Settings → Environments → github-pages** permitir las ramas `main` y `villa`.
 El juego queda en `https://santiagotestinof.github.io/MarvelSurvivor/`. Las rutas son relativas, así que funciona en cualquier hosting estático.
 
 ## Controles

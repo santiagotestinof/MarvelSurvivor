@@ -21,6 +21,9 @@ import { WaveSystem } from '../systems/WaveSystem';
 import { TestMap } from '../world/TestMap';
 import type { HudScene } from './HudScene';
 
+/** Estado que dibuja el HUD: ronda + experiencia. */
+export type HudSnapshot = HudState & ProgressState;
+
 /** Una ronda: oleadas de enemigos, ataque automático, jefe final y resultado. */
 export class GameScene extends Phaser.Scene {
   private player!: Character;
@@ -93,7 +96,7 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop(SCENE_KEYS.hud));
   }
 
-  getHudState(): HudState & ProgressState {
+  getHudState(): HudSnapshot {
     return { ...this.round.getHudState(this.clock), ...this.progression.getState() };
   }
 

@@ -2,7 +2,7 @@ name: Deploy a GitHub Pages
 
 on:
   push:
-    branches: [villa]
+    branches: [main, villa]
   workflow_dispatch:
 
 permissions:
