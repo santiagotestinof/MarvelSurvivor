@@ -100,12 +100,12 @@ export class GameScene extends Phaser.Scene {
     const radiusSq = this.stats.pickupRadius ** 2;
     const targetY = this.player.y - 8;
     this.gems = this.gems.filter((gem) => {
-      if (!gem.magnetized) {
+      if (!gem.isMagnetized) {
         const dx = this.player.x - gem.x;
         const dy = targetY - gem.y;
-        if (dx * dx + dy * dy <= radiusSq) gem.magnetized = true;
+        if (dx * dx + dy * dy <= radiusSq) gem.magnetize();
       }
-      if (gem.magnetized && gem.moveToward(this.player.x, targetY, delta)) {
+      if (gem.isMagnetized && gem.moveToward(this.player.x, targetY, delta)) {
         this.progression.addXp(gem.value);
         gem.destroy();
         return false;
