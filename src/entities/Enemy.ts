@@ -30,6 +30,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(kind.origin.x, kind.origin.y);
     const { width, height, offsetX, offsetY } = kind.body;
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
+    this.setCollideWorldBounds(true);
     this.play(enemyAnimationKey(kind));
   }
 
@@ -38,10 +39,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   chase(targetX: number, targetY: number, separationX = 0, separationY = 0): void {
-    const dx = targetX - this.x + separationX;
-    const dy = targetY - this.y + separationY;
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
     const distance = Math.hypot(dx, dy);
-    if (distance > 0.5) this.setVelocity((dx / distance) * this.moveSpeed, (dy / distance) * this.moveSpeed);
+    const chaseX = distance > 0.5 ? (dx / distance) * this.moveSpeed : 0;
+    const chaseY = distance > 0.5 ? (dy / distance) * this.moveSpeed : 0;
+    this.setVelocity(chaseX + separationX * this.moveSpeed, chaseY + separationY * this.moveSpeed);
     this.setDepth(this.y);
   }
 
