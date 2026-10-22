@@ -4,7 +4,9 @@ import { VirtualJoystick } from '../input/VirtualJoystick';
 import type { ProgressState } from '../progression/ProgressionSystem';
 import type { UpgradeDefinition } from '../progression/upgrades';
 import type { HudState } from '../systems/RoundController';
-import { createButton, formatTime, textStyle, uiScale } from '../ui/uiLayout';
+import { UiButton } from '../ui/UiButton';
+import { UpgradeCard } from '../ui/UpgradeCard';
+import { formatTime, textStyle, uiScale } from '../ui/uiLayout';
 import type { GameScene } from './GameScene';
 
 /** Interfaz que se dibuja encima del juego: vida, tiempo, jefe, resultado y joystick táctil. */
@@ -23,12 +25,14 @@ export class HudScene extends Phaser.Scene {
   private dim!: Phaser.GameObjects.Rectangle;
   private resultTitle!: Phaser.GameObjects.Text;
   private resultStats!: Phaser.GameObjects.Text;
-  private menuButton!: Phaser.GameObjects.Text;
+  private menuButton!: UiButton;
 
   private levelText!: Phaser.GameObjects.Text;
   private upgradeDim!: Phaser.GameObjects.Rectangle;
   private upgradeTitle!: Phaser.GameObjects.Text;
-  private upgradeCards: Phaser.GameObjects.Text[] = [];
+  private upgradeSubtitle!: Phaser.GameObjects.Text;
+  private upgradeHint!: Phaser.GameObjects.Text;
+  private upgradeCards: UpgradeCard[] = [];
   private upgradeChoices: UpgradeDefinition[] = [];
   private onUpgradePicked: ((choice: UpgradeDefinition) => void) | null = null;
   private upgradeOpenedAt = 0;
@@ -60,8 +64,16 @@ export class HudScene extends Phaser.Scene {
 
     this.levelText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
 
-    this.upgradeDim = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.7).setOrigin(0).setDepth(20).setVisible(false);
+    this.upgradeDim = this.add.rectangle(0, 0, 10, 10, 0x05080c, 0.78).setOrigin(0).setDepth(20).setVisible(false);
     this.upgradeTitle = this.add.text(0, 0, '', textStyle(32, '#f5c518')).setOrigin(0.5).setDepth(21).setVisible(false);
+    this.upgradeTitle.setShadow(0, 4, '#7a1d12', 0, true, true);
+    this.upgradeSubtitle = this.add.text(0, 0, 'Elegí una mejora', textStyle(16, '#d7e6ef')).setOrigin(0.5).setDepth(21).setVisible(false);
+    const touch = this.sys.game.device.input.touch;
+    this.upgradeHint = this.add
+      .text(0, 0, touch ? 'Tocá una tarjeta' : 'Click o teclas 1 · 2 · 3', textStyle(12, '#9fb3bf'))
+      .setOrigin(0.5)
+      .setDepth(21)
+      .setVisible(false);
     const keyboard = this.input.keyboard;
     if (keyboard) {
       ['ONE', 'TWO', 'THREE'].forEach((name, index) => keyboard.addKey(name).on('down', () => this.pickUpgrade(index)));
@@ -70,10 +82,10 @@ export class HudScene extends Phaser.Scene {
     this.dim = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.65).setOrigin(0).setDepth(10).setVisible(false);
     this.resultTitle = this.add.text(0, 0, '', textStyle(40)).setOrigin(0.5).setDepth(11).setVisible(false);
     this.resultStats = this.add.text(0, 0, '', { ...textStyle(16), align: 'center' }).setOrigin(0.5).setDepth(11).setVisible(false);
-    this.menuButton = createButton(this, 'VOLVER AL MENÚ', 18, () => this.backToMenu(), ['ENTER', 'SPACE'])
+    this.menuButton = new UiButton(this, 'VOLVER AL MENÚ', 18, () => this.backToMenu(), ['ENTER', 'SPACE'])
       .setDepth(11)
-      .setVisible(false);
-    this.menuButton.disableInteractive();
+      .setVisible(false)
+      .setEnabled(false);
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
@@ -176,55 +188,60 @@ export class HudScene extends Phaser.Scene {
     this.upgradeChoices = choices;
     this.onUpgradePicked = onPick;
     this.upgradeOpenedAt = this.time.now;
-    this.upgradeTitle.setText(`¡NIVEL ${level}!\nElegí una mejora`).setVisible(true);
-    this.upgradeDim.setVisible(true);
+    this.upgradeTitle.setText(`¡NIVEL ${level}!`);
+    for (const item of [this.upgradeDim, this.upgradeTitle, this.upgradeSubtitle, this.upgradeHint]) item.setVisible(true);
 
     for (const card of this.upgradeCards) card.destroy();
-    this.upgradeCards = choices.map((choice, index) => {
-      const card = this.add
-        .text(0, 0, '', {
-          fontFamily: 'monospace',
-          fontStyle: 'bold',
-          color: '#101010',
-          backgroundColor: '#f5c518',
-          align: 'center',
-        })
-        .setOrigin(0.5)
-        .setDepth(21)
-        .setInteractive({ useHandCursor: true });
-      card.setData('label', `${index + 1}. ${choice.name}\n${choice.description}`);
-      card.on(Phaser.Input.Events.POINTER_OVER, () => card.setBackgroundColor('#ffe272'));
-      card.on(Phaser.Input.Events.POINTER_OUT, () => card.setBackgroundColor('#f5c518'));
-      card.on(Phaser.Input.Events.POINTER_UP, () => this.pickUpgrade(index));
-      return card;
-    });
+    this.upgradeCards = choices.map((choice, index) =>
+      new UpgradeCard(this, choice, index, () => this.pickUpgrade(index)).setDepth(21),
+    );
     this.layoutUpgrades();
+
+    // Entrada: el título "salta" y las tarjetas aparecen una tras otra.
+    this.upgradeDim.setAlpha(0);
+    this.tweens.add({ targets: this.upgradeDim, alpha: 1, duration: 150 });
+    this.upgradeTitle.setScale(0.4);
+    this.tweens.add({ targets: this.upgradeTitle, scale: 1, duration: 320, ease: 'Back.easeOut' });
+    this.upgradeCards.forEach((card, index) => {
+      card.setAlpha(0).setScale(0.85);
+      this.tweens.add({ targets: card, alpha: 1, scale: 1, duration: 220, delay: 90 + index * 70, ease: 'Back.easeOut' });
+    });
   }
 
   private layoutUpgrades(): void {
     const { width, height } = this.scale;
+    const ui = this.ui;
     this.upgradeDim.setSize(width, height);
-    this.upgradeTitle.setFontSize(Math.max(18, Math.round(8 * this.ui))).setPosition(width / 2, height * 0.16);
 
     const portrait = width < height;
     const count = this.upgradeCards.length;
-    const font = Math.max(12, Math.round(3.6 * this.ui));
-    const cardW = portrait ? width * 0.86 : Math.min(width * 0.3, 90 * this.ui);
-    const cardH = Math.round(font * 5.4);
-    this.upgradeCards.forEach((card, index) => {
-      card.setFontSize(font);
-      card.setText(card.getData('label') as string);
-      card.setWordWrapWidth(cardW - font * 1.5);
-      card.setFixedSize(cardW, cardH);
-      card.setPadding(0, Math.round(font * 0.8), 0, 0);
-      if (portrait) {
-        card.setPosition(width / 2, height * 0.34 + index * (cardH + font));
-      } else {
-        const gap = font * 1.5;
-        const total = count * cardW + (count - 1) * gap;
-        card.setPosition(width / 2 - total / 2 + cardW / 2 + index * (cardW + gap), height * 0.52);
-      }
-    });
+    // En vertical la letra sale del ancho (uiScale queda chico en celulares).
+    const font = portrait ? Math.max(14, Math.round(Math.min(width * 0.045, 22))) : Math.max(13, Math.round(4.4 * ui));
+    this.upgradeTitle.setFontSize(Math.max(26, Math.round(11 * ui))).setPosition(width / 2, height * (portrait ? 0.12 : 0.15));
+    this.upgradeSubtitle.setFontSize(Math.max(14, Math.round(4.2 * ui))).setPosition(width / 2, this.upgradeTitle.y + this.upgradeTitle.height * 0.75);
+    this.upgradeHint.setFontSize(Math.max(11, Math.round(3 * ui))).setPosition(width / 2, height * 0.92);
+
+    if (portrait) {
+      const cardW = Math.min(width * 0.9, 520);
+      const cardH = Math.round(font * 6);
+      const gap = Math.round(font * 0.9);
+      const total = count * cardH + (count - 1) * gap;
+      const startY = Math.max(this.upgradeSubtitle.y + font * 2, height * 0.53 - total / 2);
+      this.upgradeCards.forEach((card, index) => {
+        card.layout(cardW, cardH, font, true);
+        card.setPosition(width / 2, startY + cardH / 2 + index * (cardH + gap));
+      });
+    } else {
+      const gap = Math.round(font * 1.4);
+      const cardW = Math.min((width * 0.9 - gap * (count - 1)) / Math.max(1, count), 72 * ui);
+      // Todas las tarjetas con el alto de la que más texto tiene.
+      const cardH = Math.max(...this.upgradeCards.map((card) => card.measureVerticalHeight(cardW, font)));
+      const total = count * cardW + (count - 1) * gap;
+      this.upgradeCards.forEach((card, index) => {
+        card.layout(cardW, cardH, font, false);
+        card.setPosition(width / 2 - total / 2 + cardW / 2 + index * (cardW + gap), height * 0.53);
+      });
+    }
   }
 
   private pickUpgrade(index: number): void {
@@ -236,8 +253,7 @@ export class HudScene extends Phaser.Scene {
     this.upgradeChoices = [];
     for (const card of this.upgradeCards) card.destroy();
     this.upgradeCards = [];
-    this.upgradeTitle.setVisible(false);
-    this.upgradeDim.setVisible(false);
+    for (const item of [this.upgradeDim, this.upgradeTitle, this.upgradeSubtitle, this.upgradeHint]) item.setVisible(false);
     this.joystick.disabled = false;
     callback(choice);
   }
@@ -250,7 +266,7 @@ export class HudScene extends Phaser.Scene {
       .setText(`Tiempo: ${formatTime(state.elapsedMs)}\nEnemigos derrotados: ${state.kills}`)
       .setVisible(true);
     this.dim.setVisible(true);
-    this.menuButton.setVisible(true).setInteractive({ useHandCursor: true });
+    this.menuButton.setVisible(true).setEnabled(true);
   }
 
   private backToMenu(): void {

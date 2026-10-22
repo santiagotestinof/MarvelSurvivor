@@ -24,6 +24,7 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 
 ## Dónde tocar qué
 - Balance (oleadas, XP, duración): `src/config/gameplayConfig.ts`
-- Mejoras: `src/progression/upgrades.ts` · Enemigos: `src/enemies/enemyKinds.ts`
+- Mejoras: `src/progression/upgrades.ts` (cada una con su ícono en `src/ui/upgradeIcons.ts`) · Enemigos: `src/enemies/enemyKinds.ts`
+- Interfaz: `src/ui/` (`UiButton`, `UpgradeCard`, `drawPanel` y escalas en `uiLayout.ts`)
 - Héroes: `src/characters/` (registro en `registry.ts`) · Escenas: `src/scenes/` (Boot, Menu, Game, Hud)
 - Detalles de sprites y cómo agregar animaciones o personajes: `README.md`

@@ -1,0 +1,130 @@
+import type Phaser from 'phaser';
+
+/**
+ * Íconos provisionales de las mejoras, dibujados como pixel art desde texto (como los sprites
+ * provisionales, nada de arte de terceros). Cada carácter es un píxel; '.' es transparente.
+ * Para sumar uno: una entrada con el mismo `id` que la mejora.
+ */
+const PALETTE: Record<string, number> = {
+  K: 0x161616,
+  W: 0xffffff,
+  S: 0xc9d3dd,
+  Y: 0xf5c518,
+  O: 0xff8a2a,
+  R: 0xe23b3b,
+  G: 0x3ddc84,
+  D: 0x1f8a4c,
+  C: 0x37d5ff,
+  B: 0x2f6fe0,
+};
+
+const ICONS: Record<string, string[]> = {
+  damage: [
+    '....O.....',
+    '.O..O..O..',
+    '..O.Y.O...',
+    '...YYY....',
+    'OOYYWYYOO.',
+    '...YYY....',
+    '..O.Y.O...',
+    '.O..O..O..',
+    '....O.....',
+    '..........',
+  ],
+  'fire-rate': [
+    '..........',
+    '.YY...YY..',
+    '.OYY..OYY.',
+    '..OYY..OYY',
+    '...OYY..OY',
+    '..OYY..OYY',
+    '.OYY..OYY.',
+    '.YY...YY..',
+    '..........',
+    '..........',
+  ],
+  speed: [
+    '....R.....',
+    '...RR.....',
+    '...ROR....',
+    '..ROOR....',
+    '..ROYOR...',
+    '.ROYYOR...',
+    '.ROYYYOR..',
+    '.RROYWORR.',
+    '..RROORR..',
+    '...RRRR...',
+  ],
+  health: [
+    '.KKKKKKKK.',
+    'KGGGGGGGGK',
+    'KGWWGGGGDK',
+    'KGWGGGGGDK',
+    'KGGGGGGGDK',
+    '.KGGGGGDK.',
+    '.KGGGGGDK.',
+    '..KGGGDK..',
+    '...KGDK...',
+    '....KK....',
+  ],
+  repair: [
+    '..........',
+    '.RR...RR..',
+    'RWRR.RRRR.',
+    'RWRRRRRRR.',
+    'RRRRRRRRR.',
+    '.RRRRRRR..',
+    '..RRRRR...',
+    '...RRR....',
+    '....R.....',
+    '..........',
+  ],
+  magnet: [
+    '.SSS..SSS.',
+    '.SSS..SSS.',
+    '.RRR..BBB.',
+    '.RR....BB.',
+    '.RR....BB.',
+    '.RR....BB.',
+    '.RRR..BBB.',
+    '..RRRBBB..',
+    '...RRBB...',
+    '..........',
+  ],
+  range: [
+    '....C.....',
+    '....C.....',
+    '..CCCCC...',
+    '.C..C..C..',
+    'CCCC.CCCC.',
+    '.C..C..C..',
+    '..CCCCC...',
+    '....C.....',
+    '....C.....',
+    '..........',
+  ],
+};
+
+/** Lado de cada ícono en píxeles (antes de escalar). */
+export const UPGRADE_ICON_SIZE = 10;
+
+export function upgradeIconKey(upgradeId: string): string {
+  return `upgrade-icon:${upgradeId}`;
+}
+
+/** Genera las texturas de los íconos (llamar una vez, desde BootScene). */
+export function registerUpgradeIcons(scene: Phaser.Scene): void {
+  for (const [id, rows] of Object.entries(ICONS)) {
+    const key = upgradeIconKey(id);
+    if (scene.textures.exists(key)) continue;
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    rows.forEach((row, y) => {
+      [...row].forEach((char, x) => {
+        const color = PALETTE[char];
+        if (color !== undefined) g.fillStyle(color, 1).fillRect(x, y, 1, 1);
+      });
+    });
+    g.generateTexture(key, UPGRADE_ICON_SIZE, UPGRADE_ICON_SIZE);
+    g.destroy();
+  }
+}

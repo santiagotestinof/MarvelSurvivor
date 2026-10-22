@@ -15,11 +15,11 @@ export function formatTime(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-const FONT = 'monospace';
+export const UI_FONT = 'monospace';
 
 export function textStyle(size: number, color = '#ffffff'): Phaser.Types.GameObjects.Text.TextStyle {
   return {
-    fontFamily: FONT,
+    fontFamily: UI_FONT,
     fontStyle: 'bold',
     fontSize: `${Math.round(size)}px`,
     color,
@@ -28,35 +28,17 @@ export function textStyle(size: number, color = '#ffffff'): Phaser.Types.GameObj
   };
 }
 
-/** Botón de texto que responde a mouse, toque y teclado (si se pasa `hotkeys`). */
-export function createButton(
-  scene: Phaser.Scene,
-  label: string,
-  size: number,
-  onClick: () => void,
-  hotkeys: string[] = [],
-): Phaser.GameObjects.Text {
-  const padX = Math.round(size * 1.2);
-  const padY = Math.round(size * 0.6);
-  const button = scene.add
-    .text(0, 0, label, {
-      fontFamily: FONT,
-      fontStyle: 'bold',
-      fontSize: `${Math.round(size)}px`,
-      color: '#101010',
-      backgroundColor: '#f5c518',
-      padding: { left: padX, right: padX, top: padY, bottom: padY },
-    })
-    .setOrigin(0.5)
-    .setInteractive({ useHandCursor: true });
-
-  button.on(Phaser.Input.Events.POINTER_OVER, () => button.setBackgroundColor('#ffe272'));
-  button.on(Phaser.Input.Events.POINTER_OUT, () => button.setBackgroundColor('#f5c518'));
-  button.on(Phaser.Input.Events.POINTER_UP, onClick);
-
-  const keyboard = scene.input.keyboard;
-  if (keyboard) {
-    for (const name of hotkeys) keyboard.addKey(name).on('down', onClick);
-  }
-  return button;
+/** Panel redondeado semitransparente con borde (fondo de tarjetas y recuadros de texto). */
+export function drawPanel(
+  g: Phaser.GameObjects.Graphics,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  options: { fill?: number; alpha?: number; border?: number; borderAlpha?: number; radius?: number; lineWidth?: number } = {},
+): void {
+  const { fill = 0x0b1410, alpha = 0.82, border = 0xffffff, borderAlpha = 0.18, radius = 8, lineWidth = 2 } = options;
+  g.fillStyle(0x000000, 0.35).fillRoundedRect(x + 3, y + 4, w, h, radius);
+  g.fillStyle(fill, alpha).fillRoundedRect(x, y, w, h, radius);
+  g.lineStyle(lineWidth, border, borderAlpha).strokeRoundedRect(x, y, w, h, radius);
 }
