@@ -83,7 +83,7 @@ export class HudScene extends Phaser.Scene {
 
     this.pauseDim = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.68).setOrigin(0).setDepth(30).setVisible(false);
     this.pauseTitle = this.add.text(0, 0, 'PAUSA', textStyle(40, '#ffffff')).setOrigin(0.5).setDepth(31).setVisible(false);
-    this.pauseButton = createButton(this, 'PAUSAR', 18, () => this.togglePause(), ['ESC']).setDepth(5);
+    this.pauseButton = createButton(this, 'PAUSAR', 18, () => this.togglePause()).setDepth(5);
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
@@ -120,12 +120,12 @@ export class HudScene extends Phaser.Scene {
       this.scene.pause(SCENE_KEYS.game);
       this.pauseDim.setVisible(true);
       this.pauseTitle.setText('PAUSA\nESC para continuar').setVisible(true);
-      this.pauseButton.setText('CONTINUAR');
+      this.pauseButton.setDepth(32).setText('CONTINUAR');
     } else {
       this.scene.resume(SCENE_KEYS.game);
       this.pauseDim.setVisible(false);
       this.pauseTitle.setVisible(false);
-      this.pauseButton.setText('PAUSAR');
+      this.pauseButton.setDepth(5).setText('PAUSAR');
     }
   }
 
