@@ -1,1 +1,124 @@
-# MarvelSurvivor
+# Marvel Survivors
+
+Videojuego web 2D top-down inspirado en Vampire Survivors, ambientado en el universo Marvel.
+Hecho con **TypeScript + Phaser 3 + Vite**. Corre directamente en el navegador.
+
+**Estado: Fase 1** — escenario de pruebas e Iron Man jugable (movimiento y animaciones en 8 direcciones).
+
+## Cómo ejecutarlo
+
+Requiere [Node.js](https://nodejs.org) 18 o superior.
+
+```bash
+npm install      # una sola vez
+npm run dev      # abre http://localhost:5173
+```
+
+Otros comandos:
+
+| Comando | Qué hace |
+| --- | --- |
+| `npm run build` | Revisa tipos y genera la versión publicable en `dist/` |
+| `npm run preview` | Sirve el build de `dist/` para probarlo |
+| `npm run typecheck` | Solo revisa tipos de TypeScript |
+| `npm run sprites` | Regenera los sprites provisionales (ver más abajo) |
+
+Agregando `?debug` a la URL (`http://localhost:5173/?debug`) se dibujan las cajas de colisión.
+
+## Jugar online (GitHub Pages)
+
+El workflow `.github/workflows/deploy.yml` compila y publica el juego cada vez que se hace push a la rama `villa`.
+Para activarlo, una sola vez: en GitHub → **Settings → Pages → Source: GitHub Actions**.
+El juego queda en `https://santiagotestinof.github.io/MarvelSurvivor/`. Las rutas son relativas, así que funciona en cualquier hosting estático.
+
+## Controles
+
+`W A S D` o flechas del teclado. Ocho direcciones, velocidad constante también en diagonal.
+
+## Estructura
+
+```
+src/
+├── main.ts                      Punto de entrada
+├── config/
+│   ├── gameConfig.ts            Configuración de Phaser (pixel art, escala, física)
+│   ├── cameraConfig.ts          Suavizado y zoom entero de la cámara
+│   ├── controlsConfig.ts        Teclas asignadas
+│   └── assetKeys.ts             Claves y rutas de recursos que no son de personajes
+├── core/
+│   ├── direction.ts             Las 8 direcciones y conversión vector → dirección
+│   └── random.ts                Aleatorio con semilla (mapa reproducible)
+├── input/
+│   ├── MoveInput.ts             Interfaz de entrada de movimiento
+│   └── KeyboardMoveInput.ts     Implementación por teclado
+├── systems/
+│   ├── MovementSystem.ts        Vector de intención → velocidad (normalizada)
+│   ├── AnimationSystem.ts       Carga de spritesheets, registro de animaciones y animador
+│   └── CameraRig.ts             Seguimiento suave, límites del mapa, zoom entero
+├── entities/
+│   └── Character.ts             Entidad base de todos los personajes
+├── characters/
+│   ├── CharacterDefinition.ts   "Contrato" de datos de un personaje
+│   ├── registry.ts              Catálogo de personajes
+│   └── ironman/                 Definición e implementación de Iron Man
+├── world/
+│   └── TestMap.ts               Mapa provisional con obstáculos
+└── scenes/
+    ├── BootScene.ts             Carga de recursos
+    └── GameScene.ts             Escena de juego
+public/assets/                   Sprites y tiles (PNG)
+tools/generate-sprites.mjs       Generador de los sprites provisionales
+```
+
+Ideas de diseño:
+
+- **Datos separados de lógica.** Un personaje es una `CharacterDefinition` (sprites, velocidad, caja de colisión) más una clase que hereda de `Character`. Todo el movimiento, la orientación y la animación están en la base y no se duplican.
+- **Entrada desacoplada.** `MovementSystem` solo recibe un vector. Un joystick virtual para móviles es una clase nueva que implementa `MoveInput`; no hay que tocar nada más.
+- **Pixel art nítido.** `pixelArt` y `roundPixels` activados, zoom de cámara siempre entero, sin escalados fraccionarios.
+- **Orden de dibujo por altura** (`depth = y`), con sombra elíptica bajo cada personaje.
+
+## Sprites: formato y cómo reemplazarlos
+
+Cada acción de un personaje es un spritesheet PNG con **una fila por dirección** y una columna por cuadro:
+
+| Fila | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Dirección | abajo | abajo-izq | izquierda | arriba-izq | arriba | arriba-der | derecha | abajo-der |
+
+Iron Man usa cuadros de 32×32 con los pies en el píxel (16, 30), así no "salta" al cambiar de animación:
+
+- `ironman-idle.png`: 4 cuadros × 8 direcciones (128×256)
+- `ironman-walk.png`: 6 cuadros × 8 direcciones (192×256)
+
+**Los sprites actuales son provisionales y originales**, generados por código con `npm run sprites` (no se usó ningún material de terceros). Para poner arte definitivo basta con reemplazar esos PNG respetando el formato; no hay que cambiar código. Si cambia el tamaño de cuadro o la cantidad de cuadros, se ajusta `ironManDefinition.ts`.
+
+## Agregar una animación nueva (ataque, vuelo, daño, muerte...)
+
+1. Sumar el nombre en `CharacterAction` (`CharacterDefinition.ts`).
+2. Dibujar el spritesheet con el mismo formato (8 filas).
+3. Declararlo en `sheets` de la definición del personaje.
+4. Pedirlo desde la lógica con `animator.play('attack', direction)`.
+
+La carga y el registro de animaciones se hacen solos a partir de `sheets`.
+
+## Agregar un personaje
+
+1. Crear `src/characters/<nombre>/` con su definición (y su clase si necesita comportamiento propio).
+2. Registrarlo en `src/characters/registry.ts`.
+
+## Qué está completo y qué es provisional
+
+Completo:
+
+- Proyecto Vite + TypeScript + Phaser 3, build de producción.
+- Movimiento en 8 direcciones, velocidad constante en diagonales, conserva la orientación al detenerse.
+- Spritesheets idle y walk con las 8 direcciones dibujadas por separado (no hay un sprite girado).
+- Cámara con seguimiento suave y límites del mapa; mapa de 1920×1280 px.
+- Colisiones con obstáculos y con los bordes del mapa.
+
+Provisional:
+
+- Sprites de Iron Man, suelo, árboles, rocas y cajas (arte generado por código).
+- El mapa de pruebas.
+
+Fuera de alcance en esta fase (por pedido): enemigos, combate, habilidades, experiencia, gacha y guardado.

@@ -1,0 +1,21 @@
+{
+  "name": "marvel-survivors",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Marvel Survivors - survivor game 2D top-down (Phaser 3 + TypeScript + Vite)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "sprites": "node tools/generate-sprites.mjs"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  }
+}
