@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { IRON_MAN_ID } from '../characters/ironman/ironManDefinition';
 import { SCENE_KEYS } from '../config/sceneKeys';
+import { ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -42,7 +43,8 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.frozen = false;
-    this.clock = 0;
+    const testMode = new URLSearchParams(window.location.search).get('test') === '1';
+    this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
     this.stats = new PlayerStats();
     this.progression = new ProgressionSystem();
     this.gems = [];
