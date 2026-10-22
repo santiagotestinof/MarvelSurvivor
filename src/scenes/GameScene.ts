@@ -55,6 +55,7 @@ export class GameScene extends Phaser.Scene {
 
     this.enemies = this.physics.add.group();
     this.physics.add.collider(this.enemies, map.obstacles);
+    this.physics.add.collider(this.enemies, this.enemies);
     this.attack = new AutoAttackSystem(this, this.player, this.player.definition.stats.attack, this.enemies, this.stats);
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
       this.dropGem(e);
@@ -157,7 +158,7 @@ export class GameScene extends Phaser.Scene {
           separationY += (dy / distance) * strength;
         }
       }
-      enemy.chase(this.player.x, this.player.y - 6, separationX * 1.4, separationY * 1.4);
+      enemy.chase(this.player.x, this.player.y - 6, separationX * 1.2, separationY * 1.2);
     }
     this.round.update(now);
 
