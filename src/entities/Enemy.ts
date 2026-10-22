@@ -37,9 +37,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     return this.currentHealth;
   }
 
-  chase(targetX: number, targetY: number): void {
-    const dx = targetX - this.x;
-    const dy = targetY - this.y;
+  chase(targetX: number, targetY: number, separationX = 0, separationY = 0): void {
+    const dx = targetX - this.x + separationX;
+    const dy = targetY - this.y + separationY;
     const distance = Math.hypot(dx, dy);
     if (distance > 0.5) this.setVelocity((dx / distance) * this.moveSpeed, (dy / distance) * this.moveSpeed);
     this.setDepth(this.y);
