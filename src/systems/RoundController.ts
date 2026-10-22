@@ -31,6 +31,7 @@ export class RoundController {
   private boss: Enemy | null = null;
   private readonly startedAt: number;
   private endedAt = 0;
+  private lastNow = 0;
 
   constructor(
     startedAt: number,
@@ -46,6 +47,7 @@ export class RoundController {
   }
 
   update(now: number): void {
+    this.lastNow = now;
     if (this.ended) return;
 
     if (this.player.isDead) {
@@ -69,7 +71,7 @@ export class RoundController {
   onEnemyKilled = (enemy: Enemy): void => {
     if (this.ended) return;
     this.kills++;
-    if (enemy === this.boss) this.finish('won', enemy.scene.time.now);
+    if (enemy === this.boss) this.finish('won', this.lastNow);
   };
 
   getHudState(now: number): HudState {

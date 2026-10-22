@@ -13,7 +13,7 @@ import { MovementSystem } from '../systems/MovementSystem';
  */
 export class Character extends Phaser.Physics.Arcade.Sprite {
   readonly definition: CharacterDefinition;
-  readonly maxHealth: number;
+  maxHealth: number;
 
   private readonly movement: MovementSystem;
   private readonly animator: CharacterAnimator;
@@ -23,6 +23,7 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   private action: CharacterAction = 'idle';
   private currentHealth: number;
   private invulnerableUntil = 0;
+  private speed: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number, definition: CharacterDefinition) {
     super(scene, x, y, definition.sheets.idle.textureKey, 0);
@@ -40,7 +41,8 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
 
     this.shadow = scene.add.image(x, y, TEXTURES.shadow);
-    this.movement = new MovementSystem(definition.stats.moveSpeed);
+    this.speed = definition.stats.moveSpeed;
+    this.movement = new MovementSystem(this.speed);
     this.animator = new CharacterAnimator(this, definition);
     this.animator.play(this.action, this.facing);
 
@@ -51,6 +53,24 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
       scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.syncVisuals, this);
       this.shadow.destroy();
     });
+  }
+
+  get moveSpeed(): number {
+    return this.speed;
+  }
+
+  setMoveSpeed(value: number): void {
+    this.speed = value;
+    this.movement.setMoveSpeed(value);
+  }
+
+  addMaxHealth(amount: number): void {
+    this.maxHealth += amount;
+    this.currentHealth += amount;
+  }
+
+  heal(amount: number): void {
+    if (!this.isDead) this.currentHealth = Math.min(this.maxHealth, this.currentHealth + amount);
   }
 
   get direction(): Direction {

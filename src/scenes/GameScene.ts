@@ -8,6 +8,11 @@ import type { Projectile } from '../entities/Projectile';
 import { CompositeMoveInput } from '../input/CompositeMoveInput';
 import { KeyboardMoveInput } from '../input/KeyboardMoveInput';
 import type { MoveInput } from '../input/MoveInput';
+import { XpGem } from '../entities/XpGem';
+import { PROGRESSION } from '../config/gameplayConfig';
+import { PlayerStats } from '../progression/PlayerStats';
+import { ProgressionSystem, type ProgressState } from '../progression/ProgressionSystem';
+import { pickUpgradeChoices, type UpgradeDefinition } from '../progression/upgrades';
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { RoundController, type HudState } from '../systems/RoundController';
@@ -24,6 +29,12 @@ export class GameScene extends Phaser.Scene {
   private waves!: WaveSystem;
   private round!: RoundController;
   private frozen = false;
+  private stats = new PlayerStats();
+  private progression = new ProgressionSystem();
+  private gems: XpGem[] = [];
+  private hud!: HudScene;
+  /** Reloj de la ronda: no avanza mientras se elige una mejora. */
+  private clock = 0;
 
   constructor() {
     super(SCENE_KEYS.game);
@@ -31,6 +42,10 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.frozen = false;
+    this.clock = 0;
+    this.stats = new PlayerStats();
+    this.progression = new ProgressionSystem();
+    this.gems = [];
     const map = new TestMap(this);
     map.build();
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
@@ -39,11 +54,12 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, map.obstacles);
 
     this.enemies = this.physics.add.group();
-    this.attack = new AutoAttackSystem(this, this.player, this.player.definition.stats.attack, this.enemies);
-    this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) =>
-      this.round.onEnemyKilled(e),
-    );
-    this.round = new RoundController(this.time.now, this.player, this.waves, this.enemies);
+    this.attack = new AutoAttackSystem(this, this.player, this.player.definition.stats.attack, this.enemies, this.stats);
+    this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
+      this.dropGem(e);
+      this.round.onEnemyKilled(e);
+    });
+    this.round = new RoundController(0, this.player, this.waves, this.enemies);
 
     // Enemigos que tocan al jugador le hacen daño (con invulnerabilidad corta).
     this.physics.add.overlap(this.player, this.enemies, (_p, e) => {
@@ -63,6 +79,7 @@ export class GameScene extends Phaser.Scene {
     this.scene.stop(SCENE_KEYS.hud);
     this.scene.launch(SCENE_KEYS.hud);
     const hud = this.scene.get(SCENE_KEYS.hud) as HudScene;
+    this.hud = hud;
     this.moveInput = new CompositeMoveInput([new KeyboardMoveInput(this), { getVector: () => hud.touchVector }]);
 
     new CameraRig(this, this.player, { width: map.widthPx, height: map.heightPx });
@@ -70,11 +87,45 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop(SCENE_KEYS.hud));
   }
 
-  getHudState(): HudState {
-    return this.round.getHudState(this.time.now);
+  getHudState(): HudState & ProgressState {
+    return { ...this.round.getHudState(this.clock), ...this.progression.getState() };
   }
 
-  update(time: number): void {
+  private dropGem(enemy: Enemy): void {
+    if (enemy.kind.xpValue > 0) this.gems.push(new XpGem(this, enemy.x, enemy.y - 4, enemy.kind.xpValue));
+  }
+
+  /** Mueve las gemas cercanas hacia el jugador y suma la experiencia de las que llegan. */
+  private updateGems(delta: number): void {
+    const radiusSq = this.stats.pickupRadius ** 2;
+    const targetY = this.player.y - 8;
+    this.gems = this.gems.filter((gem) => {
+      if (!gem.magnetized) {
+        const dx = this.player.x - gem.x;
+        const dy = targetY - gem.y;
+        if (dx * dx + dy * dy <= radiusSq) gem.magnetized = true;
+      }
+      if (gem.magnetized && gem.moveToward(this.player.x, targetY, delta)) {
+        this.progression.addXp(gem.value);
+        gem.destroy();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  /** Pausa la ronda y ofrece mejoras al HUD; al elegir, se aplica y se sigue. */
+  private openLevelUp(): void {
+    this.progression.pendingLevelUps--;
+    const choices = pickUpgradeChoices(PROGRESSION.upgradeChoices);
+    this.scene.pause();
+    this.hud.showUpgrades(this.progression.level, choices, (choice: UpgradeDefinition) => {
+      choice.apply({ stats: this.stats, player: this.player });
+      this.scene.resume();
+    });
+  }
+
+  update(_time: number, delta: number): void {
     if (this.round.ended) {
       if (!this.frozen) {
         this.frozen = true;
@@ -84,11 +135,16 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.clock += delta;
+    const now = this.clock;
     this.player.step(this.moveInput.getVector());
-    this.attack.update(time);
+    this.attack.update(now);
+    this.updateGems(delta);
     for (const enemy of this.enemies.getChildren() as Enemy[]) {
       if (enemy.active) enemy.chase(this.player.x, this.player.y - 6);
     }
-    this.round.update(time);
+    this.round.update(now);
+
+    if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();
   }
 }

@@ -39,6 +39,10 @@ El juego queda en `https://santiagotestinof.github.io/MarvelSurvivor/`. Las ruta
 
 Parámetros de URL para probar: `?ronda=30` (ronda de 30 segundos), `?joystick` (joystick también con mouse), `?debug` (cajas de colisión).
 
+## Fase 3: experiencia y mejoras
+
+Los Drones sueltan gemas de XP que se acercan al jugador (radio de imán). Al subir de nivel el juego se pausa y se eligen 1 de 3 mejoras (teclas 1/2/3 o toque). Las mejoras son solo de stats y están en `src/progression/upgrades.ts` (agregar una = sumar una entrada). La curva de XP y el balance de oleadas están en `src/config/gameplayConfig.ts`.
+
 ## Fase 2: ronda de juego
 
 Menú principal → ronda de 5 minutos (`ROUND.durationMs` en `src/config/gameplayConfig.ts`) con oleadas de un enemigo genérico (Dron) cada vez más frecuentes → aparece un jefe genérico (Overlord) → se gana al derrotarlo. Si la vida llega a 0, derrota. En ambos casos se vuelve al menú.
@@ -131,4 +135,6 @@ Provisional:
 
 Fase 2 incluida: menú, oleadas, jefe, vida y daño por contacto, ataque automático, joystick táctil, pantalla de resultado.
 
-Fuera de alcance por ahora: experiencia y niveles, mejoras, más tipos de enemigos, habilidades únicas, gacha, más héroes/mapas y guardado.
+Fase 3 incluida: XP, gemas, niveles y mejoras de stats.
+
+Fuera de alcance por ahora: armas nuevas, más tipos de enemigos, habilidades únicas, gacha, más héroes/mapas y guardado.

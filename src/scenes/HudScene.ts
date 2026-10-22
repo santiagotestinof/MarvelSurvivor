@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { VirtualJoystick } from '../input/VirtualJoystick';
+import type { ProgressState } from '../progression/ProgressionSystem';
+import type { UpgradeDefinition } from '../progression/upgrades';
 import type { HudState } from '../systems/RoundController';
 import { createButton, formatTime, textStyle, uiScale } from '../ui/uiLayout';
 import type { GameScene } from './GameScene';
@@ -23,10 +25,18 @@ export class HudScene extends Phaser.Scene {
   private resultStats!: Phaser.GameObjects.Text;
   private menuButton!: Phaser.GameObjects.Text;
 
+  private levelText!: Phaser.GameObjects.Text;
+  private upgradeDim!: Phaser.GameObjects.Rectangle;
+  private upgradeTitle!: Phaser.GameObjects.Text;
+  private upgradeCards: Phaser.GameObjects.Text[] = [];
+  private upgradeChoices: UpgradeDefinition[] = [];
+  private onUpgradePicked: ((choice: UpgradeDefinition) => void) | null = null;
+  private upgradeOpenedAt = 0;
+
   private ui = 2;
   private resultScheduled = false;
   private resultShown = false;
-  private latest: HudState | null = null;
+  private latest: (HudState & ProgressState) | null = null;
 
   constructor() {
     super(SCENE_KEYS.hud);
@@ -38,12 +48,24 @@ export class HudScene extends Phaser.Scene {
     this.resultShown = false;
     this.latest = null;
     this.touchVector.set(0, 0);
+    this.upgradeCards = [];
+    this.upgradeChoices = [];
+    this.onUpgradePicked = null;
 
     this.bars = this.add.graphics().setDepth(1);
     this.healthText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
     this.timerText = this.add.text(0, 0, '', textStyle(24)).setOrigin(0.5, 0).setDepth(2);
     this.killsText = this.add.text(0, 0, '', textStyle(14)).setOrigin(1, 0).setDepth(2);
     this.bossText = this.add.text(0, 0, 'JEFE', textStyle(12, '#ffd9d9')).setOrigin(0.5).setDepth(2).setVisible(false);
+
+    this.levelText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
+
+    this.upgradeDim = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.7).setOrigin(0).setDepth(20).setVisible(false);
+    this.upgradeTitle = this.add.text(0, 0, '', textStyle(32, '#f5c518')).setOrigin(0.5).setDepth(21).setVisible(false);
+    const keyboard = this.input.keyboard;
+    if (keyboard) {
+      ['ONE', 'TWO', 'THREE'].forEach((name, index) => keyboard.addKey(name).on('down', () => this.pickUpgrade(index)));
+    }
 
     this.dim = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.65).setOrigin(0).setDepth(10).setVisible(false);
     this.resultTitle = this.add.text(0, 0, '', textStyle(40)).setOrigin(0.5).setDepth(11).setVisible(false);
@@ -91,6 +113,7 @@ export class HudScene extends Phaser.Scene {
     this.bossText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));
 
     this.dim.setSize(width, height);
+    this.layoutUpgrades();
     this.resultTitle.setFontSize(Math.max(28, Math.round(12 * ui))).setPosition(width / 2, height * 0.34);
     this.resultStats.setFontSize(Math.max(14, Math.round(4 * ui))).setPosition(width / 2, height * 0.5);
     this.menuButton.setFontSize(Math.max(16, Math.round(5 * ui))).setPosition(width / 2, height * 0.68);
@@ -102,7 +125,7 @@ export class HudScene extends Phaser.Scene {
     return Math.max(12, Math.round(5 * this.ui));
   }
 
-  private drawState(state: HudState): void {
+  private drawState(state: HudState & ProgressState): void {
     const { width } = this.scale;
     const m = this.margin;
     const barH = this.barHeight;
@@ -121,6 +144,16 @@ export class HudScene extends Phaser.Scene {
     this.timerText.setColor(state.phase === 'waves' ? '#ffffff' : '#ff8a8a');
     this.killsText.setText(`Derrotados: ${state.kills}`);
 
+    // Experiencia (barra fina abajo de todo)
+    const xpH = Math.max(8, Math.round(2.5 * this.ui));
+    const { height } = this.scale;
+    g.fillStyle(0x000000, 0.6).fillRect(0, height - xpH, width, xpH);
+    g.fillStyle(0x37d5ff, 1).fillRect(0, height - xpH, width * Phaser.Math.Clamp(state.xp / state.xpToNext, 0, 1), xpH);
+    this.levelText
+      .setFontSize(Math.max(10, Math.round(xpH * 0.9)))
+      .setText(`NV ${state.level}`)
+      .setPosition(width / 2, height - xpH / 2);
+
     // Vida del jefe
     const showBoss = state.phase === 'boss' && state.bossMaxHealth > 0;
     this.bossText.setVisible(showBoss);
@@ -133,6 +166,79 @@ export class HudScene extends Phaser.Scene {
       g.fillStyle(0xb44cff, 1).fillRect(bossX, bossY, bossW * bossRatio, barH);
       this.bossText.setPosition(width / 2, bossY + barH / 2);
     }
+  }
+
+  /** Muestra las opciones de mejora; `onPick` se llama con la elegida. */
+  showUpgrades(level: number, choices: UpgradeDefinition[], onPick: (choice: UpgradeDefinition) => void): void {
+    this.joystick.disabled = true;
+    this.joystick.release();
+    this.upgradeChoices = choices;
+    this.onUpgradePicked = onPick;
+    this.upgradeOpenedAt = this.time.now;
+    this.upgradeTitle.setText(`¡NIVEL ${level}!\nElegí una mejora`).setVisible(true);
+    this.upgradeDim.setVisible(true);
+
+    for (const card of this.upgradeCards) card.destroy();
+    this.upgradeCards = choices.map((choice, index) => {
+      const card = this.add
+        .text(0, 0, '', {
+          fontFamily: 'monospace',
+          fontStyle: 'bold',
+          color: '#101010',
+          backgroundColor: '#f5c518',
+          align: 'center',
+        })
+        .setOrigin(0.5)
+        .setDepth(21)
+        .setInteractive({ useHandCursor: true });
+      card.setData('label', `${index + 1}. ${choice.name}\n${choice.description}`);
+      card.on(Phaser.Input.Events.POINTER_OVER, () => card.setBackgroundColor('#ffe272'));
+      card.on(Phaser.Input.Events.POINTER_OUT, () => card.setBackgroundColor('#f5c518'));
+      card.on(Phaser.Input.Events.POINTER_UP, () => this.pickUpgrade(index));
+      return card;
+    });
+    this.layoutUpgrades();
+  }
+
+  private layoutUpgrades(): void {
+    const { width, height } = this.scale;
+    this.upgradeDim.setSize(width, height);
+    this.upgradeTitle.setFontSize(Math.max(18, Math.round(8 * this.ui))).setPosition(width / 2, height * 0.16);
+
+    const portrait = width < height;
+    const count = this.upgradeCards.length;
+    const font = Math.max(12, Math.round(3.6 * this.ui));
+    const cardW = portrait ? width * 0.86 : Math.min(width * 0.3, 90 * this.ui);
+    const cardH = Math.round(font * 5.4);
+    this.upgradeCards.forEach((card, index) => {
+      card.setFontSize(font);
+      card.setText(card.getData('label') as string);
+      card.setWordWrapWidth(cardW - font * 1.5);
+      card.setFixedSize(cardW, cardH);
+      card.setPadding(0, Math.round(font * 0.8), 0, 0);
+      if (portrait) {
+        card.setPosition(width / 2, height * 0.34 + index * (cardH + font));
+      } else {
+        const gap = font * 1.5;
+        const total = count * cardW + (count - 1) * gap;
+        card.setPosition(width / 2 - total / 2 + cardW / 2 + index * (cardW + gap), height * 0.52);
+      }
+    });
+  }
+
+  private pickUpgrade(index: number): void {
+    const choice = this.upgradeChoices[index];
+    if (!choice || !this.onUpgradePicked) return;
+    if (this.time.now - this.upgradeOpenedAt < 350) return; // evita toques accidentales
+    const callback = this.onUpgradePicked;
+    this.onUpgradePicked = null;
+    this.upgradeChoices = [];
+    for (const card of this.upgradeCards) card.destroy();
+    this.upgradeCards = [];
+    this.upgradeTitle.setVisible(false);
+    this.upgradeDim.setVisible(false);
+    this.joystick.disabled = false;
+    callback(choice);
   }
 
   private showResult(state: HudState): void {

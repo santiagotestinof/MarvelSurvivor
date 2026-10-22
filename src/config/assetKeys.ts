@@ -6,6 +6,7 @@ export const TEXTURES = {
   crate: 'crate',
   shadow: 'shadow',
   repulsor: 'repulsor',
+  gem: 'xp-gem',
 } as const;
 
 /** Rutas relativas a /public (la base se aplica en BootScene). */

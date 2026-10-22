@@ -34,11 +34,22 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     this.createShadowTexture();
+    this.createGemTexture();
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       registerCharacterAnimations(this, definition);
     }
     registerEnemyAnimations(this);
     this.scene.start(SCENE_KEYS.menu);
+  }
+
+  /** Gema de experiencia provisional: rombo celeste. */
+  private createGemTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x0b4a6b, 1).fillPoints([{ x: 4, y: 0 }, { x: 8, y: 4 }, { x: 4, y: 8 }, { x: 0, y: 4 }], true);
+    g.fillStyle(0x37d5ff, 1).fillPoints([{ x: 4, y: 1 }, { x: 7, y: 4 }, { x: 4, y: 7 }, { x: 1, y: 4 }], true);
+    g.fillStyle(0xd9f7ff, 1).fillRect(3, 2, 2, 2);
+    g.generateTexture(TEXTURES.gem, 8, 8);
+    g.destroy();
   }
 
   /** Sombra elíptica compartida por todos los personajes. */

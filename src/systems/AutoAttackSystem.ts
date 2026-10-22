@@ -3,6 +3,7 @@ import type { AttackDefinition } from '../characters/CharacterDefinition';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import { Projectile } from '../entities/Projectile';
+import type { PlayerStats } from '../progression/PlayerStats';
 
 /** Dispara automáticamente al enemigo más cercano dentro del alcance de puntería. */
 export class AutoAttackSystem {
@@ -14,13 +15,14 @@ export class AutoAttackSystem {
     private readonly owner: Character,
     private readonly attack: AttackDefinition,
     private readonly enemies: Phaser.Physics.Arcade.Group,
+    private readonly stats: PlayerStats,
   ) {
     this.projectiles = scene.physics.add.group({ allowGravity: false });
   }
 
   update(now: number): void {
     this.removeExpiredProjectiles();
-    if (now - this.lastShotAt < this.attack.cooldownMs) return;
+    if (now - this.lastShotAt < this.attack.cooldownMs * this.stats.cooldownMult) return;
 
     const target = this.findNearestEnemy();
     if (!target) return;
@@ -31,7 +33,7 @@ export class AutoAttackSystem {
 
   private findNearestEnemy(): Enemy | null {
     let nearest: Enemy | null = null;
-    let nearestSq = this.attack.aimRange * this.attack.aimRange;
+    let nearestSq = (this.attack.aimRange * this.stats.rangeMult) ** 2;
 
     for (const enemy of this.enemies.getChildren() as Enemy[]) {
       if (!enemy.active || enemy.dying) continue;
@@ -57,8 +59,8 @@ export class AutoAttackSystem {
       originX,
       originY,
       this.attack.projectileTexture,
-      this.attack.damage,
-      this.attack.maxDistance,
+      this.attack.damage * this.stats.damageMult,
+      this.attack.maxDistance * this.stats.rangeMult,
       Math.cos(angle) * speed,
       Math.sin(angle) * speed,
     );

@@ -15,6 +15,8 @@ export interface EnemyKind {
   health: number;
   speed: number;
   contactDamage: number;
+  /** Experiencia que suelta al morir (0 = nada). */
+  xpValue: number;
 }
 
 export const DRONE: EnemyKind = {
@@ -29,6 +31,7 @@ export const DRONE: EnemyKind = {
   health: 20,
   speed: 38,
   contactDamage: 8,
+  xpValue: 1,
 };
 
 export const OVERLORD: EnemyKind = {
@@ -43,6 +46,7 @@ export const OVERLORD: EnemyKind = {
   health: 400,
   speed: 30,
   contactDamage: 20,
+  xpValue: 0,
 };
 
 export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, OVERLORD];

@@ -1,6 +1,6 @@
 /**
  * Números de juego (balance). Todo lo que se quiera ajustar para probar está acá.
- * Provisional: todavía no hay experiencia ni mejoras, así que la dificultad es baja a propósito.
+ * Provisional: falta jugarlo bastante para afinar el balance.
  */
 
 function readRoundDurationMs(): number {
@@ -20,15 +20,24 @@ export const PLAYER_HIT = {
   invulnerabilityMs: 700,
 };
 
+export const PROGRESSION = {
+  /** XP necesaria para pasar del nivel 1 al 2. */
+  baseXp: 5,
+  /** Cada nivel pide esta cantidad más que el anterior. */
+  xpPerLevel: 3,
+  /** Opciones de mejora que se ofrecen al subir de nivel. */
+  upgradeChoices: 3,
+};
+
 export const WAVES = {
   startIntervalMs: 1400,
-  endIntervalMs: 500,
+  endIntervalMs: 450,
   /** Enemigos por aparición: crece de 1 a este valor durante la ronda. */
   maxBatch: 2,
-  maxAlive: 45,
+  maxAlive: 60,
   /** Distancia fuera de la pantalla donde aparecen. */
   spawnMargin: 28,
   /** Al final de la ronda los enemigos tienen (1 + growth) veces la vida base. */
-  healthGrowth: 1,
+  healthGrowth: 1.5,
   speedGrowth: 0.4,
 };
