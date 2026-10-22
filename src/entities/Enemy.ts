@@ -42,9 +42,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const dx = targetX - this.x;
     const dy = targetY - this.y;
     const distance = Math.hypot(dx, dy);
-    const chaseX = distance > 0.5 ? (dx / distance) * this.moveSpeed : 0;
-    const chaseY = distance > 0.5 ? (dy / distance) * this.moveSpeed : 0;
-    this.setVelocity(chaseX + separationX * this.moveSpeed, chaseY + separationY * this.moveSpeed);
+    const chaseX = distance > 0.5 ? dx / distance : 0;
+    const chaseY = distance > 0.5 ? dy / distance : 0;
+    const moveX = chaseX + separationX * 1.8;
+    const moveY = chaseY + separationY * 1.8;
+    const moveLength = Math.hypot(moveX, moveY);
+    if (moveLength > 0.001) {
+      this.setVelocity((moveX / moveLength) * this.moveSpeed, (moveY / moveLength) * this.moveSpeed);
+    } else {
+      this.setVelocity(0, 0);
+    }
     this.setDepth(this.y);
   }
 
