@@ -12,7 +12,7 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 
 ## Comandos
 - `npm run dev` · `npm run typecheck` · `npm run build` · `npm run sprites`
-- Parámetros de URL para probar: `?ronda=30` (ronda corta), `?joystick` (joystick con mouse), `?debug` (cajas de colisión).
+- Parámetros de URL para probar: `?ronda=30` (ronda corta), `?joystick` (joystick con mouse), `?debug` (cajas de colisión), `?test=1` (empieza a 1 minuto del jefe).
 
 ## Estado por fase
 - Fase 1 (hecha): proyecto, mapa de pruebas, Iron Man con 8 direcciones, cámara, colisiones.
@@ -20,6 +20,7 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 - Fase 3 (hecha): gemas de XP, niveles, elegir 1 de 3 mejoras de stats.
 - Fase 4 (hecha): enemigos Explorador (rápido, frágil, desde el 15%) y Blindado (lento, resistente, gema de 4 XP, desde el 40%); arma Minimisiles (se desbloquea con una mejora, hasta 4 misiles por ráfaga, daño en área).
 - Fase 5 (hecha): mejoras del repulsor (disparo múltiple, perforación, velocidad, crítico) y evolución Misiles incendiarios (misiles nv4 + "Más daño" x3; deja fuego en el piso; 4 mejoras de fuego de hasta 5 niveles). Las mejoras guardan cuántas veces se eligieron (`taken`) para los requisitos.
+- Rama `testi` (integrada): pausa (botón o ESC), separación entre enemigos y colisión con obstáculos, jefe con más vida/velocidad que invoca Drones, y `?test=1` para empezar a 1 minuto del jefe.
 - Pendiente / fuera de alcance por ahora: enemigos a distancia, habilidades únicas por héroe, gacha, más héroes (objetivo: 10) y mapas, guardado de progreso.
 - Verificado en el navegador (`npm run dev`, con el juego avanzado cuadro por cuadro y eventos simulados): pantalla de VICTORIA, pantalla de DERROTA, botón "Volver al menú" (desde las dos; la ronda siguiente arranca de cero) y joystick con `?joystick` (8 direcciones, diagonal a la misma velocidad, se frena al soltar, ignora la mitad derecha).
 - Sin verificar: joystick en un celular real, cómo se siente en tiempo real y balance de dificultad (quieto se pierde en ~30 s; al jefe solo le pega cuando no hay drones más cerca).

@@ -109,7 +109,10 @@ export class TestMap {
     this.scene.add.image(x, y, TEXTURES[kind]).setOrigin(0.5, 1).setDepth(y);
 
     const { width, height } = PROP_BODY[kind];
-    const collider = this.scene.add.zone(x, y - height / 2, width, height);
+    const collider = this.scene.add.rectangle(x, y - height / 2, width, height, 0x000000, 0);
     this.obstacles.add(collider);
+    const body = collider.body as Phaser.Physics.Arcade.StaticBody;
+    body.setSize(width, height);
+    body.updateFromGameObject();
   }
 }

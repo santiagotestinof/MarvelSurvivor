@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { VirtualJoystick } from '../input/VirtualJoystick';
 import type { UpgradeDefinition } from '../progression/upgrades';
+import { PauseOverlay } from '../ui/PauseOverlay';
 import { ResultOverlay } from '../ui/ResultOverlay';
 import { UpgradeMenu } from '../ui/UpgradeMenu';
 import { formatTime, textStyle, uiScale } from '../ui/uiLayout';
@@ -26,6 +27,7 @@ export class HudScene extends Phaser.Scene {
   private levelText!: Phaser.GameObjects.Text;
   private upgradeMenu!: UpgradeMenu;
   private result!: ResultOverlay;
+  private pause!: PauseOverlay;
 
   private ui = 2;
   private resultScheduled = false;
@@ -51,6 +53,7 @@ export class HudScene extends Phaser.Scene {
 
     this.upgradeMenu = new UpgradeMenu(this);
     this.result = new ResultOverlay(this, () => this.backToMenu());
+    this.pause = new PauseOverlay(this, () => this.togglePause());
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
@@ -61,11 +64,15 @@ export class HudScene extends Phaser.Scene {
   }
 
   update(): void {
+    if (this.pause.isPaused) return;
     this.touchVector.copy(this.joystick.vector);
 
     const state = this.gameScene.getHudState();
     this.latest = state;
     this.drawState(state);
+
+    const playing = state.phase === 'waves' || state.phase === 'boss';
+    this.pause.setButtonAvailable(playing && !this.upgradeMenu.isOpen);
 
     if ((state.phase === 'won' || state.phase === 'lost') && !this.resultScheduled) {
       this.resultScheduled = true;
@@ -90,6 +97,7 @@ export class HudScene extends Phaser.Scene {
 
     this.upgradeMenu.layout(ui);
     this.result.layout(ui, width, height);
+    this.pause.layout(ui, width, height, this.margin);
 
     if (this.latest) this.drawState(this.latest);
   }
@@ -149,6 +157,22 @@ export class HudScene extends Phaser.Scene {
       this.setJoystickEnabled(true);
       onPick(choice);
     });
+  }
+
+  /** Pausa o reanuda la ronda (no aplica en el menú de mejoras ni en el resultado). */
+  private togglePause(): void {
+    const playing = this.latest?.phase === 'waves' || this.latest?.phase === 'boss';
+    if (!playing || this.upgradeMenu.isOpen) return;
+
+    const pausing = !this.pause.isPaused;
+    this.pause.setPaused(pausing);
+    this.setJoystickEnabled(!pausing);
+    if (pausing) {
+      this.touchVector.set(0, 0);
+      this.scene.pause(SCENE_KEYS.game);
+    } else {
+      this.scene.resume(SCENE_KEYS.game);
+    }
   }
 
   private setJoystickEnabled(enabled: boolean): void {

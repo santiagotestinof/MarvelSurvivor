@@ -36,6 +36,10 @@ export class UpgradeMenu {
     if (keyboard) CARD_KEYS.forEach((name, index) => keyboard.addKey(name).on('down', () => this.pick(index)));
   }
 
+  get isOpen(): boolean {
+    return this.onPick !== null;
+  }
+
   show(level: number, choices: UpgradeDefinition[], onPick: (choice: UpgradeDefinition) => void): void {
     this.choices = choices;
     this.onPick = onPick;

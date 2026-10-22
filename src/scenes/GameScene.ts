@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { IRON_MAN_ID } from '../characters/ironman/ironManDefinition';
 import { SCENE_KEYS } from '../config/sceneKeys';
+import { ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -49,7 +50,8 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.frozen = false;
-    this.clock = 0;
+    const testMode = new URLSearchParams(window.location.search).get('test') === '1';
+    this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
     this.stats = new PlayerStats();
     this.progression = new ProgressionSystem();
     this.taken = {};
@@ -62,6 +64,8 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, map.obstacles);
 
     this.enemies = this.physics.add.group();
+    this.physics.add.collider(this.enemies, map.obstacles);
+    this.physics.add.collider(this.enemies, this.enemies);
     this.attack = new AutoAttackSystem(this, this.player, this.player.definition.stats.attack, this.enemies, this.stats);
     this.missiles = new MissileWeapon(this, this.player, this.enemies, this.stats);
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
@@ -152,8 +156,35 @@ export class GameScene extends Phaser.Scene {
     this.attack.update(now);
     this.missiles.update(now, delta);
     this.updateGems(delta);
-    for (const enemy of this.enemies.getChildren() as Enemy[]) {
-      if (enemy.active) enemy.chase(this.player.x, this.player.y - 6);
+    const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);
+    for (const enemy of activeEnemies) {
+      let separationX = 0;
+      let separationY = 0;
+      for (let otherIndex = 0; otherIndex < activeEnemies.length; otherIndex++) {
+        const other = activeEnemies[otherIndex];
+        if (enemy === other) continue;
+        let dx = enemy.x - other.x;
+        let dy = enemy.y - other.y;
+        let distance = Math.hypot(dx, dy);
+        const spacing = enemy.kind.id === 'overlord' || other.kind.id === 'overlord' ? 27 : 17;
+        if (distance < spacing) {
+          if (distance < 0.001) {
+            const angle = ((activeEnemies.indexOf(enemy) + 1) * 2.399963229728653 + (otherIndex + 1)) % (Math.PI * 2);
+            dx = Math.cos(angle);
+            dy = Math.sin(angle);
+            distance = 1;
+          }
+          const strength = (spacing - distance) / spacing;
+          separationX += (dx / distance) * strength;
+          separationY += (dy / distance) * strength;
+        }
+      }
+      const separationLength = Math.hypot(separationX, separationY);
+      if (separationLength > 0) {
+        separationX /= separationLength;
+        separationY /= separationLength;
+      }
+      enemy.chase(this.player.x, this.player.y - 6, separationX, separationY);
     }
     this.round.update(now);
 

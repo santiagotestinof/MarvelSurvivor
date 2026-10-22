@@ -37,7 +37,7 @@ El juego queda en `https://santiagotestinof.github.io/MarvelSurvivor/`. Las ruta
 - Celular: tocá y deslizá en la mitad izquierda de la pantalla (joystick virtual flotante).
 - Iron Man dispara solo al enemigo más cercano.
 
-Parámetros de URL para probar: `?ronda=30` (ronda de 30 segundos), `?joystick` (joystick también con mouse), `?debug` (cajas de colisión).
+Parámetros de URL para probar: `?ronda=30` (ronda de 30 segundos), `?joystick` (joystick también con mouse), `?debug` (cajas de colisión), `?test=1` (empieza a 1 minuto del jefe).
 
 ## Enemigos y armas
 
