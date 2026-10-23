@@ -12,6 +12,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { IRON_MAN_REF } from './ironman-reference.mjs';
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'public', 'assets');
 const FRAME = 32;
@@ -315,6 +317,167 @@ function buildSheet(style, frames) {
   DIRECTIONS.forEach(([fx, fy], row) => {
     frames.forEach((f, col) => {
       sheet.blit(drawHero(style, { fx, fy, ...f }), col * FRAME, row * FRAME);
+    });
+  });
+  return sheet;
+}
+
+
+// ---------------------------------------------------------------- Iron Man (a partir de la imagen de referencia)
+
+const REF_PALETTE = {
+  K: hex('#150909'),
+  R: hex('#c80000'),
+  r: hex('#880000'),
+  d: hex('#560000'),
+  Y: hex('#f4d434'),
+  O: hex('#c4a400'),
+  o: hex('#947200'),
+  B: hex('#84b4f4'),
+  W: hex('#d4e4f4'),
+};
+
+/** Tamaño del cuadro de Iron Man (más alto que el resto por los propulsores) y escala de la referencia. */
+const IM_FRAME = { w: 48, h: 48 };
+const IM_SCALE = 0.8;
+/** Fila (de la referencia) donde terminan las piernas; abajo de eso solo hay llama de los propulsores. */
+const IM_FEET_ROW = 43;
+/** Fila del cuadro donde apoyan los pies. */
+const IM_FEET_Y = 41;
+
+const refGrid = () => IRON_MAN_REF.map((row) => [...row]);
+
+/** Achica la grilla de letras a `scale`: cada píxel nuevo toma la letra que más ocupa su zona (el contorno pesa un poco más). */
+function shrinkGrid(grid, scale) {
+  const h = grid.length;
+  const w = grid[0].length;
+  const ow = Math.ceil(w * scale);
+  const oh = Math.ceil(h * scale);
+  const out = [];
+  for (let oy = 0; oy < oh; oy++) {
+    const row = [];
+    for (let ox = 0; ox < ow; ox++) {
+      const x0 = ox / scale;
+      const x1 = (ox + 1) / scale;
+      const y0 = oy / scale;
+      const y1 = (oy + 1) / scale;
+      const weights = {};
+      let total = 0;
+      for (let y = Math.floor(y0); y < Math.min(h, Math.ceil(y1)); y++)
+        for (let x = Math.floor(x0); x < Math.min(w, Math.ceil(x1)); x++) {
+          const cover = (Math.min(x + 1, x1) - Math.max(x, x0)) * (Math.min(y + 1, y1) - Math.max(y, y0));
+          if (cover <= 0) continue;
+          weights[grid[y][x]] = (weights[grid[y][x]] ?? 0) + cover;
+          total += cover;
+        }
+      const empty = weights['.'] ?? 0;
+      if (empty > total * 0.55) {
+        row.push('.');
+        continue;
+      }
+      let best = '.';
+      let bestW = -1;
+      for (const [letter, weight] of Object.entries(weights)) {
+        if (letter === '.') continue;
+        const value = weight * (letter === 'K' ? 1.0 : 1);
+        if (value > bestW) {
+          bestW = value;
+          best = letter;
+        }
+      }
+      row.push(best);
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+/** Aprieta la grilla en horizontal (para las vistas de perfil y diagonales). */
+function squeezeGrid(grid, factor) {
+  const w = grid[0].length;
+  const nw = Math.max(4, Math.round(w * factor));
+  return grid.map((row) => {
+    const out = [];
+    for (let x = 0; x < nw; x++) {
+      const a = Math.floor((x * w) / nw);
+      const b = Math.max(a + 1, Math.floor(((x + 1) * w) / nw));
+      const counts = {};
+      for (let i = a; i < b && i < w; i++) counts[row[i]] = (counts[row[i]] ?? 0) + 1;
+      const letters = Object.keys(counts).filter((l) => l !== '.');
+      if (letters.length === 0) out.push('.');
+      else out.push(letters.sort((l, m) => counts[m] * (m === 'K' ? 1 : 1) - counts[l] * (l === 'K' ? 1 : 1))[0]);
+    }
+    return out;
+  });
+}
+
+// fx, fy: hacia dónde mira. stride: -2..2 (piernas abiertas/cerradas). bob: 0/-1 (cuerpo arriba). pulse: 0..2 (largo de las llamas).
+function drawIronManRef({ fx, fy, stride = 0, bob = 0, pulse = 0 }) {
+  let g = refGrid();
+  const h = g.length;
+  const w = g[0].length;
+
+  // De espaldas: el casco y el pecho quedan lisos (sin careta ni reactor).
+  if (fy < 0) {
+    const toRed = { Y: 'R', O: 'r', o: 'd', B: 'R', W: 'R' };
+    for (let y = 0; y < 14; y++) for (let x = 0; x < w; x++) g[y][x] = toRed[g[y][x]] ?? g[y][x];
+    for (let y = 14; y < 24; y++) for (let x = 12; x < 24; x++) if (g[y][x] === 'B' || g[y][x] === 'W') g[y][x] = 'R';
+  }
+
+  // Largo de las llamas de los propulsores (pies abajo, manos a los costados).
+  const flame = [10, 7, 9][pulse] ?? 10;
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      if (g[y][x] !== 'B' && g[y][x] !== 'W') continue;
+      const foot = y > IM_FEET_ROW && y - IM_FEET_ROW > flame;
+      const hand = y >= 31 && (x <= 8 || x >= 25) && y - 31 > flame + 2;
+      if (foot || hand) g[y][x] = '.';
+    }
+
+  // Las piernas se abren y se cierran al caminar.
+  const sway = Math.round(stride / 2);
+  if (sway !== 0) {
+    const legs = g.map((row) => [...row]);
+    for (let y = 29; y < h; y++)
+      for (let x = 9; x < 26; x++) {
+        const c = g[y][x];
+        if (c === '.') continue;
+        legs[y][x] = legs[y][x] === c ? '.' : legs[y][x];
+      }
+    for (let y = 29; y < h; y++)
+      for (let x = 9; x < 26; x++) {
+        const c = g[y][x];
+        if (c === '.') continue;
+        const nx = x + (x < 17 ? -sway : sway);
+        if (nx >= 0 && nx < w) legs[y][nx] = c;
+      }
+    g = legs;
+  }
+
+  // Perfil y diagonales: se aprieta en horizontal y se espeja si mira a la izquierda.
+  if (fx !== 0) {
+    g = squeezeGrid(g, fy === 0 ? 0.62 : 0.84);
+    if (fx < 0) g = g.map((row) => row.reverse());
+  }
+
+  const small = shrinkGrid(g, IM_SCALE);
+  const cv = new Canvas(IM_FRAME.w, IM_FRAME.h);
+  const ox = Math.round((IM_FRAME.w - small[0].length) / 2);
+  const oy = IM_FEET_Y - Math.round(IM_FEET_ROW * IM_SCALE) + bob;
+  small.forEach((row, y) =>
+    row.forEach((letter, x) => {
+      const color = REF_PALETTE[letter];
+      if (color) cv.set(ox + x, oy + y, color);
+    }),
+  );
+  return cv;
+}
+
+function buildIronManSheet(frames) {
+  const sheet = new Canvas(frames.length * IM_FRAME.w, DIRECTIONS.length * IM_FRAME.h);
+  DIRECTIONS.forEach(([fx, fy], row) => {
+    frames.forEach((f, col) => {
+      sheet.blit(drawIronManRef({ fx, fy, ...f }), col * IM_FRAME.w, row * IM_FRAME.h);
     });
   });
   return sheet;
@@ -729,7 +892,12 @@ function previewOf(cv, scale, bg = hex('#5f8f58')) {
 // ---------------------------------------------------------------- main
 
 console.log('Generando recursos provisionales...');
-const { idle, walk } = saveHero('ironman');
+const ironIdle = buildIronManSheet(IDLE_FRAMES);
+const ironWalk = buildIronManSheet(WALK_FRAMES);
+save(ironIdle, 'characters/ironman/ironman-idle.png');
+save(ironWalk, 'characters/ironman/ironman-walk.png');
+const idle = ironIdle;
+const walk = ironWalk;
 const heroSheets = {};
 for (const id of Object.keys(HEROES)) if (id !== 'ironman') heroSheets[id] = saveHero(id);
 save(makeGround(), 'tiles/ground.png');

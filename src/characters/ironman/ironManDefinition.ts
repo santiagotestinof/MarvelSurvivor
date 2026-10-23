@@ -6,16 +6,16 @@ export const IRON_MAN_ID = 'ironman';
 /**
  * Los spritesheets actuales son provisionales (generados con tools/generate-sprites.mjs).
  * Para reemplazarlos por arte definitivo alcanza con sustituir los PNG respetando el formato:
- * cuadros de 32×32, una fila por dirección (orden de core/direction.ts), los pies en (16, 30).
+ * cuadros de 48×48 (Iron Man es más grande que el resto), una fila por dirección (orden de core/direction.ts), los pies en (24, 41).
  */
 export const ironManDefinition: CharacterDefinition = {
   id: IRON_MAN_ID,
   displayName: 'Iron Man',
   rarity: 'common',
   weaponText: 'Repulsores: disparan solos al enemigo más cercano',
-  frame: { width: 32, height: 32 },
-  origin: { x: 0.5, y: 30 / 32 },
-  body: { width: 10, height: 8, offsetX: 11, offsetY: 22 },
+  frame: { width: 48, height: 48 },
+  origin: { x: 0.5, y: 41 / 48 },
+  body: { width: 10, height: 8, offsetX: 19, offsetY: 37 },
   stats: {
     moveSpeed: 95,
     maxHealth: 100,
