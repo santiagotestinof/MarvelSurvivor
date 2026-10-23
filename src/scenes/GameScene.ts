@@ -156,7 +156,6 @@ export class GameScene extends Phaser.Scene {
     this.clock += delta;
     const now = this.clock;
     this.player.step(this.moveInput.getVector());
-    if (this.stats.regenPerSecond > 0) this.player.heal(this.stats.regenPerSecond * delta / 1000);
     this.attack.update(now);
     this.missiles.update(now, delta);
     this.updateGems(delta);

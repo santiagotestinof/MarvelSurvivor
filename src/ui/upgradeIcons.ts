@@ -79,18 +79,6 @@ const ICONS: Record<string, string[]> = {
     '....R.....',
     '..........',
   ],
-  regeneration: [
-    '...GGG....',
-    '..GWWWG...',
-    '.GWGGGWG..',
-    'GWG...GWG.',
-    'GWG...GWG.',
-    '.GWGGGWG..',
-    '..GWWWG...',
-    '...GGG....',
-    '..........',
-    '..........',
-  ],
   magnet: [
     '.SSS..SSS.',
     '.SSS..SSS.',

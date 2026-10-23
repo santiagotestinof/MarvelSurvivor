@@ -93,15 +93,6 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     apply: ({ player }) => player.heal(40),
   },
   {
-    id: 'regeneration',
-    name: 'Nanorreparación',
-    description: '+0,75 de vida por segundo',
-    category: 'defense',
-    describe: ({ stats }) => `+${(stats.regenPerSecond + 0.75).toLocaleString('es-AR')} de vida/s (actual: ${stats.regenPerSecond.toLocaleString('es-AR')})`,
-    isAvailable: (ctx) => times(ctx, 'regeneration') < 3,
-    apply: ({ stats }) => (stats.regenPerSecond += 0.75),
-  },
-  {
     id: 'magnet',
     name: 'Imán',
     description: '+40% de radio para juntar gemas',

@@ -6,7 +6,6 @@ export class PlayerStats {
   rangeMult = 1;
   /** Distancia a la que las gemas empiezan a ir hacia el jugador. */
   pickupRadius = 36;
-  regenPerSecond = 0;
 
   // Ataque básico (repulsor)
   /** Disparos por ataque, abiertos en abanico hacia el mismo objetivo. */
