@@ -573,8 +573,8 @@ function saveHero(id) {
 const DRAWN_REFS = { capitan: CAPITAN_REF, thor: THOR_REF, hulk: HULK_REF, spiderman: SPIDERMAN_REF };
 const DRAWN_HEROES = Object.keys(DRAWN_REFS);
 const DRAWN_FRAME = 48;
-/** Las referencias de estos héroes miran a la izquierda (Capitán e Iron Man miran a la derecha). */
-const DRAWN_FACES_LEFT = ['thor', 'hulk', 'spiderman'];
+/** Las referencias de estos héroes miran a la izquierda (Capitán, Thor e Iron Man miran a la derecha). */
+const DRAWN_FACES_LEFT = ['hulk', 'spiderman'];
 /** Pies en la fila 40 del cuadro (el suelo está en (24, 41)). Un solo dibujo para todas las direcciones: se espeja según hacia dónde mira el original (`DRAWN_FACES_LEFT`). */
 function drawnFrame(id, { fx, stride = 0, bob = 0 }) {
   const rows = DRAWN_REFS[id].map((row) => row.split(' '));
