@@ -3,7 +3,6 @@ import { BootScene } from '../scenes/BootScene';
 import { GameScene } from '../scenes/GameScene';
 import { HudScene } from '../scenes/HudScene';
 import { CharacterScene } from '../scenes/CharacterScene';
-import { GachaScene } from '../scenes/GachaScene';
 import { ShopScene } from '../scenes/ShopScene';
 import { MenuScene } from '../scenes/MenuScene';
 
@@ -28,6 +27,6 @@ export function createGameConfig(): Phaser.Types.Core.GameConfig {
       arcade: { gravity: { x: 0, y: 0 }, debug: debugPhysics },
     },
     input: { activePointers: 3 },
-    scene: [BootScene, MenuScene, ShopScene, CharacterScene, GachaScene, GameScene, HudScene],
+    scene: [BootScene, MenuScene, ShopScene, CharacterScene, GameScene, HudScene],
   };
 }

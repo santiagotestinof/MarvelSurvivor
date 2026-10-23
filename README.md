@@ -163,4 +163,4 @@ Fase 3 incluida: XP, gemas, niveles y mejoras de stats.
 
 Incluido después: dos enemigos nuevos (Explorador y Blindado), el arma Minimisiles con su evolución (Misiles incendiarios) y mejoras del repulsor.
 
-Fuera de alcance por ahora: enemigos a distancia, habilidades únicas por héroe, gacha, más héroes/mapas y guardado.
+Fuera de alcance por ahora: enemigos a distancia, habilidades únicas por héroe, más héroes/mapas y guardado.

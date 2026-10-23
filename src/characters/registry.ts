@@ -31,11 +31,13 @@ export const CHARACTER_REGISTRY: Record<string, CharacterEntry> = {
   [HULK_ID]: { definition: hulkDefinition, create: (scene, x, y) => new Character(scene, x, y, hulkDefinition) },
 };
 
-/** Héroe con el que se empieza (ya viene desbloqueado). */
+/** Héroe de respaldo (si el progreso guardado no tiene ninguno). */
 export const STARTER_ID = IRON_MAN_ID;
 
-/** Héroes que se consiguen en el gacha (todos menos el inicial). */
-export const GACHA_POOL: readonly string[] = Object.keys(CHARACTER_REGISTRY).filter((id) => id !== STARTER_ID);
+/** Héroes comunes: de entre ellos se sortea el que se regala la primera vez que se entra. */
+export const COMMON_HEROES: readonly string[] = Object.keys(CHARACTER_REGISTRY).filter(
+  (id) => CHARACTER_REGISTRY[id].definition.rarity === 'common',
+);
 
 export function createCharacter(scene: Phaser.Scene, id: string, x: number, y: number): Character {
   const entry = CHARACTER_REGISTRY[id];

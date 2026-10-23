@@ -36,7 +36,6 @@ export class MenuScene extends Phaser.Scene {
   private runActive = false;
   private shopButton!: UiButton;
   private charactersButton!: UiButton;
-  private gachaButton!: UiButton;
   private heroRarity!: Phaser.GameObjects.Text;
   private goldLabel!: Phaser.GameObjects.Text;
   private panel!: Phaser.GameObjects.Graphics;
@@ -89,7 +88,6 @@ export class MenuScene extends Phaser.Scene {
     this.abandonButton = new UiButton(this, 'ABANDONAR RONDA', 20, () => this.abandonRun()).setVisible(this.runActive).setEnabled(this.runActive);
     this.shopButton = new UiButton(this, 'MEJORAS', 20, () => this.scene.start(SCENE_KEYS.shop), ['M']);
     this.charactersButton = new UiButton(this, 'PERSONAJES', 20, () => this.scene.start(SCENE_KEYS.characters), ['P']);
-    this.gachaButton = new UiButton(this, 'INVOCAR', 20, () => this.scene.start(SCENE_KEYS.gacha), ['G']);
     this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
 
     this.panel = this.add.graphics();
@@ -171,7 +169,7 @@ export class MenuScene extends Phaser.Scene {
     const buttonSize = Math.max(16, Math.round(5.5 * ui));
     this.playButton.setFontSize(buttonSize);
     const small = Math.max(12, Math.round(buttonSize * 0.72));
-    const secondary = [this.charactersButton, this.gachaButton, this.shopButton, ...(this.runActive ? [this.abandonButton] : [])];
+    const secondary = [this.charactersButton, this.shopButton, ...(this.runActive ? [this.abandonButton] : [])];
     for (const button of secondary) button.setFontSize(small);
     const gap = Math.round(small * 0.8);
     const rowWidth = secondary.reduce((sum, button) => sum + button.width, 0) + gap * (secondary.length - 1);

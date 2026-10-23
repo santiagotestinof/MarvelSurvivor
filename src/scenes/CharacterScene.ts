@@ -2,20 +2,23 @@ import Phaser from 'phaser';
 import { CHARACTER_REGISTRY } from '../characters/registry';
 import { TEXTURES } from '../config/assetKeys';
 import { computeZoom } from '../config/cameraConfig';
+import { HERO_SHOP } from '../config/gameplayConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { saveData } from '../meta/saveData';
 import { drawHeroCard } from '../ui/heroCard';
 import { UiButton } from '../ui/UiButton';
 import { textStyle, uiScale } from '../ui/uiLayout';
 
-/** Elegir con qué héroe jugar. Los que todavía no se consiguieron aparecen como silueta. */
+/** Elegir con qué héroe jugar y comprar los que faltan con oro (tocar dos veces para confirmar la compra). */
 export class CharacterScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.TileSprite;
   private shade!: Phaser.GameObjects.Graphics;
   private title!: Phaser.GameObjects.Text;
   private hint!: Phaser.GameObjects.Text;
   private backButton!: UiButton;
-  private gachaButton!: UiButton;
+  private goldLabel!: Phaser.GameObjects.Text;
+  /** Héroe al que se le tocó una vez "comprar" y espera la confirmación. */
+  private pendingBuy: string | null = null;
   private cardObjects: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
@@ -28,9 +31,9 @@ export class CharacterScene extends Phaser.Scene {
     this.shade = this.add.graphics();
     this.title = this.add.text(0, 0, 'PERSONAJES', textStyle(28, '#ffffff')).setOrigin(0.5);
     this.title.setShadow(0, 4, '#1593b8', 0, true, true);
-    this.hint = this.add.text(0, 0, 'Tocá un héroe para elegirlo.', textStyle(11, '#9fb3bf')).setOrigin(0.5);
+    this.hint = this.add.text(0, 0, 'Tocá un héroe para elegirlo. Los demás se compran con oro.', textStyle(11, '#9fb3bf')).setOrigin(0.5);
     this.backButton = new UiButton(this, 'VOLVER [ESC]', 16, () => this.scene.start(SCENE_KEYS.menu), ['ESC']);
-    this.gachaButton = new UiButton(this, 'INVOCAR [G]', 16, () => this.scene.start(SCENE_KEYS.gacha), ['G']);
+    this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
 
     this.render();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.render, this);
@@ -55,11 +58,8 @@ export class CharacterScene extends Phaser.Scene {
 
     const size = Math.max(12, Math.round(3.6 * ui));
     this.backButton.setFontSize(size);
-    this.gachaButton.setFontSize(size);
-    const gap = Math.round(size * 0.8);
-    const total = this.backButton.width + gap + this.gachaButton.width;
-    this.gachaButton.setPosition(width / 2 - total / 2 + this.gachaButton.width / 2, height * 0.94);
-    this.backButton.setPosition(width / 2 + total / 2 - this.backButton.width / 2, height * 0.94);
+    this.backButton.setPosition(width / 2, height * 0.94);
+    this.goldLabel.setText(`ORO: ${saveData.gold}`).setFontSize(Math.max(12, Math.round(4 * ui))).setPosition(width - 3 * ui, 3 * ui);
 
     for (const object of this.cardObjects) object.destroy();
     this.cardObjects = [];
@@ -82,18 +82,37 @@ export class CharacterScene extends Phaser.Scene {
       const y = areaY + row * (cardH + cardGap);
       const unlocked = saveData.isUnlocked(definition.id);
       const chosen = saveData.selectedCharacter === definition.id;
-      const objects = drawHeroCard(this, definition, x, y, cardW, cardH, {
-        locked: !unlocked,
-        highlighted: chosen,
-        footer: chosen ? { text: 'ELEGIDO', color: '#ffe272' } : unlocked ? { text: 'TOCÁ PARA ELEGIR', color: '#9fb3bf' } : undefined,
-      });
-      const zone = this.add.zone(x, y, cardW, cardH).setOrigin(0).setInteractive({ useHandCursor: unlocked });
-      zone.on(Phaser.Input.Events.POINTER_UP, () => {
-        if (!unlocked || chosen) return;
-        saveData.select(definition.id);
-        this.render();
-      });
+      const price = HERO_SHOP.prices[definition.rarity];
+      const canAfford = saveData.gold >= price;
+      const confirming = this.pendingBuy === definition.id;
+      const footer = chosen
+        ? { text: 'ELEGIDO', color: '#ffe272' }
+        : unlocked
+          ? { text: 'TOCÁ PARA ELEGIR', color: '#9fb3bf' }
+          : confirming
+            ? { text: `¿COMPRAR POR ${price}?\nTOCÁ OTRA VEZ`, color: '#7dffb0' }
+            : canAfford
+              ? { text: `COMPRAR · ${price} DE ORO`, color: '#ffd24a' }
+              : { text: `${price} DE ORO (te faltan ${price - saveData.gold})`, color: '#ff8a8a' };
+      const objects = drawHeroCard(this, definition, x, y, cardW, cardH, { locked: !unlocked, highlighted: chosen || confirming, footer });
+      const zone = this.add.zone(x, y, cardW, cardH).setOrigin(0).setInteractive({ useHandCursor: !chosen });
+      zone.on(Phaser.Input.Events.POINTER_UP, () => this.onCardTap(definition.id, price));
       this.cardObjects.push(...objects, zone);
     });
+  }
+
+  private onCardTap(id: string, price: number): void {
+    if (saveData.isUnlocked(id)) {
+      this.pendingBuy = null;
+      if (saveData.selectedCharacter !== id) saveData.select(id);
+    } else if (saveData.gold < price) {
+      this.pendingBuy = null;
+    } else if (this.pendingBuy !== id) {
+      this.pendingBuy = id;
+    } else {
+      this.pendingBuy = null;
+      if (saveData.buyHero(id, price)) saveData.select(id);
+    }
+    this.render();
   }
 }

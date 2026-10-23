@@ -1,4 +1,4 @@
-import { CHARACTER_REGISTRY, STARTER_ID } from '../characters/registry';
+import { CHARACTER_REGISTRY, COMMON_HEROES, STARTER_ID } from '../characters/registry';
 
 /**
  * Progreso permanente (oro y mejoras compradas), guardado en el navegador (localStorage).
@@ -11,22 +11,23 @@ interface SaveShape {
   gold: number;
   /** Nivel comprado de cada mejora permanente, por id. */
   upgrades: Record<string, number>;
-  /** Héroes desbloqueados (el inicial siempre). */
+  /** Héroes comprados (la primera vez se regala uno común al azar). */
   unlocked: string[];
   /** Héroe elegido para jugar. */
   selected: string;
-  /** Tiradas seguidas del gacha sin sacar un héroe épico o mejor (para la garantía). */
-  pity: number;
 }
 
+/** Progreso de alguien que entra por primera vez: sin oro y con un héroe común al azar de regalo. */
 function emptySave(): SaveShape {
-  return { gold: 0, upgrades: {}, unlocked: [STARTER_ID], selected: STARTER_ID, pity: 0 };
+  const pool = COMMON_HEROES.length > 0 ? COMMON_HEROES : [STARTER_ID];
+  const gift = pool[Math.floor(Math.random() * pool.length)];
+  return { gold: 0, upgrades: {}, unlocked: [gift], selected: gift };
 }
 
 function sanitize(raw: unknown): SaveShape {
-  const save = emptySave();
-  if (typeof raw !== 'object' || raw === null) return save;
-  const { gold, upgrades, unlocked, selected, pity } = raw as Partial<SaveShape>;
+  if (typeof raw !== 'object' || raw === null) return emptySave();
+  const save: SaveShape = { gold: 0, upgrades: {}, unlocked: [], selected: '' };
+  const { gold, upgrades, unlocked, selected } = raw as Partial<SaveShape>;
   if (typeof gold === 'number' && Number.isFinite(gold) && gold > 0) save.gold = Math.floor(gold);
   if (typeof upgrades === 'object' && upgrades !== null) {
     for (const [id, level] of Object.entries(upgrades)) {
@@ -36,8 +37,9 @@ function sanitize(raw: unknown): SaveShape {
   if (Array.isArray(unlocked)) {
     for (const id of unlocked) if (typeof id === 'string' && id in CHARACTER_REGISTRY && !save.unlocked.includes(id)) save.unlocked.push(id);
   }
-  if (typeof selected === 'string' && save.unlocked.includes(selected)) save.selected = selected;
-  if (typeof pity === 'number' && Number.isFinite(pity) && pity > 0) save.pity = Math.floor(pity);
+  // Un guardado sin ningún héroe (viejo o dañado) recibe el regalo de bienvenida, conservando el oro y las mejoras.
+  if (save.unlocked.length === 0) save.unlocked = emptySave().unlocked;
+  save.selected = typeof selected === 'string' && save.unlocked.includes(selected) ? selected : save.unlocked[0];
   return save;
 }
 
@@ -57,16 +59,21 @@ function applyTestParams(data: SaveShape): SaveShape {
 class SaveData {
   private data: SaveShape = this.load();
 
+  constructor() {
+    // Primera vez en este navegador: se guarda enseguida el héroe de regalo para que no cambie al recargar.
+    try {
+      if (window.localStorage.getItem(STORAGE_KEY) === null) this.persist();
+    } catch {
+      // Sin almacenamiento: el regalo vale mientras la página siga abierta.
+    }
+  }
+
   get gold(): number {
     return this.data.gold;
   }
 
   get selectedCharacter(): string {
     return this.data.selected;
-  }
-
-  get pity(): number {
-    return this.data.pity;
   }
 
   isUnlocked(id: string): boolean {
@@ -79,25 +86,13 @@ class SaveData {
     this.persist();
   }
 
-  /** Gasta oro sin comprar una mejora (por ejemplo, una tirada del gacha). Devuelve false si no alcanza. */
-  spend(amount: number): boolean {
-    if (this.data.gold < amount) return false;
-    this.data.gold -= amount;
-    this.persist();
-    return true;
-  }
-
-  /** Desbloquea un héroe. Devuelve false si ya lo tenía. */
-  unlock(id: string): boolean {
-    if (this.isUnlocked(id)) return false;
+  /** Compra un héroe: gasta `price` de oro y lo desbloquea. Devuelve false si ya lo tenía o no alcanza el oro. */
+  buyHero(id: string, price: number): boolean {
+    if (this.isUnlocked(id) || !(id in CHARACTER_REGISTRY) || this.data.gold < price) return false;
+    this.data.gold -= price;
     this.data.unlocked.push(id);
     this.persist();
     return true;
-  }
-
-  setPity(value: number): void {
-    this.data.pity = Math.max(0, Math.floor(value));
-    this.persist();
   }
 
   levelOf(id: string): number {

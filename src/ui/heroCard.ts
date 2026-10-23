@@ -6,7 +6,7 @@ import { animationKey } from '../systems/AnimationSystem';
 import { drawPanel, textStyle } from './uiLayout';
 
 export interface HeroCardOptions {
-  /** Héroe sin desbloquear: silueta y sin datos. */
+  /** Héroe sin comprar: se ve atenuado, con su información para decidir la compra. */
   locked?: boolean;
   /** Tarjeta resaltada (héroe elegido). */
   highlighted?: boolean;
@@ -41,11 +41,11 @@ export function drawHeroCard(
   drawPanel(panel, x, y, w, h, {
     radius: 8,
     border: highlighted ? 0xffffff : rarity.color,
-    borderAlpha: highlighted ? 1 : locked ? 0.35 : 0.85,
+    borderAlpha: highlighted ? 1 : locked ? 0.5 : 0.85,
     lineWidth: highlighted ? 4 : 2,
   });
   // Un velo del color de la rareza detrás del héroe.
-  panel.fillStyle(rarity.color, locked ? 0.05 : 0.14).fillRoundedRect(x + 3, y + 3, w - 6, h * 0.46, 6);
+  panel.fillStyle(rarity.color, locked ? 0.08 : 0.14).fillRoundedRect(x + 3, y + 3, w - 6, h * 0.46, 6);
   objects.push(panel);
 
   const spriteScale = Math.max(2, Math.floor((h * 0.34) / def.frame.height));
@@ -53,11 +53,11 @@ export function drawHeroCard(
     .sprite(x + w / 2, y + pad + (def.frame.height * spriteScale) / 2, def.sheets.idle.textureKey, 0)
     .setScale(spriteScale)
     .play(animationKey(def.id, 'idle', Direction.Down));
-  if (locked) sprite.setTintFill(0x050a10).setAlpha(0.85);
+  if (locked) sprite.setTint(0x6b7885).setAlpha(0.8);
   objects.push(sprite);
 
   let cursor = y + pad * 1.3 + def.frame.height * spriteScale;
-  const name = scene.add.text(x + w / 2, cursor, locked ? '???' : def.displayName.toUpperCase(), textStyle(nameSize)).setOrigin(0.5, 0);
+  const name = scene.add.text(x + w / 2, cursor, def.displayName.toUpperCase(), textStyle(nameSize)).setOrigin(0.5, 0);
   name.setWordWrapWidth(w - pad * 2).setAlign('center');
   objects.push(name);
   cursor += name.height + 2;
@@ -67,11 +67,9 @@ export function drawHeroCard(
   cursor += tag.height + pad * 0.5;
 
   if (showStats) {
-    const text = locked
-      ? 'Bloqueado. Conseguilo en INVOCAR.'
-      : `VIDA ${def.stats.maxHealth}   VEL ${def.stats.moveSpeed}\n${def.weaponText}`;
+    const text = `VIDA ${def.stats.maxHealth}   VEL ${def.stats.moveSpeed}\n${def.weaponText}`;
     const info = scene.add
-      .text(x + w / 2, cursor, text, { ...textStyle(small, locked ? '#8a97a3' : '#d7e6ef'), align: 'center' })
+      .text(x + w / 2, cursor, text, { ...textStyle(small, locked ? '#a9b6c2' : '#d7e6ef'), align: 'center' })
       .setOrigin(0.5, 0)
       .setWordWrapWidth(w - pad * 2);
     objects.push(info);
