@@ -762,8 +762,9 @@ function fillEllipse(cv, cx, cy, rx, ry, colorAt) {
     }
 }
 
-// Centinela tipo Ultron (enemigo principal): 4 direcciones (filas: abajo, izq, der, arriba) x 4 cuadros de 32x32.
-function drawUltronBot(dir, frameIdx) {
+// Centinela tipo Ultron (enemigo principal): 8 direcciones (orden DIRECTIONS) x 4 cuadros de 32x32.
+// Incluye vistas diagonales (3/4) para que el giro entre frente, costado y espalda sea suave y natural.
+function drawUltronBot(fx, fy, frameIdx) {
   const cv = new Canvas(32, 32);
   const outline = hex('#0e0f14');
   const mLight = hex('#b8bcc6');
@@ -775,43 +776,50 @@ function drawUltronBot(dir, frameIdx) {
   const redGlow = hex('#e8352b');
   const redBright = hex('#ff6e62');
 
-  const strides = [-2, 0, 2, 0];
+  const strides = [-2, -1, 2, 1];
   const bobs = [0, -1, 0, -1];
   const stride = strides[frameIdx] ?? 0;
   const bob = bobs[frameIdx] ?? 0;
 
   const cx = 16;
-  const isFront = dir === 'down';
-  const isBack = dir === 'up';
-  const isSide = dir === 'left' || dir === 'right';
-  const fx = dir === 'right' ? 1 : dir === 'left' ? -1 : 0;
+  const straight = fx === 0;
+  const sideOnly = fx !== 0 && fy === 0;
+  const diag = fx !== 0 && fy !== 0;
+  const isFront = fy > 0;
+  const isBack = fy < 0;
 
   // ---------------- 1) PIERNAS (y = 20..30)
   const hipY = 20 + bob;
-  if (!isSide) {
+  if (!sideOnly) {
+    // En frente/espalda las piernas están separadas ±3 px; en diagonal 3/4 están a ±2 px y desplazadas según el paso.
     for (const side of [-1, 1]) {
       const step = side * stride;
       const lift = step > 0 ? -1 : 0;
-      const lx = cx + side * 3 - 1;
-      // Muslo segmentado con brillo diagonal como en la foto
-      cv.rect(lx, hipY, 3, 4, mBase);
-      cv.rect(lx, hipY, 1, 4, side < 0 ? mLight : mDark);
-      cv.rect(lx + 2, hipY, 1, 4, side > 0 ? mLight : mDark);
-      cv.set(lx + 1, hipY + 1, mLight);
-      // Articulación oscura de la rodilla
+      const sep = straight ? 3 : 2;
+      const diagShift = diag ? Math.round((fx * side * stride) / 3) : 0;
+      const lx = cx + side * sep - 1 + diagShift;
+      const farLeg = diag && side !== fx;
+      const legBase = farLeg ? mDark : mBase;
+      const legLight = farLeg ? mBase : mLight;
+      // Muslo segmentado con brillo diagonal
+      cv.rect(lx, hipY, 3, 4, legBase);
+      cv.rect(lx, hipY, 1, 4, side < 0 ? legLight : mDark);
+      cv.rect(lx + 2, hipY, 1, 4, side > 0 ? legLight : mDark);
+      cv.set(lx + 1, hipY + 1, legLight);
+      // Rodilla oscura
       const kneeY = hipY + 4 + lift;
       cv.rect(lx, kneeY, 3, 2, mDeep);
-      // Pantorrilla metálica
-      const shinX = lx + (side > 0 ? 1 : -1) * (step !== 0 ? 1 : 0);
-      cv.rect(shinX, kneeY + 2, 3, 3, mBase);
-      cv.rect(shinX + 1, kneeY + 2, 1, 3, mLight);
-      // Pie / bota robótica
+      // Pantorrilla
+      const shinX = lx + (straight ? (side > 0 ? 1 : -1) * (Math.abs(stride) >= 2 ? 1 : 0) : fx);
+      cv.rect(shinX, kneeY + 2, 3, 3, legBase);
+      cv.rect(shinX + 1, kneeY + 2, 1, 3, legLight);
+      // Bota
       const footY = Math.min(30, kneeY + 5);
-      cv.rect(shinX - (side < 0 ? 1 : 0), footY, 4, 2, mDark);
-      cv.rect(shinX, footY, 2, 1, mLight);
+      cv.rect(shinX - (side < 0 && straight ? 1 : 0), footY, 4, 2, mDark);
+      cv.rect(shinX, footY, 2, 1, legLight);
     }
   } else {
-    // Vista de perfil: dos piernas en tijera (lejana primero, cercana después)
+    // Vista de perfil puro: dos piernas en tijera
     for (const layer of [-1, 1]) {
       const step = layer * stride;
       const dark = layer < 0;
@@ -820,37 +828,30 @@ function drawUltronBot(dir, frameIdx) {
       const thighX = cx - 1 + Math.round(step * 0.6);
       const kneeX = cx - 1 + step;
       const lift = step * fx > 0 ? -1 : 0;
-      // Muslo
       cv.rect(thighX, hipY, 3, 4, baseC);
       cv.rect(thighX + (fx > 0 ? 2 : 0), hipY, 1, 4, lightC);
-      // Rodilla
       cv.rect(kneeX, hipY + 4 + lift, 3, 2, mDeep);
-      // Pantorrilla
       cv.rect(kneeX, hipY + 6 + lift, 3, 3, baseC);
       cv.rect(kneeX + (fx > 0 ? 2 : 0), hipY + 6 + lift, 1, 3, lightC);
-      // Bota orientada hacia fx
       const footX = fx > 0 ? kneeX : kneeX - 1;
       cv.rect(footX, Math.min(30, hipY + 9 + lift), 4, 2, mDark);
       cv.set(footX + (fx > 0 ? 2 : 1), Math.min(30, hipY + 9 + lift), lightC);
     }
   }
 
-  // ---------------- 2) BRAZO LEJANO (en perfil va detrás del torso)
+  // ---------------- 2) BRAZO LEJANO (en perfil y en diagonal 3/4 queda parcialmente detrás del torso)
   const ty = 12 + bob;
   const drawProfileArm = (swing, isFar) => {
     const baseC = isFar ? mDark : mBase;
     const lightC = isFar ? mBase : mLight;
     const shX = cx - 1 + Math.round(swing * 0.4);
     const shY = ty;
-    // Hombrera redondeada
     cv.rect(shX, shY, 3, 3, baseC);
-    cv.set(shX + (fx > 0 ? 1 : 1), shY, lightC);
-    // Brazo superior y codo con punto rojo
+    cv.set(shX + 1, shY, lightC);
     const elbX = shX + Math.round(swing * 0.8);
     const elbY = shY + 3;
     cv.rect(elbX, elbY, 3, 3, baseC);
     cv.set(elbX + 1, elbY + 1, redGlow);
-    // Antebrazo adelantado hacia fx y mano con garras
     const foreX = elbX + fx * 2;
     const foreY = elbY + 1;
     cv.rect(foreX, foreY, 3, 3, baseC);
@@ -862,145 +863,183 @@ function drawUltronBot(dir, frameIdx) {
     cv.set(handX + 1, handY - 1, mDeep);
   };
 
-  if (isSide) {
+  if (sideOnly) {
     drawProfileArm(-stride, true);
   }
 
   // ---------------- 3) TORSO (y = 12..19)
-  if (!isSide) {
-    // Pecho ancho arriba (10 px) y cintura angosta abajo (6 px), como en la imagen de referencia
-    cv.shaded(cx - 5, ty, 10, 5, mBase, mLight, mDark);
-    cv.shaded(cx - 4, ty + 5, 8, 2, mBase, mLight, mDark);
-    cv.shaded(cx - 3, ty + 7, 6, 2, mDark, mBase, mDeep); // pelvis / cinturón
+  if (!sideOnly) {
+    // En frente/espalda mide 10 px; en diagonal 3/4 mide 8 px y el eje central se corre 1 px hacia fx.
+    const chestW = straight ? 10 : 8;
+    const waistW = straight ? 8 : 6;
+    const hipW = straight ? 6 : 5;
+    const tx = cx - Math.floor(chestW / 2);
+    const centerShift = diag ? fx * 2 : 0;
+    const midX = cx + centerShift;
+
+    cv.shaded(tx, ty, chestW, 5, mBase, mLight, mDark);
+    cv.shaded(cx - Math.floor(waistW / 2), ty + 5, waistW, 2, mBase, mLight, mDark);
+    cv.shaded(cx - Math.floor(hipW / 2), ty + 7, hipW, 2, mDark, mBase, mDeep);
 
     if (isFront) {
-      // Brillo central del esternón y ranuras pectorales
-      cv.rect(cx - 1, ty + 1, 2, 3, mLight);
-      cv.set(cx - 3, ty + 2, mDeep);
-      cv.set(cx + 2, ty + 2, mDeep);
-      // Los 4 nodos de energía rojos en V del pecho/costillas (idénticos a la foto)
-      cv.set(cx - 3, ty + 4, redGlow);
-      cv.set(cx + 2, ty + 4, redGlow);
-      cv.set(cx - 2, ty + 5, redBright);
-      cv.set(cx + 1, ty + 5, redBright);
-      // Placa abdominal segmentada
-      cv.rect(cx - 3, ty + 6, 6, 1, mDeep);
+      // Brillo del esternón y ranuras pectorales desplazados hacia donde gira el torso
+      cv.rect(midX - 1, ty + 1, 2, 3, mLight);
+      cv.set(midX - 3, ty + 2, mDeep);
+      if (midX + 2 < tx + chestW) cv.set(midX + 2, ty + 2, mDeep);
+      // Nodos rojos en V del pecho
+      if (midX - 3 >= tx) cv.set(midX - 3, ty + 4, redGlow);
+      if (midX + 2 < tx + chestW) cv.set(midX + 2, ty + 4, redGlow);
+      cv.set(midX - 2, ty + 5, redBright);
+      cv.set(midX + 1, ty + 5, redBright);
+      cv.rect(cx - Math.floor(hipW / 2), ty + 6, hipW, 1, mDeep);
     } else if (isBack) {
-      // Columna vertebral cibernética y placas dorsales
-      cv.rect(cx - 1, ty, 2, 8, mDeep);
-      for (let y = ty + 1; y <= ty + 6; y += 2) cv.rect(cx - 1, y, 2, 1, mLight);
-      // Dos respiraderos rojos en los omóplatos
-      cv.set(cx - 3, ty + 2, scarRed);
-      cv.set(cx + 2, ty + 2, scarRed);
-      cv.set(cx - 2, ty + 4, redGlow);
-      cv.set(cx + 1, ty + 4, redGlow);
+      // Columna vertebral cibernética (en diagonal 3/4 se desplaza levemente hacia -fx)
+      const spineX = cx - (diag ? fx : 0);
+      cv.rect(spineX - 1, ty, 2, 8, mDeep);
+      for (let y = ty + 1; y <= ty + 6; y += 2) cv.rect(spineX - 1, y, 2, 1, mLight);
+      if (spineX - 3 >= tx) cv.set(spineX - 3, ty + 2, scarRed);
+      if (spineX + 2 < tx + chestW) cv.set(spineX + 2, ty + 2, scarRed);
+      cv.set(spineX - 2, ty + 4, redGlow);
+      if (spineX + 1 < tx + chestW) cv.set(spineX + 1, ty + 4, redGlow);
     }
   } else {
-    // Torso de perfil
+    // Torso de perfil puro (6 px)
     const tx = cx - 3;
     cv.shaded(tx, ty, 6, 5, mBase, mLight, mDark);
     cv.shaded(tx + 1, ty + 5, 5, 3, mDark, mBase, mDeep);
-    // Pecho saliente hacia fx con nodos rojos laterales
     const frontX = fx > 0 ? tx + 5 : tx;
     cv.rect(frontX, ty + 1, 1, 4, mLight);
     cv.set(frontX - fx, ty + 3, redGlow);
     cv.set(frontX - fx * 2, ty + 4, redBright);
-    // Espalda vertebral del lado opuesto
     const backX = fx > 0 ? tx : tx + 5;
     cv.rect(backX, ty + 1, 1, 5, mDeep);
   }
 
-  // ---------------- 4) BRAZOS (frente, espalda y brazo cercano en perfil)
-  if (isSide) {
+  // ---------------- 4) BRAZOS
+  if (sideOnly) {
     drawProfileArm(stride, false);
   } else {
-    // En frente y espalda: hombreras redondeadas, brazos segmentados con puntos rojos y una mano con garras levantada
     for (const side of [-1, 1]) {
       const swing = Math.round((side * stride) / 2);
-      const shX = side < 0 ? cx - 8 : cx + 5;
+      // En diagonal 3/4 los hombros están más cerca del centro para una transición suave hacia el perfil
+      const shX = straight
+        ? (side < 0 ? cx - 8 : cx + 5)
+        : (side < 0 ? cx - 6 : cx + 4);
       const shY = ty + (swing > 0 ? 1 : 0);
-      // Hombrera (3x3)
-      cv.shaded(shX, shY, 3, 3, mBase, mLight, mDark);
-      // Brazo y antebrazo: el brazo derecho del sprite (side > 0 en frente, side < 0 en espalda) se flexiona amenazante como en la foto
-      const raised = (isFront && side > 0) || (isBack && side < 0);
+      const farArm = diag && side !== fx;
+      const armBase = farArm ? mDark : mBase;
+      const armLight = farArm ? mBase : mLight;
+      const armDark = farArm ? mDeep : mDark;
+
+      cv.shaded(shX, shY, 3, 3, armBase, armLight, armDark);
+      const raised = (isFront && (diag ? side === fx : side > 0)) || (isBack && (diag ? side === fx : side < 0));
       if (raised) {
-        const armX = shX + side;
-        cv.rect(armX, shY + 3, 3, 3, mBase);
-        cv.set(armX + 1, shY + 4, redGlow); // nodo rojo del codo
-        // Mano levantada con 3 garras oscuras arriba
-        const clawX = armX + side;
+        const armX = shX + (diag ? fx : side);
+        cv.rect(armX, shY + 3, 3, 3, armBase);
+        cv.set(armX + 1, shY + 4, redGlow);
+        const clawX = armX + (diag ? fx : side);
         const clawY = shY;
-        cv.shaded(clawX, clawY + 1, 3, 3, mBase, mLight, mDark);
+        cv.shaded(clawX, clawY + 1, 3, 3, armBase, armLight, armDark);
         cv.set(clawX, clawY - 1, mDeep);
         cv.set(clawX + 2, clawY - 1, mDeep);
       } else {
-        const armX = shX - (side < 0 ? 1 : 0);
-        cv.shaded(armX, shY + 3, 3, 3, mBase, mLight, mDark);
-        cv.set(armX + 1, shY + 4, redGlow); // nodo rojo bíceps/codo
-        cv.shaded(armX, shY + 6, 3, 3, mBase, mLight, mDark);
-        cv.set(armX + 1, shY + 7, redGlow); // nodo rojo antebrazo
-        cv.rect(armX, shY + 9, 3, 2, mDark); // puño cerrado
+        const armX = shX - (side < 0 && straight ? 1 : 0);
+        cv.shaded(armX, shY + 3, 3, 3, armBase, armLight, armDark);
+        cv.set(armX + 1, shY + 4, redGlow);
+        cv.shaded(armX, shY + 6, 3, 3, armBase, armLight, armDark);
+        cv.set(armX + 1, shY + 7, redGlow);
+        cv.rect(armX, shY + 9, 3, 2, armDark);
       }
     }
   }
 
   // ---------------- 5) CABEZA (y = 2..11)
   const hy = 2 + bob;
-  if (!isSide) {
-    // Cráneo metálico redondeado (más angosto arriba y en la mandíbula, ancho en las sienes)
+  if (straight) {
     cv.shaded(cx - 4, hy, 8, 2, mBase, mLight, mDark);
     cv.shaded(cx - 5, hy + 2, 10, 5, mBase, mLight, mDark);
     cv.shaded(cx - 4, hy + 7, 8, 3, mDark, mBase, mDeep);
-    // Orejas / sensores laterales
     cv.rect(cx - 6, hy + 4, 1, 3, mBase);
     cv.rect(cx + 5, hy + 4, 1, 3, mBase);
 
     if (isFront) {
-      // Brillo superior izquierdo del cráneo
       cv.rect(cx - 3, hy + 1, 2, 2, mLight);
-      // Dos marcas rojas verticales en la frente (idénticas a la foto de Ultron)
       cv.rect(cx - 2, hy + 2, 1, 3, scarRed);
       cv.rect(cx + 2, hy + 2, 1, 3, scarRed);
       cv.set(cx - 3, hy + 1, scarRed);
-      // Cuencas oscuras y ojos rojos brillantes
       cv.rect(cx - 4, hy + 5, 3, 2, socket);
       cv.rect(cx + 1, hy + 5, 3, 2, socket);
       cv.rect(cx - 3, hy + 5, 2, 1, redBright);
       cv.rect(cx + 2, hy + 5, 2, 1, redBright);
       cv.set(cx - 2, hy + 6, redGlow);
       cv.set(cx + 2, hy + 6, redGlow);
-      // Mandíbula / rejilla bucal oscura con barrotes grises verticales
       cv.rect(cx - 4, hy + 7, 8, 2, socket);
       cv.set(cx - 2, hy + 8, mBase);
       cv.set(cx, hy + 8, mBase);
       cv.set(cx + 2, hy + 8, mBase);
     } else {
-      // De espaldas: nuca metálica con costura central y nodo neural rojo
       cv.rect(cx - 3, hy + 1, 3, 2, mLight);
       cv.rect(cx, hy + 1, 1, 7, mDeep);
       cv.rect(cx - 3, hy + 6, 6, 1, mDeep);
       cv.rect(cx - 1, hy + 4, 2, 2, scarRed);
       cv.set(cx, hy + 4, redGlow);
     }
-  } else {
-    // Cabeza de perfil (mirando a la izquierda o a la derecha)
+  } else if (diag) {
+    // Cabeza en diagonal 3/4: punto intermedio entre frente/espalda y perfil
     const hx = cx - 4;
     cv.shaded(hx + 1, hy, 7, 2, mBase, mLight, mDark);
     cv.shaded(hx, hy + 2, 9, 5, mBase, mLight, mDark);
     cv.shaded(hx + 1, hy + 7, 7, 3, mDark, mBase, mDeep);
+    // Oreja visible del lado cercano (-fx)
+    const earX = fx > 0 ? hx - 1 : hx + 9;
+    cv.rect(earX, hy + 4, 1, 3, mDark);
 
-    // Disco auditivo en la sien (centro de la cabeza)
+    if (isFront) {
+      // En 3/4 de frente se ven los dos ojos y las dos marcas rojas pero desplazados hacia fx
+      const s1 = fx > 0 ? cx : cx - 3;
+      const s2 = fx > 0 ? cx + 3 : cx;
+      cv.rect(s1, hy + 2, 1, 3, scarRed);
+      cv.rect(s2, hy + 2, 1, 3, scarRed);
+      // Ojo cercano al centro (2 px) y ojo del borde (2 px)
+      const eNear = fx > 0 ? cx - 1 : cx - 1;
+      const eFar = fx > 0 ? cx + 2 : cx - 4;
+      cv.rect(eNear, hy + 5, 2, 2, socket);
+      cv.rect(eFar, hy + 5, 2, 2, socket);
+      cv.rect(eNear, hy + 5, 2, 1, redBright);
+      cv.rect(eFar, hy + 5, 2, 1, redBright);
+      cv.set(eNear + 1, hy + 6, redGlow);
+      cv.set(eFar + (fx > 0 ? 1 : 0), hy + 6, redGlow);
+      // Rejilla bucal desplazada hacia fx
+      const jawX = fx > 0 ? cx - 1 : cx - 4;
+      cv.rect(jawX, hy + 7, 6, 2, socket);
+      cv.set(jawX + 1, hy + 8, mBase);
+      cv.set(jawX + 3, hy + 8, mBase);
+      cv.set(jawX + 5, hy + 8, mBase);
+    } else {
+      // En 3/4 de espaldas se ve la nuca desplazada hacia -fx y un destello del ojo/mandíbula en el borde fx
+      const seamX = cx - fx;
+      cv.rect(seamX, hy + 1, 1, 7, mDeep);
+      cv.rect(seamX - 1, hy + 4, 2, 2, scarRed);
+      cv.set(seamX, hy + 4, redGlow);
+      const edgeX = fx > 0 ? hx + 8 : hx;
+      cv.set(edgeX, hy + 5, redGlow);
+      cv.rect(edgeX, hy + 6, 1, 2, socket);
+    }
+  } else {
+    // Cabeza de perfil puro
+    const hx = cx - 4;
+    cv.shaded(hx + 1, hy, 7, 2, mBase, mLight, mDark);
+    cv.shaded(hx, hy + 2, 9, 5, mBase, mLight, mDark);
+    cv.shaded(hx + 1, hy + 7, 7, 3, mDark, mBase, mDeep);
     cv.rect(cx - 1, hy + 4, 2, 3, mDeep);
     cv.set(cx - 1, hy + 5, mBase);
 
-    // Frente, marca roja, cuenca ocular y boca hacia el lado que mira (fx)
     const faceX = fx > 0 ? hx + 6 : hx;
     const scarX = fx > 0 ? hx + 6 : hx + 2;
     cv.rect(scarX, hy + 2, 1, 3, scarRed);
     cv.rect(faceX, hy + 5, 3, 2, socket);
     cv.rect(fx > 0 ? faceX + 1 : faceX, hy + 5, 2, 1, redBright);
-    cv.set(fx > 0 ? faceX + 1 : faceX + 1, hy + 6, redGlow);
-    // Mandíbula oscura en perfil
+    cv.set(faceX + 1, hy + 6, redGlow);
     cv.rect(faceX, hy + 7, 3, 2, socket);
     cv.set(faceX + 1, hy + 8, mBase);
   }
@@ -1009,12 +1048,11 @@ function drawUltronBot(dir, frameIdx) {
 }
 
 function makeDrone() {
-  const dirs = ['down', 'left', 'right', 'up'];
   const framesPerDir = 4;
-  const sheet = new Canvas(32 * framesPerDir, 32 * dirs.length);
-  dirs.forEach((dir, row) => {
+  const sheet = new Canvas(32 * framesPerDir, 32 * DIRECTIONS.length);
+  DIRECTIONS.forEach(([fx, fy], row) => {
     for (let col = 0; col < framesPerDir; col++) {
-      sheet.blit(drawUltronBot(dir, col), col * 32, row * 32);
+      sheet.blit(drawUltronBot(fx, fy, col), col * 32, row * 32);
     }
   });
   return sheet;
@@ -1053,32 +1091,320 @@ function makeOverlord() {
   return sheet;
 }
 
-// Explorador: dron chico y rápido, hoja de 2 cuadros de 20x20 (las alas aletean).
-function makeScout() {
-  const sheet = new Canvas(40, 20);
-  const shell = [hex('#ffd166'), hex('#f4a52a'), hex('#b86a12')];
-  const wing = hex('#c8f1ff');
-  const eye = hex('#ff3b3b');
-  for (let f = 0; f < 2; f++) {
-    const cv = new Canvas(20, 20);
-    const bob = f;
-    if (f === 0) {
-      cv.rect(1, 6, 5, 2, wing);
-      cv.rect(14, 6, 5, 2, wing);
-    } else {
-      cv.rect(2, 10, 4, 2, wing);
-      cv.rect(14, 10, 4, 2, wing);
+// Outrider (súbdito de Thanos en Endgame, reemplaza a las abejas en SCOUT):
+// 8 direcciones (orden DIRECTIONS) x 4 cuadros de 32x32.
+// Piel azul-gris oscura, cresta espinosa, colmillos amarillentos, marcas doradas en V en el pecho,
+// 4 brazos con garras y 2 tentáculos dorsales curvos en los hombros.
+function drawOutrider(fx, fy, frameIdx) {
+  const cv = new Canvas(32, 32);
+  const outline = hex('#090a0f');
+  const sLight = hex('#4c5668');
+  const sBase = hex('#313947');
+  const sDark = hex('#1e232d');
+  const sDeep = hex('#13161d');
+  const gum = hex('#7d4940');
+  const tooth = hex('#e6d88a');
+  const gold = hex('#c9b062');
+  const goldDark = hex('#8f7838');
+
+  const strides = [-2, -1, 2, 1];
+  const bobs = [0, -1, 0, -1];
+  const stride = strides[frameIdx] ?? 0;
+  const bob = bobs[frameIdx] ?? 0;
+
+  const cx = 16;
+  const straight = fx === 0;
+  const sideOnly = fx !== 0 && fy === 0;
+  const diag = fx !== 0 && fy !== 0;
+  const isFront = fy > 0;
+  const isBack = fy < 0;
+  const ty = 12 + bob;
+
+  // ---------------- 1) TENTÁCULOS DORSALES CURVOS (salen detrás de los hombros y se arquean arriba afuera)
+  if (!sideOnly) {
+    for (const side of [-1, 1]) {
+      const tx0 = cx + side * (straight ? 5 : 4);
+      const sway = frameIdx % 2 === 0 ? 0 : 1;
+      // Tallo curvo bien separado de la cabeza con pinza dorada en la punta (como en la foto)
+      cv.rect(tx0, ty - 1, 2, 1, sDark);
+      cv.rect(tx0 + side * 2, ty - 2, 2, 1, sDark);
+      cv.rect(tx0 + side * 3, ty - 4 + sway, 2, 2, sBase);
+      cv.set(tx0 + side * 4, ty - 5 + sway, sLight);
+      cv.set(tx0 + side * 3, ty - 6 + sway, goldDark);
+      cv.set(tx0 + side * 2, ty - 6 + sway, tooth);
     }
-    cv.rect(9, 14 - bob, 2, 3, shell[2]); // aguijón
-    fillEllipse(cv, 10, 10 - bob, 5.5, 4.5, (dx, dy) => {
-      const t = dy + dx * 0.35;
-      return t > 0.5 ? shell[2] : t > -0.25 ? shell[1] : shell[0];
-    });
-    cv.rect(6, 9 - bob, 8, 2, hex('#1b1206')); // visor
-    cv.rect(9, 9 - bob, 2, 2, eye);
-    cv.set(9, 9 - bob, hex('#ff9a9a'));
-    sheet.blit(addOutline(cv, hex('#1a0f04')), f * 20, 0);
+  } else {
+    // En perfil los tentáculos dorsales se arquean claramente detrás de la espalda (-fx)
+    const backDir = -fx;
+    const sway = frameIdx % 2 === 0 ? 0 : 1;
+    cv.rect(cx + backDir * 3, ty - 1, 2, 1, sDark);
+    cv.rect(cx + backDir * 5, ty - 3 + sway, 2, 2, sBase);
+    cv.set(cx + backDir * 6, ty - 4 + sway, sLight);
+    cv.set(cx + backDir * 5, ty - 5 + sway, goldDark);
+    cv.set(cx + backDir * 4, ty - 5 + sway, tooth);
   }
+
+  // ---------------- 2) PIERNAS CON GARRAS (y = 20..30)
+  const hipY = 20 + bob;
+  if (!sideOnly) {
+    for (const side of [-1, 1]) {
+      const step = side * stride;
+      const lift = step > 0 ? -1 : 0;
+      const sep = straight ? 3 : 2;
+      const diagShift = diag ? Math.round((fx * side * stride) / 3) : 0;
+      const lx = cx + side * sep - 1 + diagShift;
+      const farLeg = diag && side !== fx;
+      const legBase = farLeg ? sDark : sBase;
+      const legLight = farLeg ? sBase : sLight;
+
+      // Muslo musculoso
+      cv.rect(lx, hipY, 3, 4, legBase);
+      cv.rect(lx + (side < 0 ? 0 : 1), hipY, 1, 3, legLight);
+      // Rodilla y pantorrilla
+      const kneeY = hipY + 4 + lift;
+      cv.rect(lx, kneeY, 3, 2, sDark);
+      const shinX = lx + (straight ? (side > 0 ? 1 : -1) * (Math.abs(stride) >= 2 ? 1 : 0) : fx);
+      cv.rect(shinX, kneeY + 2, 3, 3, legBase);
+      cv.set(shinX + 1, kneeY + 2, legLight);
+      // Pie con 3 garras amarillas como en la foto
+      const footY = Math.min(30, kneeY + 5);
+      const footX = shinX - (side < 0 && straight ? 1 : 0);
+      cv.rect(footX, footY, 4, 2, sDark);
+      cv.set(footX, footY + 1, tooth);
+      cv.set(footX + 2, footY + 1, tooth);
+      cv.set(footX + 3, footY + 1, gold);
+    }
+  } else {
+    for (const layer of [-1, 1]) {
+      const step = layer * stride;
+      const dark = layer < 0;
+      const baseC = dark ? sDark : sBase;
+      const lightC = dark ? sBase : sLight;
+      const thighX = cx - 1 + Math.round(step * 0.6);
+      const kneeX = cx - 1 + step;
+      const lift = step * fx > 0 ? -1 : 0;
+      cv.rect(thighX, hipY, 3, 4, baseC);
+      cv.rect(thighX + (fx > 0 ? 2 : 0), hipY, 1, 3, lightC);
+      cv.rect(kneeX, hipY + 4 + lift, 3, 2, sDark);
+      cv.rect(kneeX, hipY + 6 + lift, 3, 3, baseC);
+      const footY = Math.min(30, hipY + 9 + lift);
+      const footX = fx > 0 ? kneeX : kneeX - 1;
+      cv.rect(footX, footY, 4, 2, sDark);
+      cv.set(footX + (fx > 0 ? 3 : 0), footY + 1, tooth);
+      cv.set(footX + (fx > 0 ? 1 : 2), footY + 1, gold);
+    }
+  }
+
+  // ---------------- 3) BRAZOS DE PERFIL LEJANOS
+  const drawProfileArms = (swing, isFar) => {
+    const baseC = isFar ? sDark : sBase;
+    const lightC = isFar ? sBase : sLight;
+    const shX = cx - 1 + Math.round(swing * 0.4);
+    // Brazo superior con franja dorada en el hombro y garras adelante
+    cv.rect(shX, ty, 3, 3, baseC);
+    cv.rect(shX, ty + 1, 3, 1, goldDark);
+    const foreX = shX + fx * 2;
+    cv.rect(foreX, ty + 2, 3, 3, baseC);
+    cv.set(foreX + 1, ty + 2, lightC);
+    const handX = foreX + fx * 2;
+    cv.rect(handX, ty, 2, 3, baseC);
+    cv.set(handX, ty - 1, tooth);
+    cv.set(handX + 1, ty - 1, gold);
+    // Brazo inferior secundario (4 brazos del Outrider)
+    const lowX = shX + fx;
+    cv.rect(lowX, ty + 5, 2, 4, sDark);
+    cv.set(lowX + fx, ty + 8, gold);
+  };
+
+  if (sideOnly) {
+    drawProfileArms(-stride, true);
+  }
+
+  // ---------------- 4) TORSO CON MARCAS DORADAS EN V (y = 12..19)
+  if (!sideOnly) {
+    const chestW = straight ? 10 : 8;
+    const waistW = straight ? 8 : 6;
+    const hipW = straight ? 6 : 5;
+    const tx = cx - Math.floor(chestW / 2);
+    const midX = cx + (diag ? fx * 2 : 0);
+
+    cv.shaded(tx, ty, chestW, 5, sBase, sLight, sDark);
+    cv.shaded(cx - Math.floor(waistW / 2), ty + 5, waistW, 2, sBase, sLight, sDark);
+    cv.shaded(cx - Math.floor(hipW / 2), ty + 7, hipW, 2, sDark, sBase, sDeep);
+
+    if (isFront) {
+      // Arnés/marcas doradas en V que bajan desde los hombros al centro del pecho (idénticas a la foto)
+      cv.set(tx + 1, ty, gold);
+      cv.set(tx + chestW - 2, ty, gold);
+      cv.set(midX - 3, ty + 1, gold);
+      if (midX + 2 < tx + chestW) cv.set(midX + 2, ty + 1, gold);
+      cv.set(midX - 2, ty + 2, gold);
+      cv.set(midX + 1, ty + 2, gold);
+      cv.rect(midX - 1, ty + 3, 2, 2, goldDark);
+      // Puntos dorados en el abdomen/costillas
+      cv.set(midX - 2, ty + 5, goldDark);
+      cv.set(midX + 1, ty + 5, goldDark);
+      cv.set(midX - 1, ty + 6, gold);
+      cv.set(midX, ty + 6, gold);
+    } else if (isBack) {
+      const spineX = cx - (diag ? fx : 0);
+      cv.rect(spineX - 1, ty, 2, 8, sDeep);
+      for (let y = ty + 1; y <= ty + 6; y += 2) cv.rect(spineX - 1, y, 2, 1, sLight);
+      // Tiras doradas cruzadas en la espalda
+      cv.set(spineX - 3, ty + 1, goldDark);
+      if (spineX + 2 < tx + chestW) cv.set(spineX + 2, ty + 1, goldDark);
+      cv.set(spineX - 2, ty + 2, gold);
+      if (spineX + 1 < tx + chestW) cv.set(spineX + 1, ty + 2, gold);
+    }
+  } else {
+    const tx = cx - 3;
+    cv.shaded(tx, ty, 6, 5, sBase, sLight, sDark);
+    cv.shaded(tx + 1, ty + 5, 5, 3, sDark, sBase, sDeep);
+    const frontX = fx > 0 ? tx + 5 : tx;
+    cv.set(frontX, ty + 1, gold);
+    cv.set(frontX - fx, ty + 2, gold);
+    cv.set(frontX - fx, ty + 4, goldDark);
+    cv.set(frontX - fx * 2, ty + 6, goldDark);
+  }
+
+  // ---------------- 5) LOS 4 BRAZOS (PAR SUPERIOR + PAR INFERIOR CON GARRAS)
+  if (sideOnly) {
+    drawProfileArms(stride, false);
+  } else {
+    for (const side of [-1, 1]) {
+      const swing = Math.round((side * stride) / 2);
+      const shX = straight
+        ? (side < 0 ? cx - 8 : cx + 5)
+        : (side < 0 ? cx - 6 : cx + 4);
+      const shY = ty + (swing > 0 ? 1 : 0);
+      const farArm = diag && side !== fx;
+      const armBase = farArm ? sDark : sBase;
+      const armLight = farArm ? sBase : sLight;
+
+      // Hombrera con 2 franjas doradas horizontales como en la imagen
+      cv.shaded(shX, shY, 3, 3, armBase, armLight, sDark);
+      cv.rect(shX, shY + 1, 3, 1, gold);
+
+      // Brazo principal superior: uno levantado con garras abiertas y el otro extendido abajo con garras
+      const raised = (isFront && (diag ? side === fx : side > 0)) || (isBack && (diag ? side === fx : side < 0));
+      if (raised) {
+        // Brazo inferior secundario baja por debajo del codo levantado
+        const lowX = shX + (side < 0 ? -1 : 1);
+        cv.rect(lowX, shY + 5, 2, 4, sDark);
+        cv.set(lowX + (side < 0 ? 0 : 1), shY + 9, tooth);
+        cv.set(lowX + (side < 0 ? 1 : 0), shY + 9, gold);
+
+        const armX = shX + (diag ? fx : side);
+        cv.rect(armX, shY + 3, 3, 3, armBase);
+        const clawX = armX + (diag ? fx : side);
+        const clawY = shY - 1;
+        cv.shaded(clawX, clawY + 1, 3, 3, armBase, armLight, sDark);
+        cv.set(clawX, clawY, tooth);
+        cv.set(clawX + 2, clawY, tooth);
+        cv.set(clawX - (diag ? fx : side), clawY + 1, gold);
+      } else {
+        // Brazo secundario se abre en diagonal hacia afuera (como en la foto, se ven los dos brazos paralelos)
+        const armX = shX - (side < 0 && straight ? 1 : 0);
+        const lowX = armX + (side < 0 ? -2 : 3);
+        cv.rect(lowX, shY + 4, 2, 5, sDark);
+        cv.set(lowX, shY + 9, tooth);
+        cv.set(lowX + 1, shY + 9, gold);
+
+        cv.shaded(armX, shY + 3, 3, 5, armBase, armLight, sDark);
+        cv.rect(armX, shY + 8, 3, 2, sDark);
+        cv.set(armX, shY + 10, tooth);
+        cv.set(armX + 2, shY + 10, gold);
+      }
+    }
+  }
+
+  // ---------------- 6) CABEZA ALIENÍGENA CON CRESTA ESPINOSA Y COLMILLOS (y = 1..11)
+  const hy = 2 + bob;
+  if (straight) {
+    // Púas superiores de la cresta (como en la imagen de referencia)
+    cv.rect(cx - 4, hy - 1, 2, 2, sBase);
+    cv.rect(cx - 1, hy - 2, 2, 3, sLight);
+    cv.rect(cx + 2, hy - 1, 2, 2, sBase);
+    cv.set(cx - 5, hy + 1, sBase);
+    cv.shaded(cx - 5, hy + 1, 10, 5, sBase, sLight, sDark);
+    cv.shaded(cx - 4, hy + 6, 8, 4, sDark, sBase, sDeep);
+
+    if (isFront) {
+      // Líneas quitinosas de la cresta frontal
+      cv.rect(cx - 3, hy + 2, 1, 2, sLight);
+      cv.rect(cx, hy + 1, 1, 3, sLight);
+      cv.rect(cx + 2, hy + 2, 1, 2, sLight);
+      // Fauces feroces sin ojos: encía rojiza y colmillos amarillos arriba y abajo
+      cv.rect(cx - 3, hy + 5, 6, 4, sDeep);
+      cv.rect(cx - 3, hy + 5, 6, 1, gum);
+      cv.set(cx - 3, hy + 6, tooth);
+      cv.set(cx - 1, hy + 6, tooth);
+      cv.set(cx + 1, hy + 6, tooth);
+      cv.set(cx + 2, hy + 6, tooth);
+      cv.set(cx - 2, hy + 8, tooth);
+      cv.set(cx, hy + 8, tooth);
+      cv.set(cx + 1, hy + 8, gum);
+    } else {
+      // De espaldas: cresta espinosa dorsal
+      cv.rect(cx - 1, hy, 2, 9, sDeep);
+      for (let y = hy + 1; y <= hy + 7; y += 2) cv.rect(cx - 2, y, 4, 1, sLight);
+    }
+  } else if (diag) {
+    const hx = cx - 4;
+    // Púas inclinadas hacia atrás (-fx)
+    cv.rect(cx - fx * 3, hy - 1, 2, 2, sBase);
+    cv.rect(cx - fx, hy - 2, 2, 3, sLight);
+    cv.set(cx - fx * 5, hy + 1, sBase);
+    cv.shaded(hx, hy + 1, 9, 5, sBase, sLight, sDark);
+    cv.shaded(hx + 1, hy + 6, 7, 4, sDark, sBase, sDeep);
+
+    if (isFront) {
+      // Fauces en 3/4 desplazadas hacia fx
+      const mawX = fx > 0 ? cx - 1 : cx - 4;
+      cv.rect(mawX, hy + 5, 5, 4, sDeep);
+      cv.rect(mawX, hy + 5, 5, 1, gum);
+      cv.set(mawX, hy + 6, tooth);
+      cv.set(mawX + 2, hy + 6, tooth);
+      cv.set(mawX + 4, hy + 6, tooth);
+      cv.set(mawX + 1, hy + 8, tooth);
+      cv.set(mawX + 3, hy + 8, tooth);
+    } else {
+      // 3/4 de espaldas: nuca espinosa y un colmillo asomando en el borde fx
+      const spineX = cx - fx;
+      cv.rect(spineX, hy + 1, 1, 8, sDeep);
+      const edgeX = fx > 0 ? hx + 8 : hx;
+      cv.set(edgeX, hy + 6, tooth);
+      cv.set(edgeX, hy + 7, sDeep);
+    }
+  } else {
+    // Cabeza de perfil con púas barridas hacia atrás (-fx) y mandíbula dentada hacia fx
+    const hx = cx - 4;
+    const backDir = -fx;
+    cv.rect(cx + backDir * 2, hy - 2, 2, 3, sLight);
+    cv.rect(cx + backDir * 4, hy, 2, 2, sBase);
+    cv.rect(cx + backDir * 5, hy + 2, 2, 2, sBase);
+    cv.shaded(hx, hy + 1, 9, 5, sBase, sLight, sDark);
+    cv.shaded(hx + 1, hy + 6, 7, 4, sDark, sBase, sDeep);
+
+    const jawX = fx > 0 ? hx + 5 : hx;
+    cv.rect(jawX, hy + 5, 4, 4, sDeep);
+    cv.rect(jawX, hy + 5, 4, 1, gum);
+    cv.set(jawX + 1, hy + 6, tooth);
+    cv.set(jawX + 3, hy + 6, tooth);
+    cv.set(jawX + 2, hy + 8, tooth);
+  }
+
+  return addOutline(cv, outline);
+}
+
+function makeScout() {
+  const framesPerDir = 4;
+  const sheet = new Canvas(32 * framesPerDir, 32 * DIRECTIONS.length);
+  DIRECTIONS.forEach(([fx, fy], row) => {
+    for (let col = 0; col < framesPerDir; col++) {
+      sheet.blit(drawOutrider(fx, fy, col), col * 32, row * 32);
+    }
+  });
   return sheet;
 }
 

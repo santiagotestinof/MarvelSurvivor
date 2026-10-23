@@ -2,15 +2,74 @@ import type Phaser from 'phaser';
 
 declare const __BUILD_ID__: string;
 
-/** Las 4 orientaciones de los enemigos con vista por lado (coincide con el orden de filas en su spritesheet). */
-export type EnemyDirection = 'down' | 'left' | 'right' | 'up';
+/**
+ * Las 8 orientaciones de los enemigos con vista por lado y diagonales 3/4.
+ * El orden coincide exactamente con `DIRECTIONS` en `tools/generate-sprites.mjs` y `Direction` en `core/direction.ts`.
+ */
+export type EnemyDirection =
+  | 'down'
+  | 'down-left'
+  | 'left'
+  | 'up-left'
+  | 'up'
+  | 'up-right'
+  | 'right'
+  | 'down-right';
 
-export const ENEMY_DIRECTIONS: readonly EnemyDirection[] = ['down', 'left', 'right', 'up'];
+export const ENEMY_DIRECTIONS: readonly EnemyDirection[] = [
+  'down',
+  'down-left',
+  'left',
+  'up-left',
+  'up',
+  'up-right',
+  'right',
+  'down-right',
+];
 
-/** Elige cuál de los 4 lados mostrar según hacia dónde camina el enemigo. */
-export function enemyDirectionFromVector(dx: number, dy: number): EnemyDirection {
-  if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? 'left' : 'right';
-  return dy < 0 ? 'up' : 'down';
+// Sectores de 45° empezando en "right" (0 rad) y girando en sentido horario (Y crece hacia abajo).
+const SECTOR_TO_ENEMY_DIR: readonly EnemyDirection[] = [
+  'right',
+  'down-right',
+  'down',
+  'down-left',
+  'left',
+  'up-left',
+  'up',
+  'up-right',
+];
+
+const SECTOR_ANGLES: Record<EnemyDirection, number> = {
+  right: 0,
+  'down-right': Math.PI / 4,
+  down: Math.PI / 2,
+  'down-left': (3 * Math.PI) / 4,
+  left: Math.PI,
+  'up-left': -(3 * Math.PI) / 4,
+  up: -Math.PI / 2,
+  'up-right': -Math.PI / 4,
+};
+
+/**
+ * Convierte un ángulo (radianes) en una de las 8 direcciones, con histéresis respecto a la dirección actual
+ * para que no titile en el borde entre dos sectores y pase suavemente por las vistas diagonales (3/4).
+ */
+export function enemyDirectionFromAngle(angle: number, current?: EnemyDirection): EnemyDirection {
+  if (current) {
+    const currentCenter = SECTOR_ANGLES[current];
+    let diff = angle - currentCenter;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    // Un sector mide 45° (±22.5° = ±0.3927 rad). Mantenemos el actual hasta ±29° (0.51 rad).
+    if (Math.abs(diff) <= 0.51) return current;
+  }
+  const sector = Math.round(angle / (Math.PI / 4));
+  return SECTOR_TO_ENEMY_DIR[((sector % 8) + 8) % 8];
+}
+
+/** Elige cuál de las 8 vistas mostrar según el vector de movimiento (dx, dy). */
+export function enemyDirectionFromVector(dx: number, dy: number, current?: EnemyDirection): EnemyDirection {
+  return enemyDirectionFromAngle(Math.atan2(dy, dx), current);
 }
 
 /** Datos de un tipo de enemigo. Para sumar uno nuevo: spritesheet + una entrada acá. */
@@ -22,7 +81,7 @@ export interface EnemyKind {
   frame: { width: number; height: number };
   frameCount: number;
   frameRate: number;
-  /** Si tiene 4 filas (abajo, izquierda, derecha, arriba) para cambiar de vista según hacia dónde camina. */
+  /** Si tiene las 8 filas direccionales (frente, costado, espalda y las 4 diagonales 3/4). */
   directional?: boolean;
   origin: { x: number; y: number };
   /** Caja de colisión en píxeles desde la esquina superior izquierda del cuadro. */
@@ -80,16 +139,17 @@ export const SENTINEL: EnemyKind = {
   spawn: { fromProgress: 0.3, weight: 1.4 },
 };
 
-/** Rápido y frágil: obliga a moverse aunque muera de un par de disparos. */
+/** Outrider (súbdito de Thanos en Endgame): rápido y frágil, conserva la velocidad, vida y daño originales. */
 export const SCOUT: EnemyKind = {
   id: 'scout',
   texture: 'enemy-scout',
   path: 'assets/enemies/scout.png',
-  frame: { width: 20, height: 20 },
-  frameCount: 2,
+  frame: { width: 32, height: 32 },
+  frameCount: 4,
   frameRate: 10,
-  origin: { x: 0.5, y: 0.85 },
-  body: { width: 10, height: 8, offsetX: 5, offsetY: 9 },
+  directional: true,
+  origin: { x: 0.5, y: 0.94 },
+  body: { width: 13, height: 11, offsetX: 9, offsetY: 19 },
   health: 10,
   speed: 64,
   contactDamage: 5,

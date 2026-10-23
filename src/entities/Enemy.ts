@@ -1,10 +1,18 @@
 import Phaser from 'phaser';
-import { enemyAnimationKey, enemyDirectionFromVector, type EnemyKind } from '../enemies/enemyKinds';
+import {
+  enemyAnimationKey,
+  enemyDirectionFromAngle,
+  type EnemyDirection,
+  type EnemyKind,
+} from '../enemies/enemyKinds';
 
 export interface EnemyScaling {
   health: number;
   speed: number;
 }
+
+/** Velocidad máxima de giro visual (radianes/s) para que pase por las vistas diagonales 3/4 de forma natural. */
+const FACING_TURN_SPEED = 8.5;
 
 /** Enemigo que persigue al jugador en línea recta. */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
@@ -20,6 +28,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private slowFactor = 1;
   private knockUntil = 0;
   private readonly moveSpeed: number;
+  private facingAngle = Math.PI / 2;
+  private facingReady = false;
+  private currentDir: EnemyDirection = 'down';
 
   constructor(scene: Phaser.Scene, x: number, y: number, kind: EnemyKind, scaling: EnemyScaling) {
     super(scene, x, y, kind.texture, 0);
@@ -37,7 +48,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
     this.setCollideWorldBounds(true);
     if (kind.id === 'sentinel') this.setTint(0xffb36b);
-    this.play(enemyAnimationKey(kind));
+    this.play(enemyAnimationKey(kind, this.currentDir));
   }
 
   /** Lo deja sin poder dañar y lo pinta pálido para que se note. */
@@ -96,12 +107,20 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setVelocity(0, 0);
     }
 
-    if (this.kind.directional) {
-      const faceX = Math.abs(dx) > 0.5 ? dx : moveX;
-      const faceY = Math.abs(dy) > 0.5 ? dy : moveY;
-      const dir = enemyDirectionFromVector(faceX, faceY);
-      const nextKey = enemyAnimationKey(this.kind, dir);
-      if (this.anims.currentAnim?.key !== nextKey) {
+    if (this.kind.directional && distance > 1) {
+      // Suaviza el ángulo de mirada hacia el objetivo/movimiento para pasar por las vistas diagonales (3/4).
+      const targetAngle = Math.atan2(dy, dx);
+      const dt = Math.min(0.05, (this.scene.game.loop.delta || 16.6) / 1000);
+      if (!this.facingReady) {
+        this.facingAngle = targetAngle;
+        this.facingReady = true;
+      } else {
+        this.facingAngle = Phaser.Math.Angle.RotateTo(this.facingAngle, targetAngle, FACING_TURN_SPEED * dt);
+      }
+      const nextDir = enemyDirectionFromAngle(this.facingAngle, this.currentDir);
+      if (nextDir !== this.currentDir) {
+        this.currentDir = nextDir;
+        const nextKey = enemyAnimationKey(this.kind, nextDir);
         const progress = this.anims.getProgress();
         this.play(nextKey, true);
         this.anims.setProgress(progress);
