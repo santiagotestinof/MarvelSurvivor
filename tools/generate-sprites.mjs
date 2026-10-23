@@ -7,7 +7,7 @@
 // Orden de filas (debe coincidir con src/core/direction.ts):
 //   0 abajo, 1 abajo-izq, 2 izquierda, 3 arriba-izq, 4 arriba, 5 arriba-der, 6 derecha, 7 abajo-der
 
-import { STRANGE_REF } from './hero-trace-strange.mjs';
+import { STRANGE_REF, STRANGE_ARMS_REF } from './hero-trace-strange.mjs';
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -640,41 +640,6 @@ function buildStrangeSheet(frames) {
 const STRANGE_IDLE = [0, 1, 1, 0].map((bob) => ({ bob }));
 const STRANGE_WALK = [0, 1, 1, 0, 1, 1].map((bob, i) => ({ bob, sway: [0, 1, 1, 0, -1, -1][i] }));
 
-
-/** Los 6 brazos de atrás (solo se ven en la ulti): tres por lado, con manga azul y mano. Se dibujan en código para que se lean bien a este tamaño. */
-function makeStrangeArms() {
-  const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
-  const sleeve = hex('#2c6a95');
-  const sleeveDark = hex('#173a57');
-  const skin = hex('#f0c29a');
-  const skinDark = hex('#b9835f');
-  const outline = hex('#101018');
-  const shoulderY = 19;
-  for (const side of [-1, 1]) {
-    for (const [deg, len] of [[14, 16], [42, 16], [70, 14]]) {
-      const a = (deg * Math.PI) / 180;
-      const sx = 24 + side * 3;
-      const ex = sx + side * Math.cos(a) * len;
-      const ey = shoulderY - Math.sin(a) * len;
-      drawLine(cv, sx, shoulderY + 1, ex, ey + 1, outline);
-      drawLine(cv, sx, shoulderY - 1, ex, ey - 1, outline);
-      drawLine(cv, sx, shoulderY, ex, ey, sleeve);
-      drawLine(cv, sx, shoulderY + 1, ex, ey + 1, sleeveDark);
-      // mano con dedos abiertos
-      const hx = Math.round(ex);
-      const hy = Math.round(ey);
-      cv.rect(hx - 2, hy - 2, 5, 5, outline);
-      cv.rect(hx - 1, hy - 1, 3, 3, skin);
-      cv.set(hx + 1, hy + 1, skinDark);
-      const dx = Math.round(Math.cos(a) * side * 3);
-      const dy = Math.round(-Math.sin(a) * 3);
-      cv.set(hx + dx, hy + dy, outline);
-      cv.set(hx + dx - dy * 0, hy + dy, outline);
-      cv.set(hx + Math.round(dx * 0.6), hy + Math.round(dy * 0.6), skin);
-    }
-  }
-  return cv;
-}
 
 function drawLine(cv, x0, y0, x1, y1, c) {
   const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
@@ -2499,7 +2464,7 @@ save(makeAuraInner(), 'effects/aura-inner.png');
   save(strangeIdle, 'characters/strange/strange-idle.png');
   save(strangeWalk, 'characters/strange/strange-walk.png');
   heroSheets.strange = { idle: strangeIdle, walk: strangeWalk };
-  save(makeStrangeArms(), 'characters/strange/strange-arms.png');
+  save(strangeFrame(STRANGE_ARMS_REF, {}), 'characters/strange/strange-arms.png');
 }
 const missile = makeMissile();
 save(missile, 'projectiles/missile.png');
