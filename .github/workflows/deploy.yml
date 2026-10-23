@@ -1,10 +1,11 @@
 name: Deploy a GitHub Pages
 
-# Compila el juego y publica la carpeta `dist` en la rama `gh-pages`.
+# Cada push a la rama `produccion` compila el juego y publica la carpeta `dist` en la rama `gh-pages`.
+# (`main` y `villa` ya no publican: para publicar, pushear a `produccion`, por ejemplo `git push origin villa:produccion`.)
 # En Settings → Pages hay que elegir: Source = "Deploy from a branch", Branch = gh-pages, carpeta = / (root).
 on:
   push:
-    branches: [main, villa]
+    branches: [produccion]
   workflow_dispatch:
 
 permissions:

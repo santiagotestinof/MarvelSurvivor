@@ -3,7 +3,7 @@
 Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un equipo de 5 estudiantes de ingeniería. Idioma del equipo y de los textos del juego: **español rioplatense**.
 
 ## Reglas del proyecto
-- Rama principal: **`main`**. La rama de trabajo de Santi es **`villa`**. El push a `main` o a `villa` publica el juego en GitHub Pages (`.github/workflows/deploy.yml`): https://santiagotestinof.github.io/MarvelSurvivor/
+- Rama principal: **`main`**. La rama de trabajo de Santi es **`villa`**. Publicar: el push a la rama **`produccion`** compila y publica el juego en GitHub Pages (`.github/workflows/deploy.yml` lo deja en la rama `gh-pages`; en Settings → Pages: Deploy from a branch → `gh-pages` / root). `main` y `villa` no publican. Para publicar desde villa: `git push origin villa:produccion`: https://santiagotestinof.github.io/MarvelSurvivor/
 - Tiene que ser jugable en el navegador, en PC (teclado) y en celular (joystick táctil).
 - Stack: TypeScript (estricto) + Phaser 3 + Vite. Arquitectura modular: datos en definiciones (`CharacterDefinition`, `EnemyKind`, `UpgradeDefinition`), lógica en `systems/`.
 - No copiar arte de terceros (ni de pokesurvivor ni de Marvel). Todo el arte actual es provisional y se genera con `npm run sprites` (`tools/generate-sprites.mjs`).
