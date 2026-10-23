@@ -10,9 +10,9 @@ import {
   type MetaUpgradeDefinition,
 } from '../meta/metaUpgrades';
 import { saveData } from '../meta/saveData';
-import { META_COLORS, metaIconId } from '../ui/metaIcons';
+import { META_COLORS } from '../ui/metaIcons';
+import { META_ITEM_SIZE, META_ITEM_TEXTURE, metaItemFrame } from '../ui/metaItemIcons';
 import { UiButton } from '../ui/UiButton';
-import { UPGRADE_ICON_SIZE, upgradeIconKey } from '../ui/upgradeIcons';
 import { drawPanel, textStyle, uiScale } from '../ui/uiLayout';
 
 const GOLD_COLOR = '#ffd24a';
@@ -144,14 +144,14 @@ export class ShopScene extends Phaser.Scene {
     const boxTop = y + h * 0.05 + nameSize * 1.25 * (name.height > nameSize * 1.5 ? 2 : 1) + 2;
     const boxBottom = y + h - pipsH - h * 0.08;
     const box = Math.max(16, Math.min(boxBottom - boxTop, w * 0.62));
-    const iconScale = Math.max(1, Math.floor((box * 0.72) / UPGRADE_ICON_SIZE));
+    const iconScale = Math.max(1, Math.floor((box * 0.97) / META_ITEM_SIZE));
     const boxX = x + w / 2 - box / 2;
     const boxY = boxTop + (boxBottom - boxTop - box) / 2;
     const frame = this.add.graphics();
     frame.fillStyle(0x050b14, 1).fillRoundedRect(boxX, boxY, box, box, 5);
     frame.fillStyle(color, level > 0 ? 0.28 : 0.1).fillRoundedRect(boxX, boxY, box, box, 5);
     frame.lineStyle(2, maxed ? GOLD : color, level > 0 ? 1 : 0.6).strokeRoundedRect(boxX, boxY, box, box, 5);
-    const icon = this.add.image(x + w / 2, boxY + box / 2, upgradeIconKey(metaIconId(def.id))).setScale(iconScale);
+    const icon = this.add.image(x + w / 2, boxY + box / 2, META_ITEM_TEXTURE, metaItemFrame(def.id)).setScale(iconScale);
     if (level === 0) icon.setAlpha(0.8);
 
     // Rangos: un casillero por nivel, lleno si ya se compró.
@@ -192,8 +192,8 @@ export class ShopScene extends Phaser.Scene {
     g.fillStyle(0x050b14, 1).fillRoundedRect(boxX, boxY, box, box, 6);
     g.fillStyle(color, 0.25).fillRoundedRect(boxX, boxY, box, box, 6);
     g.lineStyle(3, maxed ? GOLD : color, 1).strokeRoundedRect(boxX, boxY, box, box, 6);
-    const iconScale = Math.max(2, Math.floor((box * 0.72) / UPGRADE_ICON_SIZE));
-    this.dynamicObjects.push(this.add.image(boxX + box / 2, boxY + box / 2, upgradeIconKey(metaIconId(def.id))).setScale(iconScale));
+    const iconScale = Math.max(2, Math.floor((box * 0.97) / META_ITEM_SIZE));
+    this.dynamicObjects.push(this.add.image(boxX + box / 2, boxY + box / 2, META_ITEM_TEXTURE, metaItemFrame(def.id)).setScale(iconScale));
 
     const textX = boxX + box + pad;
     const nameSize = Math.max(13, Math.round(4.2 * ui));

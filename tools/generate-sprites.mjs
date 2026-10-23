@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { IRON_MAN_REF } from './ironman-reference.mjs';
+import { buildMetaIconSheet } from './meta-icons.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'public', 'assets');
@@ -893,6 +894,14 @@ function previewOf(cv, scale, bg = hex('#5f8f58')) {
 // ---------------------------------------------------------------- main
 
 console.log('Generando recursos provisionales...');
+// Íconos de las mejoras permanentes (tienda).
+{
+  const sheet = buildMetaIconSheet();
+  const cv = new Canvas(sheet.width, sheet.height);
+  cv.px.set(sheet.px);
+  save(cv, 'ui/meta-items.png');
+}
+
 const ironIdle = buildIronManSheet(IM_IDLE_FRAMES);
 const ironWalk = buildIronManSheet(IM_WALK_FRAMES);
 save(ironIdle, 'characters/ironman/ironman-idle.png');
