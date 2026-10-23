@@ -261,11 +261,44 @@ export class GameScene extends Phaser.Scene {
     while (now >= this.nextUltimateShotAt && this.nextUltimateShotAt < this.ironManFlyingUntil) {
       const impactX = this.player.x;
       const impactY = this.player.y - 8;
-      damageArea(this.enemies, [], impactX, impactY, 30, 12);
-      const impact = this.add.circle(impactX, impactY, 30, 0x75e6ff, 0.3).setDepth(999_998);
-      this.tweens.add({ targets: impact, alpha: 0, scale: 1.25, duration: 180, onComplete: () => impact.destroy() });
+      // Cada misil hace 1,5 veces el daño anterior: 12 -> 18.
+      this.spawnIronManUltimateMissile(impactX, impactY, 18);
       this.nextUltimateShotAt += 500;
     }
+  }
+
+  /** Misil visible que cae sobre la posición actual del jugador y aplica el daño al impactar. */
+  private spawnIronManUltimateMissile(targetX: number, targetY: number, damage: number): void {
+    const startX = targetX + Phaser.Math.Between(-22, 22);
+    const startY = targetY - 105;
+    const trail = this.add.ellipse(0, -13, 5, 23, 0xffa34a, 0.55);
+    const body = this.add.rectangle(0, 0, 7, 17, 0xdce8f2, 1);
+    body.setStrokeStyle(1, 0x536779, 1);
+    const nose = this.add.triangle(0, 11, -4, -2, 4, -2, 0, 5, 0xff6045, 1);
+    const finLeft = this.add.triangle(-5, 5, 0, -3, -5, 4, 0, 5, 0xe84f43, 1);
+    const finRight = this.add.triangle(5, 5, 0, -3, 5, 4, 0, 5, 0xe84f43, 1);
+    const missile = this.add.container(startX, startY, [trail, body, nose, finLeft, finRight]);
+    missile.setDepth(999_999);
+    this.tweens.add({
+      targets: missile,
+      x: targetX,
+      y: targetY,
+      duration: 260,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        missile.destroy();
+        damageArea(this.enemies, [], targetX, targetY, 30, damage);
+        // Destello cálido pequeño; se elimina el antiguo círculo azul de impacto.
+        const flash = this.add.star(targetX, targetY, 7, 2, 6, 0xffa34a, 0.8).setDepth(999_998);
+        this.tweens.add({
+          targets: flash,
+          scale: 1.8,
+          alpha: 0,
+          duration: 170,
+          onComplete: () => flash.destroy(),
+        });
+      },
+    });
   }
 
   /** Pequeñas nubes de estela: aparecen de forma espaciada y se desvanecen rápido. */
