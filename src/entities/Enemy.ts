@@ -36,6 +36,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const { width, height, offsetX, offsetY } = kind.body;
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
     this.setCollideWorldBounds(true);
+    if (kind.id === 'sentinel') this.setTint(0xffb36b);
     this.play(enemyAnimationKey(kind));
   }
 
@@ -72,10 +73,22 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const dx = targetX - this.x;
     const dy = targetY - this.y;
     const distance = Math.hypot(dx, dy);
-    const chaseX = distance > 0.5 ? dx / distance : 0;
-    const chaseY = distance > 0.5 ? dy / distance : 0;
-    const moveX = chaseX + separationX * 1.8;
-    const moveY = chaseY + separationY * 1.8;
+    let moveX = distance > 0.5 ? dx / distance : 0;
+    let moveY = distance > 0.5 ? dy / distance : 0;
+
+    if (this.kind.rangedAttack) {
+      const preferredRange = this.kind.rangedAttack.range;
+      if (distance < preferredRange - 28) {
+        moveX *= -1;
+        moveY *= -1;
+      } else if (distance <= preferredRange + 28) {
+        moveX = 0;
+        moveY = 0;
+      }
+    }
+
+    moveX += separationX * 1.8;
+    moveY += separationY * 1.8;
     const moveLength = Math.hypot(moveX, moveY);
     if (moveLength > 0.001) {
       this.setVelocity((moveX / moveLength) * speed, (moveY / moveLength) * speed);
@@ -85,23 +98,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(this.y);
   }
 
-  /** Devuelve true si el golpe se aplicó. */
-  takeDamage(amount: number): boolean {
-    if (this.dying) return false;
-    this.currentHealth -= amount;
+/** Devuelve true si el golpe se aplicó. */
+takeDamage(amount: number): boolean {
+  if (this.dying) return false;
+  this.currentHealth -= amount;
 
-    if (this.currentHealth <= 0) {
-      this.die();
-    } else {
-      this.setTintFill(0xffffff);
-      this.scene.time.delayedCall(60, () => {
-        if (!this.active) return;
-        if (this.harmless) this.setTint(0xb7c4d6);
-        else this.clearTint();
-      });
-    }
-    return true;
+  if (this.currentHealth <= 0) {
+    this.die();
+  } else {
+    this.setTintFill(0xffffff);
+    this.scene.time.delayedCall(60, () => {
+      if (!this.active) return;
+
+      if (this.harmless) {
+        this.setTint(0xb7c4d6);
+      } else if (this.kind.id === 'sentinel') {
+        this.setTint(0xffb36b);
+      } else {
+        this.clearTint();
+      }
+    });
   }
+  return true;
+}
 
   private die(): void {
     this.dying = true;

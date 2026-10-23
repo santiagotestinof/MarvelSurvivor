@@ -158,7 +158,7 @@ export class MenuScene extends Phaser.Scene {
 
     // Escala entera para que el pixel art quede nítido.
     const heroScale = Math.max(2, Math.floor(height / (portrait ? 150 : 120)));
-    this.heroY = height * (portrait ? 0.47 : 0.48);
+    this.heroY = height * (portrait ? 0.48 : 0.495);
     this.hero.setScale(heroScale).setPosition(cx, this.heroY);
     this.heroName.setFontSize(Math.max(13, Math.round(4.4 * ui))).setPosition(cx, this.heroY + 6 * heroScale + 4 * ui);
     this.heroRarity.setFontSize(Math.max(10, Math.round(3 * ui))).setPosition(cx, this.heroName.y + this.heroName.height * 0.5 + 2 * ui);
