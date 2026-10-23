@@ -72,6 +72,7 @@ export class GameScene extends Phaser.Scene {
   private ironManBaseScaleY = 1;
   private nextIronManCloudAt = 0;
   private environmentObstacles!: Phaser.Physics.Arcade.StaticGroup;
+  private playerObstacleCollider!: Phaser.Physics.Arcade.Collider;
 
   constructor() {
     super(SCENE_KEYS.game);
@@ -101,7 +102,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
     this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
-    this.physics.add.collider(this.player, map.obstacles);
+    this.playerObstacleCollider = this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.ironManBaseMoveSpeed = this.player.moveSpeed;
     this.ironManBaseScaleX = this.player.scaleX;
@@ -209,7 +210,7 @@ export class GameScene extends Phaser.Scene {
     if (this.player.definition.id !== 'ironman' || this.round.ended || this.frozen || this.player.isDead) return;
     if (this.clock < this.ironManFlyingUntil || this.clock < this.ultimateReadyAt) return;
     this.ironManFlyingUntil = this.clock + 5000;
-    (this.player.body as Phaser.Physics.Arcade.Body).checkCollision.none = true;
+    this.playerObstacleCollider.active = false;
     this.nextUltimateShotAt = this.clock + 500;
     this.nextIronManCloudAt = this.clock + 180;
     this.player.setFlightHeight(9);
@@ -246,7 +247,7 @@ export class GameScene extends Phaser.Scene {
         this.ultimateReadyAt = now + 40_000;
         this.player.setFlightHeight(0);
         this.moveIronManToNearestFreeSpot();
-        (this.player.body as Phaser.Physics.Arcade.Body).checkCollision.none = false;
+        this.playerObstacleCollider.active = true;
         this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
         this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
         this.player.clearTint();
@@ -519,7 +520,7 @@ export class GameScene extends Phaser.Scene {
         this.ironManFlyingUntil = 0;
         this.player.setFlightHeight(0);
         this.moveIronManToNearestFreeSpot();
-        (this.player.body as Phaser.Physics.Arcade.Body).checkCollision.none = false;
+        this.playerObstacleCollider.active = true;
         this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
         this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
         this.player.clearTint();
