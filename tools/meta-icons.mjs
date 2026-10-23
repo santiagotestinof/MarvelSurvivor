@@ -109,22 +109,46 @@ function mulberry32(seed) {
 
 /** Gema de seis lados con caras de luz, color y sombra (Gemas del Infinito). */
 function gem(g, light, mid, dark) {
-  const cx = 8;
-  const cy = 8;
-  g.poly(
-    [[cx, 1.5], [13.5, 4.5], [13.5, 11.5], [cx, 14.5], [2.5, 11.5], [2.5, 4.5]],
-    (x, y) => {
-      const t = (x + 0.5 - cx) * 0.55 + (y + 0.5 - cy) * 0.85;
-      if (t < -3) return light;
-      if (t > 3.2) return dark;
-      return mid;
-    },
-  );
-  g.set(5, 4, C.W);
-  g.set(6, 3, C.W);
-  g.set(5, 5, light);
-  g.line(8, 2, 8, 14, (x, y) => (y < 8 ? light : dark));
-  g.set(8, 8, C.W);
+  // Gema tallada: octógono con borde en 8 facetas (claras arriba a la izquierda, oscuras abajo a la derecha),
+  // mesa central brillante, aristas claras entre facetas y destellos blancos.
+  const metric = (dx, dy) => Math.max(Math.abs(dx), Math.abs(dy), (Math.abs(dx) + Math.abs(dy)) * 0.72);
+  for (let y = 0; y < 16; y += 1) {
+    for (let x = 0; x < 16; x += 1) {
+      const dx = x + 0.5 - 8;
+      const dy = y + 0.5 - 8;
+      const d = metric(dx, dy);
+      if (d > 6.9) continue;
+      const lit = (-dx * 0.6 - dy * 0.8) / Math.hypot(dx, dy || 0.001); // 1 = mira a la luz
+      if (d <= 3.3) {
+        // mesa
+        g.set(x, y, dx + dy < 0 ? light : mid);
+        continue;
+      }
+      const sector = Math.floor(((Math.atan2(dy, dx) + Math.PI) / (Math.PI / 4)) % 8);
+      const angle = Math.atan2(dy, dx) + Math.PI;
+      const edge = Math.abs(((angle / (Math.PI / 4)) % 1) - 0.5) > 0.4; // cerca del límite entre facetas
+      const shade = sector % 2 === 0 ? 0.35 : -0.15;
+      const v = lit + shade;
+      let color = v > 0.35 ? light : v > -0.45 ? mid : dark;
+      if (edge && color !== dark) color = light;
+      else if (edge) color = mid;
+      if (d > 6.0 && color !== dark) color = mid === color ? mid : color;
+      g.set(x, y, color);
+    }
+  }
+  // borde de la mesa
+  for (let y = 0; y < 16; y += 1) {
+    for (let x = 0; x < 16; x += 1) {
+      const d = metric(x + 0.5 - 8, y + 0.5 - 8);
+      if (d > 3.3 && d <= 4.1) g.set(x, y, x + y < 15 ? mid : dark);
+    }
+  }
+  g.set(5, 5, C.W);
+  g.set(6, 5, C.W);
+  g.set(5, 6, C.W);
+  g.set(3, 4, C.W);
+  g.set(9, 9, light);
+  g.set(11, 10, dark);
 }
 
 /** Frasco de vidrio con líquido y corcho. */
