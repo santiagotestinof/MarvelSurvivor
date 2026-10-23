@@ -326,7 +326,7 @@ export class GameScene extends Phaser.Scene {
     this.tryRevive();
     this.rangedAttacks.update(now, delta, activeEnemies);
     this.round.update(now);
-    this.round.update(now);
+
 
     if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();
   }
