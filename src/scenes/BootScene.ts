@@ -4,6 +4,7 @@ import { ASSET_PATHS, EFFECT_ANIMS, TEXTURES } from '../config/assetKeys';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds';
 import { loadCharacterAssets, registerCharacterAnimations } from '../systems/AnimationSystem';
+import { loadMetaItemIcons } from '../ui/metaItemIcons';
 import { registerUpgradeIcons } from '../ui/upgradeIcons';
 
 declare const __BUILD_ID__: string;
@@ -28,6 +29,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image(TEXTURES.web, ASSET_PATHS.web);
     this.load.image(TEXTURES.thunder, ASSET_PATHS.thunder);
     this.load.spritesheet(TEXTURES.fire, ASSET_PATHS.fire, { frameWidth: 32, frameHeight: 32 });
+    loadMetaItemIcons(this);
     loadEnemyAssets(this);
 
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {

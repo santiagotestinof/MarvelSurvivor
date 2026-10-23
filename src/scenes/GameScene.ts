@@ -323,7 +323,8 @@ export class GameScene extends Phaser.Scene {
     this.missiles.update(now, delta);
     this.heroWeapon?.update(now, delta);
     this.updatePickups(delta);
-    if (this.stats.regenPerSecond > 0) this.player.heal((this.stats.regenPerSecond * delta) / 1000);
+    const regenPerSecond = this.stats.regenPerSecond + (this.player.definition.id === 'hulk' ? 0.2 : 0);
+    if (regenPerSecond > 0) this.player.heal((regenPerSecond * delta) / 1000);
     const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);
     const currentSpeedScale = this.waves.getScaling(now / ROUND.durationMs).speed;
     for (const enemy of activeEnemies) {

@@ -1,11 +1,12 @@
 name: Deploy a GitHub Pages
 
-# Cada push a la rama `produccion` compila el juego y publica la carpeta `dist` en la rama `gh-pages`.
-# (`main` y `villa` ya no publican: para publicar, pushear a `produccion`, por ejemplo `git push origin villa:produccion`.)
-# En Settings → Pages hay que elegir: Source = "Deploy from a branch", Branch = gh-pages, carpeta = / (root).
+# Compila el juego y lo publica en la rama `gh-pages` (que es la que sirve GitHub Pages):
+#   - push a `produccion` -> la página principal:  https://santiagotestinof.github.io/MarvelSurvivor/
+#   - push a `villa`      -> una página de prueba: https://santiagotestinof.github.io/MarvelSurvivor/villa/
+# (`main` no publica.) En Settings → Pages: Deploy from a branch → `gh-pages` / root.
 on:
   push:
-    branches: [produccion]
+    branches: [produccion, villa]
   workflow_dispatch:
 
 permissions:
@@ -26,11 +27,24 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: pages
       - name: Publicar dist en gh-pages
         run: |
-          touch dist/.nojekyll
-          cd dist
-          git init -q -b gh-pages
+          if [ "$GITHUB_REF_NAME" = "produccion" ]; then
+            # Reemplaza la página principal y conserva la carpeta de prueba `villa/`.
+            find pages -mindepth 1 -maxdepth 1 ! -name .git ! -name villa -exec rm -rf {} +
+            cp -a dist/. pages/
+          else
+            rm -rf pages/villa
+            mkdir -p pages/villa
+            cp -a dist/. pages/villa/
+          fi
+          touch pages/.nojekyll
+          cd pages
           git add -A
+          if git diff --cached --quiet; then echo "Sin cambios para publicar"; exit 0; fi
           git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "Publicar ${GITHUB_SHA::7} (${GITHUB_REF_NAME})"
-          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+          git push origin gh-pages

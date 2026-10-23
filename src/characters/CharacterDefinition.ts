@@ -19,7 +19,7 @@ export interface ActionSheet {
   loop: boolean;
 }
 
-/** Rarezas del gacha (de más común a más rara). */
+/** Rarezas de los héroes (de más común a más rara). */
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
 /**

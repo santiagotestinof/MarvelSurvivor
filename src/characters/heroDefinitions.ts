@@ -13,9 +13,10 @@ function sheets(id: string): CharacterDefinition['sheets'] {
   return { idle: sheet('idle', 4, 4), walk: sheet('walk', 6, 10) };
 }
 
-const FRAME = { width: 32, height: 32 };
-const ORIGIN = { x: 0.5, y: 30 / 32 };
-const BODY = { width: 10, height: 8, offsetX: 11, offsetY: 22 };
+/** Todos los héroes usan cuadros de 48×48 con el suelo en (24, 41), igual que Iron Man. */
+const FRAME = { width: 48, height: 48 };
+const ORIGIN = { x: 0.5, y: 41 / 48 };
+const BODY = { width: 10, height: 8, offsetX: 19, offsetY: 37 };
 
 export const CAPITAN_ID = 'capitan';
 export const SPIDERMAN_ID = 'spiderman';
@@ -32,7 +33,7 @@ export const capitanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 85,
+    moveSpeed: 76.5,
     maxHealth: 130,
     attack: {
       kind: 'shield',
@@ -57,12 +58,12 @@ export const spidermanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 118,
+    moveSpeed: 106.2,
     maxHealth: 80,
     attack: {
       kind: 'web',
-      cooldownMs: 330,
-      damage: 6,
+      cooldownMs: 500,
+      damage: 9,
       projectileTexture: TEXTURES.web,
       projectileSpeed: 280,
       aimRange: 190,
@@ -84,11 +85,11 @@ export const thorDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 90,
+    moveSpeed: 81,
     maxHealth: 110,
     attack: {
       kind: 'thunder',
-      cooldownMs: 850,
+      cooldownMs: 1000,
       damage: 16,
       projectileTexture: TEXTURES.thunder,
       projectileSpeed: 0,

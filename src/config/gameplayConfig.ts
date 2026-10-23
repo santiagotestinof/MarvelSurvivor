@@ -13,7 +13,7 @@ function readRoundDurationMs(): number {
 export const ROUND = {
   /** Duración de las oleadas. Al terminar aparece el jefe. */
   durationMs: readRoundDurationMs(),
-  bossHealthMultiplier: 2.5,
+  bossHealthMultiplier: 1500 / 440,
   bossSpeedMultiplier: 1.15,
   bossMinionIntervalMs: 4500,
 };
@@ -122,15 +122,7 @@ export const REVIVAL = {
   blastDamage: 40,
 };
 
-/** Gacha de héroes: se paga con oro; los repetidos devuelven oro según su rareza. */
-export const GACHA = {
-  pullCost: 100,
-  /** Tiradas de la tanda grande ("x10"). */
-  multiPulls: 10,
-  /** Si pasan tantas tiradas sin héroe épico o mejor, la siguiente garantiza uno. */
-  pityPulls: 10,
-  /** Probabilidad relativa de cada rareza (se ignoran las rarezas sin héroes). */
-  weights: { common: 55, rare: 30, epic: 12, legendary: 3 },
-  /** Oro que devuelve un héroe repetido. */
-  duplicateGold: { common: 30, rare: 60, epic: 120, legendary: 250 },
+/** Tienda de héroes: cada héroe se compra una sola vez con oro, según su rareza. */
+export const HERO_SHOP = {
+  prices: { common: 300, rare: 800, epic: 2000, legendary: 5000 },
 } as const;

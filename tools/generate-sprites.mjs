@@ -13,6 +13,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { IRON_MAN_REF } from './ironman-reference.mjs';
+import { CAPITAN_REF } from './hero-trace-capitan.mjs';
+import { THOR_REF } from './hero-trace-thor.mjs';
+import { HULK_REF } from './hero-trace-hulk.mjs';
+import { SPIDERMAN_REF } from './hero-trace-spiderman.mjs';
+import { buildMetaIconSheet } from './meta-icons.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'public', 'assets');
@@ -562,6 +567,55 @@ function saveHero(id) {
   save(walk, `characters/${id}/${id}-walk.png`);
   return { idle, walk };
 }
+
+
+// ---------------------------------------------------------------- Capitán y Thor (calcados de las referencias, como Iron Man)
+const DRAWN_REFS = { capitan: CAPITAN_REF, thor: THOR_REF, hulk: HULK_REF, spiderman: SPIDERMAN_REF };
+const DRAWN_HEROES = Object.keys(DRAWN_REFS);
+const DRAWN_FRAME = 48;
+/** Las referencias de estos héroes miran a la izquierda (Capitán, Thor e Iron Man miran a la derecha). */
+const DRAWN_FACES_LEFT = ['hulk', 'spiderman'];
+/** Pies en la fila 40 del cuadro (el suelo está en (24, 41)). Un solo dibujo para todas las direcciones: se espeja según hacia dónde mira el original (`DRAWN_FACES_LEFT`). */
+function drawnFrame(id, { fx, stride = 0, bob = 0 }) {
+  const rows = DRAWN_REFS[id].map((row) => row.split(' '));
+  const h = rows.length;
+  const w = rows[0].length;
+  let g = rows.map((row) => row.map((c) => (c === '-' ? null : c)));
+  // Piernas: se abren y se cierran al caminar (las últimas filas del dibujo, separadas por la mitad de los pies).
+  const sway = Math.round(stride / 2);
+  if (sway !== 0) {
+    const legRow = Math.round(h * 0.68);
+    const xs = [];
+    for (let y = h - 6; y < h; y++) for (let x = 0; x < w; x++) if (g[y][x]) xs.push(x);
+    const mid = Math.round((Math.min(...xs) + Math.max(...xs)) / 2);
+    const out = g.map((row, y) => (y < legRow ? [...row] : Array(w).fill(null)));
+    for (let y = legRow; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const c = g[y][x];
+        if (!c) continue;
+        const nx = x + (x < mid ? -sway : sway);
+        if (nx >= 0 && nx < w) out[y][nx] = c;
+      }
+    g = out;
+  }
+  // Hacia dónde mira el dibujo original: al ir al lado contrario (o quieto / de frente) se espeja, así sin movimiento lateral todos miran a la derecha.
+  const mirror = DRAWN_FACES_LEFT.includes(id) ? fx >= 0 : fx < 0;
+  if (mirror) g = g.map((row) => [...row].reverse());
+  const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
+  const ox = Math.round((DRAWN_FRAME - w) / 2);
+  const oy = 41 - h + bob;
+  g.forEach((row, y) => row.forEach((c, x) => c && cv.set(ox + x, oy + y, hex(`#${c}`))));
+  return cv;
+}
+function buildDrawnSheet(id, frames) {
+  const sheet = new Canvas(frames.length * DRAWN_FRAME, DIRECTIONS.length * DRAWN_FRAME);
+  DIRECTIONS.forEach(([fx, fy], row) => {
+    frames.forEach((f, col) => sheet.blit(drawnFrame(id, { fx, fy, ...f }), col * DRAWN_FRAME, row * DRAWN_FRAME));
+  });
+  return sheet;
+}
+const DRAWN_IDLE = [0, -1, -1, 0].map((bob) => ({ bob }));
+const DRAWN_WALK = [0, 2, 2, 0, -2, -2].map((stride, i) => ({ stride, bob: i % 3 === 0 ? -1 : 0 }));
 
 // ---------------------------------------------------------------- terreno y objetos
 
@@ -2274,6 +2328,14 @@ function previewOf(cv, scale, bg = hex('#5f8f58')) {
 // ---------------------------------------------------------------- main
 
 console.log('Generando recursos provisionales...');
+// Íconos de las mejoras permanentes (tienda).
+{
+  const sheet = buildMetaIconSheet();
+  const cv = new Canvas(sheet.width, sheet.height);
+  cv.px.set(sheet.px);
+  save(cv, 'ui/meta-items.png');
+}
+
 const ironIdle = buildIronManSheet(IM_IDLE_FRAMES);
 const ironWalk = buildIronManSheet(IM_WALK_FRAMES);
 save(ironIdle, 'characters/ironman/ironman-idle.png');
@@ -2281,7 +2343,14 @@ save(ironWalk, 'characters/ironman/ironman-walk.png');
 const idle = ironIdle;
 const walk = ironWalk;
 const heroSheets = {};
-for (const id of Object.keys(HEROES)) if (id !== 'ironman') heroSheets[id] = saveHero(id);
+for (const id of Object.keys(HEROES)) if (id !== 'ironman' && !DRAWN_HEROES.includes(id)) heroSheets[id] = saveHero(id);
+for (const id of DRAWN_HEROES) {
+  const idleSheet = buildDrawnSheet(id, DRAWN_IDLE);
+  const walkSheet = buildDrawnSheet(id, DRAWN_WALK);
+  save(idleSheet, `characters/${id}/${id}-idle.png`);
+  save(walkSheet, `characters/${id}/${id}-walk.png`);
+  heroSheets[id] = { idle: idleSheet, walk: walkSheet };
+}
 save(makeGround(), 'tiles/ground.png');
 save(makeTree(), 'props/tree.png');
 const rock = makeRock();
