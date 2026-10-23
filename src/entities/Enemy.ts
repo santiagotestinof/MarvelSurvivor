@@ -12,6 +12,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   readonly contactDamage: number;
   readonly maxHealth: number;
   dying = false;
+  /** Enemigo sin colmillos: está en el mapa pero no hace daño al tocar. */
+  harmless = false;
 
   private currentHealth: number;
   private readonly moveSpeed: number;
@@ -32,6 +34,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
     this.setCollideWorldBounds(true);
     this.play(enemyAnimationKey(kind));
+  }
+
+  /** Lo deja sin poder dañar y lo pinta pálido para que se note. */
+  defang(): void {
+    this.harmless = true;
+    this.setAlpha(0.6).setTint(0xb7c4d6);
   }
 
   get health(): number {
@@ -65,7 +73,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.setTintFill(0xffffff);
       this.scene.time.delayedCall(60, () => {
-        if (this.active) this.clearTint();
+        if (!this.active) return;
+        if (this.harmless) this.setTint(0xb7c4d6);
+        else this.clearTint();
       });
     }
     return true;

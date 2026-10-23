@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { HudState } from '../systems/RoundController';
+import type { HudSnapshot } from '../scenes/GameScene';
 import { UiButton } from './UiButton';
 import { formatTime, textStyle } from './uiLayout';
 
@@ -27,11 +27,15 @@ export class ResultOverlay {
       .setEnabled(false);
   }
 
-  show(state: HudState): void {
+  show(state: HudSnapshot): void {
     const won = state.phase === 'won';
     this.shown = true;
     this.title.setText(won ? '¡VICTORIA!' : 'DERROTA').setColor(won ? '#f5c518' : '#ff6b6b').setVisible(true);
-    this.stats.setText(`Tiempo: ${formatTime(state.elapsedMs)}\nEnemigos derrotados: ${state.kills}`).setVisible(true);
+    const payout = state.goldPayout ?? 0;
+    const goldLine = won ? `Oro ganado: +${payout}` : `Oro guardado: +${payout} (la mitad por perder)`;
+    this.stats
+      .setText(`Tiempo: ${formatTime(state.elapsedMs)}\nEnemigos derrotados: ${state.kills}\n${goldLine}`)
+      .setVisible(true);
     this.dim.setVisible(true);
     this.button.setVisible(true).setEnabled(true);
   }

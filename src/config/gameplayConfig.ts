@@ -30,6 +30,10 @@ export const PROGRESSION = {
   xpPerLevel: 3,
   /** Opciones de mejora que se ofrecen al subir de nivel. */
   upgradeChoices: 3,
+  /** Tipos distintos de mejoras pasivas (no ligadas a un arma) que se pueden tener en una ronda. */
+  maxPassiveTypes: 4,
+  /** Al saltear una subida de nivel se recibe esta parte de la experiencia que pedía el nivel siguiente. */
+  skipXpRatio: 0.4,
 };
 
 export const WAVES = {
@@ -88,4 +92,31 @@ export const BASIC_ATTACK_LIMITS = {
   maxCritChance: 0.5,
   /** Ángulo entre disparos del abanico (radianes). */
   spread: 0.2,
+};
+
+/** Oro: se junta en la ronda (props rotos y enemigos) y se gasta en mejoras permanentes del menú. */
+export const GOLD = {
+  /** Si el jugador pierde, se queda con esta parte del oro juntado. */
+  defeatKeepRatio: 0.5,
+  /** Oro extra por vencer al jefe. */
+  bossBonus: 20,
+};
+
+/** Props que se rompen con los disparos: vida y oro (mínimo y máximo) que sueltan. */
+export const BREAKABLE_PROPS = {
+  crate: { health: 15, gold: { min: 3, max: 6 } },
+  rock: { health: 30, gold: { min: 2, max: 5 } },
+} as const;
+
+export const META = {
+  /** Cada nivel cuesta esta cantidad de veces más que el anterior. */
+  costGrowth: 1.6,
+};
+
+/** Mejora permanente Resurrección: con cuánta vida vuelve, cuánto tiempo está protegido y la onda que empuja a los enemigos. */
+export const REVIVAL = {
+  healthRatio: 0.5,
+  protectedMs: 2000,
+  blastRadius: 90,
+  blastDamage: 40,
 };

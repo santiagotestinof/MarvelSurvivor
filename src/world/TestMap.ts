@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TEXTURES } from '../config/assetKeys';
 import { createRandom } from '../core/random';
+import { BreakableProp, type BreakableKind } from '../entities/BreakableProp';
 
 const TILE = 16;
 const WIDTH_TILES = 120;
@@ -28,6 +29,10 @@ export class TestMap {
   readonly heightPx = HEIGHT_TILES * TILE;
   readonly spawn = { x: this.widthPx / 2, y: this.heightPx / 2 };
   readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
+  /** Cajas y rocas que todavía no se rompieron. */
+  readonly breakables = new Set<BreakableProp>();
+  /** Se llama cuando se rompe un objeto (para soltar el oro). */
+  onPropBroken: (prop: BreakableProp) => void = () => {};
 
   constructor(private readonly scene: Phaser.Scene) {
     this.obstacles = scene.physics.add.staticGroup();
@@ -106,7 +111,7 @@ export class TestMap {
 
   /** (x, y) es el punto del suelo donde se apoya el objeto. */
   private placeProp(kind: PropKind, x: number, y: number): void {
-    this.scene.add.image(x, y, TEXTURES[kind]).setOrigin(0.5, 1).setDepth(y);
+    const image = this.scene.add.image(x, y, TEXTURES[kind]).setOrigin(0.5, 1).setDepth(y);
 
     const { width, height } = PROP_BODY[kind];
     const collider = this.scene.add.rectangle(x, y - height / 2, width, height, 0x000000, 0);
@@ -114,5 +119,23 @@ export class TestMap {
     const body = collider.body as Phaser.Physics.Arcade.StaticBody;
     body.setSize(width, height);
     body.updateFromGameObject();
+
+    if (kind === 'crate' || kind === 'rock') this.makeBreakable(kind, image, collider);
+  }
+
+  /** Daña las cajas y rocas dentro del radio (explosiones). */
+  damagePropsInRadius(x: number, y: number, radius: number, damage: number): void {
+    const radiusSq = radius * radius;
+    for (const prop of [...this.breakables]) {
+      if ((prop.x - x) ** 2 + (prop.y - y) ** 2 <= radiusSq) prop.takeDamage(damage);
+    }
+  }
+
+  private makeBreakable(kind: BreakableKind, image: Phaser.GameObjects.Image, collider: Phaser.GameObjects.Rectangle): void {
+    const prop = new BreakableProp(kind, image, collider, (broken) => {
+      this.breakables.delete(broken);
+      this.onPropBroken(broken);
+    });
+    this.breakables.add(prop);
   }
 }

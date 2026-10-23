@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BootScene } from '../scenes/BootScene';
 import { GameScene } from '../scenes/GameScene';
 import { HudScene } from '../scenes/HudScene';
+import { ShopScene } from '../scenes/ShopScene';
 import { MenuScene } from '../scenes/MenuScene';
 
 export function createGameConfig(): Phaser.Types.Core.GameConfig {
@@ -25,6 +26,6 @@ export function createGameConfig(): Phaser.Types.Core.GameConfig {
       arcade: { gravity: { x: 0, y: 0 }, debug: debugPhysics },
     },
     input: { activePointers: 3 },
-    scene: [BootScene, MenuScene, GameScene, HudScene],
+    scene: [BootScene, MenuScene, ShopScene, GameScene, HudScene],
   };
 }

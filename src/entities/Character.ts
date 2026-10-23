@@ -14,6 +14,8 @@ import { MovementSystem } from '../systems/MovementSystem';
 export class Character extends Phaser.Physics.Arcade.Sprite {
   readonly definition: CharacterDefinition;
   maxHealth: number;
+  /** Daño que se resta a cada golpe (mínimo 1 de daño). */
+  armor = 0;
 
   private readonly movement: MovementSystem;
   private readonly animator: CharacterAnimator;
@@ -105,7 +107,7 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     const now = this.scene.time.now;
     if (this.isDead || now < this.invulnerableUntil) return false;
 
-    this.currentHealth = Math.max(0, this.currentHealth - amount);
+    this.currentHealth = Math.max(0, this.currentHealth - Math.max(1, amount - this.armor));
     this.invulnerableUntil = now + PLAYER_HIT.invulnerabilityMs;
 
     this.setTintFill(0xff3b30);
@@ -123,6 +125,15 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
       },
     });
     return true;
+  }
+
+  /** Vuelve a la vida con `fraction` de la vida máxima y unos segundos sin recibir daño. */
+  revive(fraction: number, protectedMs: number): void {
+    this.currentHealth = Math.max(1, Math.round(this.maxHealth * fraction));
+    this.invulnerableUntil = this.scene.time.now + protectedMs;
+    this.clearTint();
+    this.setAlpha(1);
+    this.scene.tweens.add({ targets: this, alpha: 0.4, duration: 120, yoyo: true, repeat: Math.floor(protectedMs / 240) });
   }
 
   /** Congela al personaje cuando termina la ronda (derrota). */

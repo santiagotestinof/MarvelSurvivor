@@ -59,6 +59,10 @@ Armas:
 
 Las mejoras de daño, cadencia y alcance afectan a todas las armas (el daño también al fuego). Todos los números están en `src/config/gameplayConfig.ts`.
 
+## Fase 6: oro y mejoras permanentes
+
+Las cajas y rocas del mapa se rompen con los disparos y sueltan monedas; algunos enemigos también. Al terminar la ronda el oro se guarda en el navegador (`localStorage`, por dispositivo): todo si se gana, la mitad si se pierde. En el menú, **MEJORAS** abre la tienda con 8 mejoras permanentes de hasta 5 niveles que valen para todos los héroes. Para sumar una mejora: agregar una entrada en `src/meta/metaUpgrades.ts`. Los números (oro de props, costos, bono del jefe) están en `src/config/gameplayConfig.ts`.
+
 ## Fase 3: experiencia y mejoras
 
 Los Drones sueltan gemas de XP que se acercan al jugador (radio de imán). Al subir de nivel el juego se pausa y se eligen 1 de 3 mejoras (teclas 1/2/3 o toque). Las mejoras son solo de stats y están en `src/progression/upgrades.ts` (agregar una = sumar una entrada). La curva de XP y el balance de oleadas están en `src/config/gameplayConfig.ts`.

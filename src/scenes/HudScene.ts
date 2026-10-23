@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { VirtualJoystick } from '../input/VirtualJoystick';
-import type { UpgradeDefinition } from '../progression/upgrades';
+import { PROGRESSION } from '../config/gameplayConfig';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { ResultOverlay } from '../ui/ResultOverlay';
-import { UpgradeMenu } from '../ui/UpgradeMenu';
+import { UpgradeMenu, type UpgradePrompt } from '../ui/UpgradeMenu';
 import { formatTime, textStyle, uiScale } from '../ui/uiLayout';
+import { UPGRADE_ICON_SIZE, upgradeIconKey } from '../ui/upgradeIcons';
 import type { GameScene, HudSnapshot } from './GameScene';
 
 /** Demora entre el final de la ronda y la pantalla de resultado. */
@@ -25,6 +26,10 @@ export class HudScene extends Phaser.Scene {
   private bossText!: Phaser.GameObjects.Text;
 
   private levelText!: Phaser.GameObjects.Text;
+  private goldText!: Phaser.GameObjects.Text;
+  /** Casilleros de las mejoras pasivas de la ronda (abajo a la izquierda). */
+  private passiveIcons: Phaser.GameObjects.Image[] = [];
+  private passiveCounts: Phaser.GameObjects.Text[] = [];
   private upgradeMenu!: UpgradeMenu;
   private result!: ResultOverlay;
   private pause!: PauseOverlay;
@@ -50,6 +55,14 @@ export class HudScene extends Phaser.Scene {
     this.bossText = this.add.text(0, 0, 'JEFE', textStyle(12, '#ffd9d9')).setOrigin(0.5).setDepth(2).setVisible(false);
 
     this.levelText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
+    this.goldText = this.add.text(0, 0, '', textStyle(12, '#ffd24a')).setOrigin(0, 0).setDepth(2);
+
+    this.passiveIcons = [];
+    this.passiveCounts = [];
+    for (let i = 0; i < PROGRESSION.maxPassiveTypes; i++) {
+      this.passiveIcons.push(this.add.image(0, 0, upgradeIconKey('damage')).setDepth(2).setVisible(false));
+      this.passiveCounts.push(this.add.text(0, 0, '', textStyle(10)).setOrigin(1, 1).setDepth(3));
+    }
 
     this.upgradeMenu = new UpgradeMenu(this);
     this.result = new ResultOverlay(this, () => this.backToMenu());
@@ -77,7 +90,8 @@ export class HudScene extends Phaser.Scene {
     if ((state.phase === 'won' || state.phase === 'lost') && !this.resultScheduled) {
       this.resultScheduled = true;
       this.setJoystickEnabled(false);
-      this.time.delayedCall(RESULT_DELAY_MS, () => this.result.show(state));
+      // Se usa el estado más reciente: el oro guardado se calcula un cuadro después de terminar la ronda.
+      this.time.delayedCall(RESULT_DELAY_MS, () => this.result.show(this.latest ?? state));
     }
   }
 
@@ -95,6 +109,8 @@ export class HudScene extends Phaser.Scene {
     this.healthText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));
     this.bossText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));
 
+    this.goldText.setFontSize(Math.max(11, Math.round(3.4 * ui)));
+    this.goldText.setPosition(this.margin, this.margin + this.barHeight + 8);
     this.upgradeMenu.layout(ui);
     this.result.layout(ui, width, height);
     this.pause.layout(ui, width, height, this.margin);
@@ -125,6 +141,7 @@ export class HudScene extends Phaser.Scene {
     this.timerText.setText(bossAppeared ? '¡JEFE!' : formatTime(state.remainingMs));
     this.timerText.setColor(bossAppeared ? '#ff8a8a' : '#ffffff');
     this.killsText.setText(`Derrotados: ${state.kills}`);
+    this.goldText.setText(`ORO ${state.gold}`);
 
     // Experiencia (barra fina abajo de todo)
     const xpH = Math.max(8, Math.round(2.5 * this.ui));
@@ -135,6 +152,8 @@ export class HudScene extends Phaser.Scene {
       .setFontSize(Math.max(10, Math.round(xpH * 0.9)))
       .setText(`NV ${state.level}`)
       .setPosition(width / 2, height - xpH / 2);
+
+    this.drawPassives(state, g, xpH);
 
     // Vida del jefe
     const showBoss = state.phase === 'boss' && state.bossMaxHealth > 0;
@@ -150,12 +169,43 @@ export class HudScene extends Phaser.Scene {
     }
   }
 
-  /** Pausa el joystick y muestra las mejoras; `onPick` recibe la elegida. */
-  showUpgrades(level: number, choices: UpgradeDefinition[], onPick: (choice: UpgradeDefinition) => void): void {
+  /** Las mejoras pasivas tomadas, en casilleros abajo a la izquierda (los vacíos marcan los lugares libres). */
+  private drawPassives(state: HudSnapshot, g: Phaser.GameObjects.Graphics, xpH: number): void {
+    const iconScale = Math.max(2, Math.round((3.6 * this.ui) / UPGRADE_ICON_SIZE * 2) / 2);
+    const slot = Math.round(UPGRADE_ICON_SIZE * iconScale * 1.35);
+    const gap = Math.max(4, Math.round(slot * 0.15));
+    const y = this.scale.height - xpH - this.margin * 0.6 - slot;
+    for (let i = 0; i < this.passiveIcons.length; i++) {
+      const x = this.margin + i * (slot + gap);
+      const item = state.passives[i];
+      g.fillStyle(0x000000, 0.55).fillRoundedRect(x, y, slot, slot, 5);
+      g.lineStyle(2, item ? 0xf5c518 : 0xffffff, item ? 0.85 : 0.2).strokeRoundedRect(x, y, slot, slot, 5);
+      const icon = this.passiveIcons[i];
+      const count = this.passiveCounts[i];
+      icon.setVisible(!!item);
+      count.setVisible(!!item);
+      if (!item) continue;
+      icon.setTexture(upgradeIconKey(item.id)).setScale(iconScale).setPosition(x + slot / 2, y + slot / 2);
+      count
+        .setFontSize(Math.max(10, Math.round(slot * 0.34)))
+        .setText(`${item.count}`)
+        .setPosition(x + slot - 3, y + slot - 1);
+    }
+  }
+
+  /** Pausa el joystick y muestra las mejoras; al elegir (o usar una herramienta) se vuelve a activar. */
+  showUpgrades(prompt: UpgradePrompt): void {
     this.setJoystickEnabled(false);
-    this.upgradeMenu.show(level, choices, (choice) => {
+    const done = <A extends unknown[]>(callback: (...args: A) => void) => (...args: A): void => {
       this.setJoystickEnabled(true);
-      onPick(choice);
+      callback(...args);
+    };
+    this.upgradeMenu.show({
+      ...prompt,
+      onPick: done(prompt.onPick),
+      onReroll: done(prompt.onReroll),
+      onSkip: done(prompt.onSkip),
+      onBanish: done(prompt.onBanish),
     });
   }
 

@@ -1,4 +1,4 @@
-import { BASIC_ATTACK_LIMITS, FIRE, MISSILES } from '../config/gameplayConfig';
+import { BASIC_ATTACK_LIMITS, FIRE, MISSILES, PROGRESSION } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
@@ -35,6 +35,11 @@ export interface UpgradeDefinition {
   describe?: (ctx: UpgradeContext) => string;
   /** Si devuelve false no se ofrece (por ejemplo, un arma al nivel máximo). */
   isAvailable?: (ctx: UpgradeContext) => boolean;
+  /**
+   * Mejora pasiva (no ligada a un arma): en una ronda solo se pueden tener `PROGRESSION.maxPassiveTypes`
+   * tipos distintos; los que ya se tienen se pueden seguir mejorando.
+   */
+  passive?: boolean;
   /** Peso al sortear las 3 opciones (1 por defecto). Más alto = sale más seguido. */
   weight?: number;
 }
@@ -59,6 +64,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   // ---- Stats generales
   {
     id: 'damage',
+    passive: true,
     name: 'Más daño',
     description: '+20% de daño',
     category: 'attack',
@@ -66,6 +72,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   },
   {
     id: 'fire-rate',
+    passive: true,
     name: 'Cadencia',
     description: '+15% de velocidad de disparo',
     category: 'attack',
@@ -73,6 +80,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   },
   {
     id: 'speed',
+    passive: true,
     name: 'Propulsores',
     description: '+10% de velocidad de movimiento',
     category: 'utility',
@@ -80,6 +88,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   },
   {
     id: 'health',
+    passive: true,
     name: 'Armadura',
     description: '+25 de vida máxima y cura 25',
     category: 'defense',
@@ -94,6 +103,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   },
   {
     id: 'magnet',
+    passive: true,
     name: 'Imán',
     description: '+40% de radio para juntar gemas',
     category: 'utility',
@@ -101,6 +111,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   },
   {
     id: 'range',
+    passive: true,
     name: 'Alcance',
     description: '+20% de alcance de disparo',
     category: 'attack',
@@ -175,9 +186,32 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   fireUpgrade('size', 'burn-size', 'Fuego expansivo', '+20% de tamaño del área'),
 ];
 
+/** Tipos distintos de mejoras pasivas que ya se tomaron en la ronda. */
+export function passiveTypesTaken(taken: Readonly<Record<string, number>>): number {
+  return UPGRADES.filter((upgrade) => upgrade.passive && (taken[upgrade.id] ?? 0) > 0).length;
+}
+
+/** Las mejoras pasivas tomadas en la ronda y cuántas veces se eligió cada una (en orden de aparición en `UPGRADES`). */
+export function passivesTaken(taken: Readonly<Record<string, number>>): { id: string; count: number }[] {
+  return UPGRADES.filter((upgrade) => upgrade.passive && (taken[upgrade.id] ?? 0) > 0).map((upgrade) => ({
+    id: upgrade.id,
+    count: taken[upgrade.id],
+  }));
+}
+
+/** ¿Hay lugar para esta mejora? Las pasivas nuevas se bloquean al llegar al límite de tipos. */
+function hasSlot(upgrade: UpgradeDefinition, taken: Readonly<Record<string, number>>): boolean {
+  if (!upgrade.passive || (taken[upgrade.id] ?? 0) > 0) return true;
+  return passiveTypesTaken(taken) < PROGRESSION.maxPassiveTypes;
+}
+
 /** Elige `count` mejoras distintas al azar (según su peso) entre las disponibles, con el texto según el estado. */
-export function pickUpgradeChoices(count: number, ctx: UpgradeContext): UpgradeDefinition[] {
-  const pool = UPGRADES.filter((upgrade) => upgrade.isAvailable?.(ctx) ?? true);
+export function pickUpgradeChoices(
+  count: number,
+  ctx: UpgradeContext,
+  banished: ReadonlySet<string> = new Set(),
+): UpgradeDefinition[] {
+  const pool = UPGRADES.filter((upgrade) => !banished.has(upgrade.id) && hasSlot(upgrade, ctx.taken) && (upgrade.isAvailable?.(ctx) ?? true));
   const picked: UpgradeDefinition[] = [];
   while (picked.length < count && pool.length > 0) {
     const total = pool.reduce((sum, upgrade) => sum + (upgrade.weight ?? 1), 0);
