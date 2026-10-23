@@ -17,31 +17,29 @@ import { pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from 
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { MissileWeapon } from '../systems/MissileWeapon';
+import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
 import { WaveSystem } from '../systems/WaveSystem';
 import { TestMap } from '../world/TestMap';
 import type { HudScene } from './HudScene';
 
-/** Estado que dibuja el HUD: ronda + experiencia. */
 export type HudSnapshot = HudState & ProgressState;
 
-/** Una ronda: oleadas de enemigos, ataque automático, jefe final y resultado. */
 export class GameScene extends Phaser.Scene {
   private player!: Character;
   private moveInput!: MoveInput;
   private enemies!: Phaser.Physics.Arcade.Group;
   private attack!: AutoAttackSystem;
   private missiles!: MissileWeapon;
+  private rangedAttacks!: RangedAttackSystem;
   private waves!: WaveSystem;
   private round!: RoundController;
   private frozen = false;
   private stats = new PlayerStats();
   private progression = new ProgressionSystem();
-  /** Veces que se eligió cada mejora en esta ronda (algunas tienen requisitos, como la evolución). */
   private taken: Record<string, number> = {};
   private gems: XpGem[] = [];
   private hud!: HudScene;
-  /** Reloj de la ronda: no avanza mientras se elige una mejora. */
   private clock = 0;
 
   constructor() {
@@ -68,18 +66,17 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.enemies, this.enemies);
     this.attack = new AutoAttackSystem(this, this.player, this.player.definition.stats.attack, this.enemies, this.stats);
     this.missiles = new MissileWeapon(this, this.player, this.enemies, this.stats);
+    this.rangedAttacks = new RangedAttackSystem(this, this.player, { width: map.widthPx, height: map.heightPx });
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
       this.dropGem(e);
       this.round.onEnemyKilled(e);
     });
     this.round = new RoundController(0, this.player, this.waves, this.enemies);
 
-    // Enemigos que tocan al jugador le hacen daño (con invulnerabilidad corta).
     this.physics.add.overlap(this.player, this.enemies, (_p, e) => {
       const enemy = e as Enemy;
       if (!enemy.dying) this.player.takeDamage(enemy.contactDamage);
     });
-    // Proyectiles que tocan enemigos.
     this.physics.add.overlap(this.attack.projectiles, this.enemies, (p, e) => {
       const projectile = p as Projectile;
       const enemy = e as Enemy;
@@ -88,7 +85,6 @@ export class GameScene extends Phaser.Scene {
       if (projectile.registerHit(enemy)) projectile.destroy();
     });
 
-    // HUD (vida, tiempo, joystick táctil) en una escena aparte encima.
     this.scene.stop(SCENE_KEYS.hud);
     this.scene.launch(SCENE_KEYS.hud);
     const hud = this.scene.get(SCENE_KEYS.hud) as HudScene;
@@ -108,7 +104,6 @@ export class GameScene extends Phaser.Scene {
     if (enemy.kind.xpValue > 0) this.gems.push(new XpGem(this, enemy.x, enemy.y - 4, enemy.kind.xpValue));
   }
 
-  /** Mueve las gemas cercanas hacia el jugador y suma la experiencia de las que llegan. */
   private updateGems(delta: number): void {
     const radiusSq = this.stats.pickupRadius ** 2;
     const targetY = this.player.y - 8;
@@ -127,7 +122,6 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  /** Pausa la ronda y ofrece mejoras al HUD; al elegir, se aplica y se sigue. */
   private openLevelUp(): void {
     this.progression.pendingLevelUps--;
     const ctx: UpgradeContext = { stats: this.stats, player: this.player, missiles: this.missiles, taken: this.taken };
@@ -186,6 +180,7 @@ export class GameScene extends Phaser.Scene {
       }
       enemy.chase(this.player.x, this.player.y - 6, separationX, separationY);
     }
+    this.rangedAttacks.update(now, delta, activeEnemies);
     this.round.update(now);
 
     if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();
