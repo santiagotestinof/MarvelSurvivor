@@ -1409,24 +1409,31 @@ function makeScout() {
 }
 
 // Chitauri (enemigo que dispara, SENTINEL): 8 direcciones (orden DIRECTIONS) x 4 cuadros de 32x32.
-// Basado en las imágenes de Chitauri Footsoldier / Commander: piel gris pálida alienígena,
-// casco/máscara dorada con tubos laterales, pechera y faldón bronce con luces azules,
-// grebas oscuras con pies de 3 dedos y rifle de energía Chitauri dorado/azul en las manos.
+// Fiel a las figuras de Chitauri Footsoldier / Commander:
+// - Piel alienígena gris ceniza pálida en pecho superior, bíceps, muslos y pies de 3 dedos.
+// - Casco/máscara de bronce dorado envejecido con pómulos angulares, boca esquelética y tubos/rastas oscuras en el cuello.
+// - Arnés pectoral y faldón central de bronce dorado sobre tela borgoña oscura con pequeños nodos azules en la cadera.
+// - Cañón Chitauri dorado curvo con núcleo azul montado en el antebrazo (deja ver todo el torso y la armadura).
 function drawChitauri(fx, fy, frameIdx) {
   const cv = new Canvas(32, 32);
-  const outline = hex('#0a0b10');
-  const skinLight = hex('#bcc2ca');
-  const skinBase = hex('#8f96a0');
-  const skinDark = hex('#5e646e');
-  const goldLight = hex('#dfc070');
-  const goldBase = hex('#ad8d42');
-  const goldDark = hex('#6e5623');
-  const cloth = hex('#4a3126');
-  const greave = hex('#2b303a');
-  const greaveLight = hex('#464e5c');
-  const blueGlow = hex('#38a8ff');
-  const blueBright = hex('#9ce8ff');
-  const darkMetal = hex('#1b1e26');
+  const outline = hex('#0b0c10');
+  // Piel alienígena gris ceniza pálida (pecho alto, brazos, muslos y pies)
+  const skinLight = hex('#ced3db');
+  const skinBase = hex('#9ea4ae');
+  const skinDark = hex('#686e78');
+  // Bronce dorado envejecido de la armadura y el cañón Chitauri
+  const goldBright = hex('#e3c578');
+  const goldLight = hex('#c4a456');
+  const goldBase = hex('#967938');
+  const goldDark = hex('#5e4a1f');
+  // Metal oscuro (cuello, rodilleras, cavidades del pecho y grebas) y tela borgoña
+  const metalLight = hex('#525866');
+  const metalBase = hex('#323640');
+  const metalDark = hex('#191b22');
+  const wineCloth = hex('#4d2422');
+  // Energía azul Chitauri
+  const blueGlow = hex('#2d9aff');
+  const blueBright = hex('#8ce6ff');
 
   const strides = [-2, -1, 2, 1];
   const bobs = [0, -1, 0, -1];
@@ -1441,7 +1448,7 @@ function drawChitauri(fx, fy, frameIdx) {
   const isBack = fy < 0;
   const ty = 12 + bob;
 
-  // ---------------- 1) PIERNAS (muslos grises pálidos, rodilleras/grebas oscuras y pies de 3 dedos)
+  // ---------------- 1) PIERNAS (muslos grises con placas bronce, rodilleras negras, grebas bronce/oscuras y pies grises de 3 dedos)
   const hipY = 20 + bob;
   if (!sideOnly) {
     for (const side of [-1, 1]) {
@@ -1454,26 +1461,34 @@ function drawChitauri(fx, fy, frameIdx) {
       const sB = farLeg ? skinDark : skinBase;
       const sL = farLeg ? skinBase : skinLight;
 
-      // Muslo alienígena gris pálido con placa lateral bronce
+      // Muslo: piel gris pálida adentro + placa bronce estriada afuera (como en la foto 2)
       cv.rect(lx, hipY, 3, 4, sB);
-      cv.set(lx + 1, hipY + 1, sL);
-      cv.set(lx + (side < 0 ? 0 : 2), hipY + 1, goldDark);
-      // Rodillera y greba oscura metálica
+      cv.rect(lx + (side < 0 ? 1 : 0), hipY, 2, 3, sL);
+      cv.rect(lx + (side < 0 ? 0 : 2), hipY, 1, 3, goldBase);
+      cv.set(lx + (side < 0 ? 0 : 2), hipY + 1, goldLight);
+
+      // Rodillera negra articulada
       const kneeY = hipY + 4 + lift;
-      cv.rect(lx, kneeY, 3, 2, darkMetal);
+      cv.rect(lx, kneeY, 3, 2, metalDark);
+      cv.set(lx + 1, kneeY, metalLight);
+
+      // Greba / canillera bronce y metal oscuro
       const shinX = lx + (straight ? (side > 0 ? 1 : -1) * (Math.abs(stride) >= 2 ? 1 : 0) : fx);
-      cv.rect(shinX, kneeY + 2, 3, 3, greave);
-      cv.set(shinX + 1, kneeY + 2, greaveLight);
-      cv.set(shinX + 1, kneeY + 3, goldDark);
-      // Pie alienígena gris pálido de dedos separados
+      cv.rect(shinX, kneeY + 2, 3, 3, metalBase);
+      cv.rect(shinX + (side < 0 ? 0 : 1), kneeY + 2, 2, 2, goldBase);
+      cv.set(shinX + 1, kneeY + 2, goldLight);
+
+      // Pie alienígena descalzo gris pálido de 3 dedos
       const footY = Math.min(30, kneeY + 5);
       const footX = shinX - (side < 0 && straight ? 1 : 0);
       cv.rect(footX, footY, 4, 2, sB);
       cv.set(footX, footY + 1, sL);
+      cv.set(footX + 1, footY + 1, metalDark);
       cv.set(footX + 2, footY + 1, sL);
-      cv.set(footX + 1, footY + 1, skinDark);
+      cv.set(footX + 3, footY + 1, sL);
     }
   } else {
+    // Piernas en perfil (tijera)
     for (const layer of [-1, 1]) {
       const step = layer * stride;
       const dark = layer < 0;
@@ -1483,150 +1498,225 @@ function drawChitauri(fx, fy, frameIdx) {
       const kneeX = cx - 1 + step;
       const lift = step * fx > 0 ? -1 : 0;
       cv.rect(thighX, hipY, 3, 4, sB);
-      cv.set(thighX + 1, hipY + 1, goldBase);
-      cv.rect(kneeX, hipY + 4 + lift, 3, 2, darkMetal);
-      cv.rect(kneeX, hipY + 6 + lift, 3, 3, greave);
-      cv.set(kneeX + 1, hipY + 6 + lift, greaveLight);
+      cv.rect(thighX + 1, hipY, 1, 3, goldBase);
+      cv.set(thighX + (fx > 0 ? 2 : 0), hipY + 1, sL);
+      cv.rect(kneeX, hipY + 4 + lift, 3, 2, metalDark);
+      cv.rect(kneeX, hipY + 6 + lift, 3, 3, metalBase);
+      cv.rect(kneeX + (fx > 0 ? 1 : 0), hipY + 6 + lift, 2, 2, goldBase);
       const footY = Math.min(30, hipY + 9 + lift);
       const footX = fx > 0 ? kneeX : kneeX - 1;
       cv.rect(footX, footY, 4, 2, sB);
       cv.set(footX + (fx > 0 ? 3 : 0), footY + 1, sL);
+      cv.set(footX + (fx > 0 ? 1 : 2), footY + 1, sL);
     }
   }
 
-  // ---------------- 2) TORSO, ARMADURA BRONCE/DORADA Y FALDÓN (y = 12..23)
+  // ---------------- 2) BRAZO LEJANO EN PERFIL
+  const drawProfileArm = (swing, isFar) => {
+    const sB = isFar ? skinDark : skinBase;
+    const sL = isFar ? skinBase : skinLight;
+    const shX = cx - 1 + Math.round(swing * 0.4);
+    // Hombrera bronce y bíceps gris pálido
+    cv.rect(shX, ty, 3, 2, goldBase);
+    cv.set(shX + 1, ty, goldLight);
+    cv.rect(shX, ty + 2, 3, 3, sB);
+    cv.set(shX + 1, ty + 2, sL);
+    if (!isFar) {
+      // En el brazo cercano lleva montado el cañón Chitauri dorado curvo con núcleo azul apuntando hacia fx
+      const gunX = fx > 0 ? shX : shX - 6;
+      const gunY = ty + 4;
+      cv.rect(gunX, gunY, 9, 3, goldBase);
+      cv.rect(gunX + 1, gunY, 7, 1, goldBright);
+      cv.rect(gunX + 2, gunY + 1, 5, 1, blueBright);
+      cv.set(fx > 0 ? gunX + 8 : gunX, gunY + 1, blueGlow);
+      cv.rect(gunX + 2, gunY + 2, 5, 1, goldDark);
+    } else {
+      // Mano gris pálida adelantada
+      cv.rect(shX + fx * 2, ty + 4, 2, 2, sB);
+    }
+  };
+
+  if (sideOnly) {
+    drawProfileArm(-stride, true);
+  }
+
+  // ---------------- 3) TORSO ESCULPIDO (pecho gris pálido arriba, arnés bronce con huecos oscuros y faldón bronce/borgoña)
   if (!sideOnly) {
     const chestW = straight ? 10 : 8;
     const waistW = straight ? 8 : 6;
     const tx = cx - Math.floor(chestW / 2);
     const midX = cx + (diag ? fx : 0);
 
-    // Pecho gris pálido con arnés bronce/dorado encima
-    cv.shaded(tx, ty, chestW, 5, skinBase, skinLight, skinDark);
-    cv.shaded(tx + 1, ty, chestW - 2, 4, goldBase, goldLight, goldDark);
-    cv.shaded(cx - Math.floor(waistW / 2), ty + 5, waistW, 3, goldDark, goldBase, cloth);
+    // Parte superior del pecho: piel gris pálida expuesta en las clavículas/pectorales (como en ambas fotos)
+    cv.shaded(tx, ty, chestW, 4, skinBase, skinLight, skinDark);
+    // Cintura y cadera con tela borgoña oscura a los lados
+    cv.rect(cx - Math.floor(waistW / 2), ty + 4, waistW, 4, wineCloth);
 
-    // Faldón / taparrabos blindado característico del Chitauri entre las piernas (y = 19..23)
-    cv.rect(midX - 2, ty + 7, 4, 5, cloth);
-    cv.rect(midX - 1, ty + 7, 2, 4, goldDark);
-    cv.set(midX - 2, ty + 7, goldLight);
-    cv.set(midX + 1, ty + 7, goldLight);
-    cv.set(midX - 2, ty + 8, blueGlow);
-    cv.set(midX + 1, ty + 8, blueGlow);
+    if (isFront) {
+      // Arnés pectoral de bronce dorado con las 2 cavidades oscuras bajo el pecho (idéntico a la foto del Commander)
+      cv.rect(tx, ty, 2, 2, goldBase);
+      cv.rect(tx + chestW - 2, ty, 2, 2, goldBase);
+      cv.rect(midX - 4, ty + 2, 8, 3, goldBase);
+      cv.rect(midX - 3, ty + 2, 6, 1, goldBright);
+      // Las dos aberturas oscuras del arnés pectoral
+      cv.rect(midX - 3, ty + 3, 2, 1, metalDark);
+      cv.rect(midX + 1, ty + 3, 2, 1, metalDark);
+      cv.rect(midX - 1, ty + 2, 2, 3, goldLight);
 
-    if (isBack) {
+      // Placa abdominal y faldón/taparrabos largo de bronce entre los muslos (y = 16..23)
+      cv.rect(midX - 2, ty + 5, 4, 7, goldBase);
+      cv.rect(midX - 1, ty + 5, 2, 6, goldLight);
+      cv.rect(midX - 2, ty + 11, 4, 1, goldDark);
+      // Líneas doradas y luces azules Chitauri en las caderas
+      cv.set(midX - 3, ty + 6, goldBright);
+      cv.set(midX + 2, ty + 6, goldBright);
+      cv.set(midX - 3, ty + 7, blueBright);
+      cv.set(midX + 2, ty + 7, blueBright);
+    } else if (isBack) {
+      // Espalda musculosa gris con columna y placas dorsales de bronce
       const spineX = cx - (diag ? fx : 0);
-      cv.rect(spineX - 1, ty, 2, 7, darkMetal);
-      for (let y = ty + 1; y <= ty + 5; y += 2) cv.rect(spineX - 1, y, 2, 1, goldLight);
-      cv.set(spineX - 2, ty + 3, blueGlow);
-      cv.set(spineX + 1, ty + 3, blueGlow);
+      cv.shaded(tx + 1, ty + 1, chestW - 2, 4, goldDark, goldBase, metalDark);
+      cv.rect(spineX - 1, ty, 2, 8, metalDark);
+      for (let y = ty + 1; y <= ty + 6; y += 2) cv.rect(spineX - 1, y, 2, 1, goldLight);
+      cv.rect(spineX - 2, ty + 7, 4, 4, wineCloth);
     }
   } else {
     const tx = cx - 3;
-    cv.shaded(tx, ty, 6, 5, goldBase, goldLight, goldDark);
-    cv.shaded(tx + 1, ty + 5, 5, 3, cloth, goldDark, darkMetal);
-    // Faldón lateral con luz azul Chitauri
-    cv.rect(cx - 2, ty + 7, 4, 4, goldDark);
-    cv.set(cx, ty + 7, blueGlow);
+    cv.shaded(tx, ty, 6, 4, skinBase, skinLight, skinDark);
+    cv.shaded(tx, ty + 2, 6, 4, goldBase, goldLight, goldDark);
+    cv.rect(tx + 1, ty + 6, 4, 5, goldDark);
+    cv.set(tx + 2, ty + 7, blueBright);
   }
 
-  // ---------------- 3) BRAZOS Y RIFLE DE ENERGÍA CHITAURI DORADO Y AZUL
+  // ---------------- 4) BRAZOS MUSCULOSOS Y CAÑÓN DE BRAZO CHITAURI (deja libre el pecho)
   if (sideOnly) {
-    // En perfil sostiene el rifle apuntando hacia fx
-    const shX = cx - 1;
-    cv.shaded(shX, ty + 1, 3, 4, skinBase, skinLight, skinDark);
-    cv.rect(shX, ty, 3, 2, goldBase);
-    // Rifle Chitauri alargado hacia fx
-    const gunX = fx > 0 ? cx - 1 : cx - 9;
-    const gunY = ty + 3;
-    cv.rect(gunX, gunY, 10, 3, goldBase);
-    cv.rect(gunX + 1, gunY, 8, 1, goldLight);
-    cv.rect(gunX + 2, gunY + 1, 6, 1, blueBright);
-    cv.set(fx > 0 ? gunX + 9 : gunX, gunY + 1, blueGlow);
-    cv.rect(gunX + 3, gunY + 2, 4, 1, goldDark);
+    drawProfileArm(stride, false);
   } else {
     for (const side of [-1, 1]) {
+      const swing = Math.round((side * stride) / 2);
       const shX = straight
         ? (side < 0 ? cx - 8 : cx + 5)
         : (side < 0 ? cx - 6 : cx + 4);
-      const shY = ty;
-      // Hombrera bronce y brazo gris pálido musculoso
-      cv.shaded(shX, shY, 3, 2, goldBase, goldLight, goldDark);
-      cv.shaded(shX, shY + 2, 3, 5, skinBase, skinLight, skinDark);
-      cv.rect(shX, shY + 5, 3, 2, goldDark); // brazalete
-    }
-    if (isFront) {
-      // Rifle de energía Chitauri cruzado sobre el pecho (dorado curvo con núcleo azul brillante, como en la foto 1)
-      const gx = cx - 6 + (diag ? fx : 0);
-      const gy = ty + 3;
-      cv.rect(gx, gy, 12, 3, goldBase);
-      cv.rect(gx + 1, gy, 10, 1, goldLight);
-      cv.rect(gx + 1, gy + 2, 10, 1, goldDark);
-      cv.rect(gx + 3, gy + 1, 6, 1, blueBright);
-      cv.set(gx + 2, gy + 1, blueGlow);
-      cv.set(gx + 9, gy + 1, blueGlow);
+      const shY = ty + (swing > 0 ? 1 : 0);
+      const farArm = diag && side !== fx;
+      const sB = farArm ? skinDark : skinBase;
+      const sL = farArm ? skinBase : skinLight;
+
+      // El hombro derecho del sprite (side > 0) tiene la hombrera oscura asimétrica y el cañón Chitauri en el brazo (como en la foto 2)
+      const hasCannon = (isFront && side > 0) || (isBack && side < 0);
+      if (hasCannon) {
+        // Hombrera asimétrica oscura/bronce
+        cv.shaded(shX, shY - 1, 3, 3, metalBase, metalLight, metalDark);
+        cv.rect(shX, shY, 3, 1, goldLight);
+        // Bíceps gris pálido
+        cv.rect(shX + (side > 0 ? 1 : -1), shY + 2, 3, 3, sB);
+        cv.set(shX + 1, shY + 2, sL);
+        // Cañón Chitauri dorado alargado montado en el antebrazo (con ranura azul brillante y punta oscura)
+        const gunX = shX + (side > 0 ? 1 : -1);
+        const gunY = shY + 4;
+        cv.rect(gunX, gunY, 3, 7, goldBase);
+        cv.rect(gunX + (side > 0 ? 1 : 0), gunY, 1, 6, goldBright);
+        cv.rect(gunX + 1, gunY + 2, 1, 3, blueBright);
+        cv.set(gunX + 1, gunY + 1, blueGlow);
+        cv.rect(gunX + 1, gunY + 6, 2, 2, metalDark); // boca del cañón
+      } else {
+        // Hombro con tira bronce, bíceps/antebrazo gris ceniza musculoso, brazalete bronce y mano con garras
+        cv.rect(shX, shY, 3, 2, goldBase);
+        cv.set(shX + 1, shY, goldBright);
+        const armX = shX - (side < 0 && straight ? 1 : 0);
+        cv.shaded(armX, shY + 2, 3, 4, sB, sL, skinDark);
+        cv.rect(armX, shY + 6, 3, 2, goldBase);
+        cv.set(armX + 1, shY + 6, blueGlow); // gema azul del guantelete (visible en la foto 1 y 2)
+        cv.rect(armX, shY + 8, 3, 2, sL);
+        cv.set(armX + 1, shY + 9, metalDark);
+      }
     }
   }
 
-  // ---------------- 4) CABEZA CON CASCO DORADO CHITAURI Y TUBOS LATERALES (y = 2..11)
+  // ---------------- 5) CABEZA: CASCO BRONCE ABOVEDADO, PÓMULOS DORADOS, BOCA ESQUELÉTICA Y TUBOS DEL CUELLO (y = 2..11)
   const hy = 2 + bob;
   if (straight) {
-    // Tubos/rastas metálicas a los costados del cuello
-    cv.rect(cx - 5, hy + 5, 2, 5, darkMetal);
-    cv.rect(cx + 3, hy + 5, 2, 5, darkMetal);
-    cv.set(cx - 5, hy + 6, skinDark);
-    cv.set(cx + 4, hy + 6, skinDark);
-    // Casco dorado con cresta en V
-    cv.shaded(cx - 4, hy, 8, 3, goldBase, goldLight, goldDark);
-    cv.set(cx - 4, hy - 1, goldLight);
-    cv.set(cx + 3, hy - 1, goldLight);
-    cv.shaded(cx - 4, hy + 3, 8, 6, skinBase, skinLight, skinDark);
+    // Tubos/rastas cibernéticas oscuras que se abren a los lados del cuello hasta los hombros (muy distintivas en las 2 fotos)
+    cv.rect(cx - 5, hy + 5, 2, 5, metalDark);
+    cv.rect(cx + 3, hy + 5, 2, 5, metalDark);
+    cv.set(cx - 5, hy + 6, metalLight);
+    cv.set(cx - 4, hy + 8, metalLight);
+    cv.set(cx + 4, hy + 6, metalLight);
+    cv.set(cx + 3, hy + 8, metalLight);
+
+    // Domo superior redondeado del casco (sin orejas cuadradas: angosto arriba, ancho en las sienes)
+    cv.shaded(cx - 3, hy, 6, 2, goldBase, goldBright, goldDark);
+    cv.set(cx - 1, hy, metalDark); // hendidura central de la corona del casco
+    cv.set(cx, hy, metalDark);
+    cv.shaded(cx - 4, hy + 2, 8, 4, goldBase, goldLight, goldDark);
+    cv.rect(cx - 3, hy + 6, 6, 4, skinDark);
 
     if (isFront) {
-      // Máscara facial bronce en V sobre el rostro gris
-      cv.rect(cx - 4, hy + 2, 8, 2, goldLight);
-      cv.rect(cx - 1, hy + 3, 2, 3, goldBase);
-      // Ojos hundidos con destello celeste Chitauri
-      cv.rect(cx - 3, hy + 4, 2, 1, darkMetal);
-      cv.rect(cx + 1, hy + 4, 2, 1, darkMetal);
-      cv.set(cx - 3, hy + 4, blueBright);
-      cv.set(cx + 2, hy + 4, blueBright);
-      // Mandíbula metálica oscura con colmillos/barrotes grises
-      cv.rect(cx - 3, hy + 6, 6, 3, darkMetal);
-      cv.set(cx - 2, hy + 7, skinLight);
-      cv.set(cx, hy + 7, skinLight);
-      cv.set(cx + 2, hy + 7, skinLight);
+      // Placa frontal bronce en V sobre el tabique nasal y los pómulos
+      cv.rect(cx - 3, hy + 2, 2, 2, goldBright);
+      cv.rect(cx + 1, hy + 2, 2, 2, goldBright);
+      cv.rect(cx - 1, hy + 3, 2, 3, goldLight);
+      // Cuencas oculares oscuras hundidas bajo las cejas doradas
+      cv.rect(cx - 3, hy + 4, 2, 1, metalDark);
+      cv.rect(cx + 1, hy + 4, 2, 1, metalDark);
+      cv.set(cx - 2, hy + 4, blueBright);
+      cv.set(cx + 1, hy + 4, blueBright);
+      // Pómulos de bronce a los lados de la mandíbula
+      cv.rect(cx - 4, hy + 5, 1, 3, goldBase);
+      cv.rect(cx + 3, hy + 5, 1, 3, goldBase);
+      // Boca/mandíbula esquelética gris y negra con dientes verticales (como en ambas fotos)
+      cv.rect(cx - 3, hy + 6, 6, 3, metalDark);
+      cv.rect(cx - 2, hy + 6, 1, 3, skinLight);
+      cv.rect(cx, hy + 6, 1, 3, skinBase);
+      cv.rect(cx + 1, hy + 6, 1, 3, skinLight);
+      cv.rect(cx - 3, hy + 7, 6, 1, metalDark);
     } else {
-      // Nuca del casco dorado
-      cv.shaded(cx - 4, hy + 2, 8, 5, goldDark, goldBase, darkMetal);
-      cv.rect(cx - 1, hy + 1, 2, 7, darkMetal);
+      // Nuca del casco con placas bronce y tubos traseros
+      cv.shaded(cx - 3, hy + 2, 6, 5, goldDark, goldBase, metalDark);
+      cv.rect(cx - 4, hy + 6, 8, 3, metalDark);
+      cv.set(cx - 2, hy + 7, metalLight);
+      cv.set(cx + 1, hy + 7, metalLight);
     }
   } else if (diag) {
     const hx = cx - 4;
-    cv.rect(cx - fx * 4, hy + 5, 2, 5, darkMetal);
-    cv.shaded(hx + 1, hy, 7, 3, goldBase, goldLight, goldDark);
-    cv.shaded(hx, hy + 3, 8, 6, skinBase, skinLight, skinDark);
+    // Tubos del cuello del lado visible
+    cv.rect(cx - fx * 4, hy + 5, 2, 5, metalDark);
+    cv.set(cx - fx * 4, hy + 6, metalLight);
+    cv.shaded(hx + 1, hy, 6, 2, goldBase, goldBright, goldDark);
+    cv.shaded(hx, hy + 2, 8, 4, goldBase, goldLight, goldDark);
+    cv.rect(hx + 1, hy + 6, 6, 4, metalDark);
+
     if (isFront) {
-      const maskX = fx > 0 ? cx - 2 : cx - 4;
-      cv.rect(maskX, hy + 2, 6, 2, goldLight);
-      cv.set(maskX + 1, hy + 4, blueBright);
-      cv.set(maskX + 4, hy + 4, blueBright);
-      cv.rect(maskX + 1, hy + 6, 5, 3, darkMetal);
-      cv.set(maskX + 2, hy + 7, skinLight);
-      cv.set(maskX + 4, hy + 7, skinLight);
+      const faceX = fx > 0 ? cx - 2 : cx - 4;
+      cv.rect(faceX, hy + 2, 5, 2, goldBright);
+      cv.rect(faceX, hy + 4, 2, 1, metalDark);
+      cv.rect(faceX + 3, hy + 4, 2, 1, metalDark);
+      cv.set(faceX + 1, hy + 4, blueBright);
+      cv.set(faceX + 4, hy + 4, blueBright);
+      // Mandíbula esquelética en 3/4
+      cv.rect(faceX + 1, hy + 6, 4, 3, metalDark);
+      cv.set(faceX + 1, hy + 6, skinLight);
+      cv.set(faceX + 3, hy + 6, skinLight);
+      cv.set(faceX + 2, hy + 8, skinBase);
+      cv.set(faceX + 4, hy + 8, skinLight);
     } else {
-      cv.shaded(hx + 1, hy + 2, 7, 5, goldDark, goldBase, darkMetal);
+      cv.shaded(hx + 1, hy + 2, 6, 5, goldDark, goldBase, metalDark);
     }
   } else {
+    // Cabeza de perfil con casco bronce abovedado, tubos en la nuca y mandíbula gris dentada adelante
     const hx = cx - 4;
-    cv.rect(cx - fx * 2, hy + 5, 2, 5, darkMetal);
-    cv.shaded(hx + 1, hy, 7, 3, goldBase, goldLight, goldDark);
-    cv.shaded(hx + 1, hy + 3, 7, 6, skinBase, skinLight, skinDark);
-    const faceX = fx > 0 ? hx + 5 : hx + 1;
-    cv.rect(faceX, hy + 2, 3, 2, goldLight);
-    cv.set(faceX + (fx > 0 ? 1 : 0), hy + 4, blueBright);
-    cv.rect(faceX, hy + 6, 3, 3, darkMetal);
-    cv.set(faceX + 1, hy + 7, skinLight);
+    const backX = fx > 0 ? hx : hx + 5;
+    cv.rect(backX, hy + 4, 3, 6, metalDark);
+    cv.set(backX + 1, hy + 5, metalLight);
+    cv.set(backX + 1, hy + 7, metalLight);
+    cv.shaded(hx + 1, hy, 6, 2, goldBase, goldBright, goldDark);
+    cv.shaded(hx, hy + 2, 8, 4, goldBase, goldLight, goldDark);
+    const faceX = fx > 0 ? hx + 5 : hx;
+    cv.rect(faceX, hy + 2, 3, 2, goldBright);
+    cv.set(faceX + (fx > 0 ? 1 : 1), hy + 4, blueBright);
+    cv.rect(faceX, hy + 5, 3, 4, metalDark);
+    cv.set(faceX + (fx > 0 ? 2 : 0), hy + 6, skinLight);
+    cv.set(faceX + 1, hy + 8, skinLight);
   }
 
   return addOutline(cv, outline);
