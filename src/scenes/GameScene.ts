@@ -210,7 +210,7 @@ export class GameScene extends Phaser.Scene {
     this.nextUltimateShotAt = this.clock + 500;
     this.nextIronManCloudAt = this.clock + 180;
     this.player.setFlightHeight(9);
-    this.player.setMoveSpeed(this.ironManBaseMoveSpeed * 1.25);
+    this.player.setMoveSpeed(125);
     this.player.setScale(this.ironManBaseScaleX * 1.08, this.ironManBaseScaleY * 1.08);
     this.player.setTint(0xb9f4ff);
     this.ironManFlightEffect?.destroy();
