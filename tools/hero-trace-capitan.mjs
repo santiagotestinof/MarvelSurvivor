@@ -1,5 +1,5 @@
 // Capitán América: modelo calcado de la imagen de referencia que pasó Santi (achicado a 40 de alto, 24 colores), igual que Iron Man.
-// Cada fila son los píxeles en hexadecimal sin '#', '-' = transparente. Mira hacia la derecha; para la izquierda se espeja.
+// Cada fila son los píxeles en hexadecimal sin '#', '-' = transparente. Se espeja para ir a la derecha.
 export const CAPITAN_REF = [
   '- - - - - - - - - - - - - 020003 000104 010101 010101 010101 010101 - - - - - - - -',
   '- - - - - - - - - - - 020103 000104 273492 0c59c2 0c58c2 0c58c2 0c58c2 293491 020003 020203 - - - - - -',

@@ -1,5 +1,5 @@
 // Thor: modelo calcado de la imagen de referencia que pasó Santi (achicado a 40 de alto, 24 colores), igual que Iron Man.
-// Cada fila son los píxeles en hexadecimal sin '#', '-' = transparente. Mira hacia la derecha; para la izquierda se espeja.
+// Cada fila son los píxeles en hexadecimal sin '#', '-' = transparente. Se espeja para ir a la derecha.
 export const THOR_REF = [
   '- - - - - - - 010101 - - - - - - - - - - 010101 797d7b - - - - - - - - -',
   '- - - - - - 010101 afb5b6 010101 - - - - - - - - - 010101 797d7b 010101 - - - - - - - -',

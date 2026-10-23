@@ -573,7 +573,7 @@ function saveHero(id) {
 const DRAWN_REFS = { capitan: CAPITAN_REF, thor: THOR_REF, hulk: HULK_REF, spiderman: SPIDERMAN_REF };
 const DRAWN_HEROES = Object.keys(DRAWN_REFS);
 const DRAWN_FRAME = 48;
-/** Pies en la fila 40 del cuadro (el suelo está en (24, 41)). Un solo dibujo para todas las direcciones: mira a la derecha y se espeja a la izquierda. */
+/** Pies en la fila 40 del cuadro (el suelo está en (24, 41)). Un solo dibujo para todas las direcciones: queda mirando a la izquierda y se espeja para ir a la derecha. */
 function drawnFrame(id, { fx, stride = 0, bob = 0 }) {
   const rows = DRAWN_REFS[id].map((row) => row.split(' '));
   const h = rows.length;
@@ -596,7 +596,7 @@ function drawnFrame(id, { fx, stride = 0, bob = 0 }) {
       }
     g = out;
   }
-  if (fx < 0) g = g.map((row) => [...row].reverse());
+  if (fx > 0) g = g.map((row) => [...row].reverse());
   const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
   const ox = Math.round((DRAWN_FRAME - w) / 2);
   const oy = 41 - h + bob;
