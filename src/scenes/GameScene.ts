@@ -23,6 +23,7 @@ import { MissileWeapon } from '../systems/MissileWeapon';
 import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
 import { WaveSystem } from '../systems/WaveSystem';
+import { damageArea } from '../systems/areaDamage';
 import { TestMap } from '../world/TestMap';
 import type { HudScene } from './HudScene';
 
@@ -63,6 +64,15 @@ export class GameScene extends Phaser.Scene {
   private hud!: HudScene;
   /** Reloj de la ronda: no avanza mientras se elige una mejora. */
   private clock = 0;
+  private ultimateKey: Phaser.Input.Keyboard.Key | null = null;
+  private ironManFlyingUntil = 0;
+  private nextUltimateShotAt = 0;
+  private ultimateReadyAt = 0;
+  private ironManFlightEffect: Phaser.GameObjects.Container | null = null;
+  private ironManBaseMoveSpeed = 0;
+  private ironManBaseScaleX = 1;
+  private ironManBaseScaleY = 1;
+  private nextIronManCloudAt = 0;
 
   constructor() {
     super(SCENE_KEYS.game);
@@ -72,6 +82,12 @@ export class GameScene extends Phaser.Scene {
     this.frozen = false;
     const testMode = new URLSearchParams(window.location.search).get('test') === '1';
     this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
+    this.ironManFlyingUntil = 0;
+    this.nextUltimateShotAt = 0;
+    this.ultimateReadyAt = 0;
+    this.ironManFlightEffect?.destroy();
+    this.ironManFlightEffect = null;
+    this.nextIronManCloudAt = 0;
     this.stats = new PlayerStats();
     this.progression = new ProgressionSystem();
     this.taken = {};
@@ -84,8 +100,12 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
+    this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
     this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
+    this.ironManBaseMoveSpeed = this.player.moveSpeed;
+    this.ironManBaseScaleX = this.player.scaleX;
+    this.ironManBaseScaleY = this.player.scaleY;
     this.toolTotals = { reroll: this.stats.rerolls, skip: this.stats.skips, banish: this.stats.banishes };
     map.onPropBroken = (prop) => this.dropPropGold(prop);
 
@@ -140,6 +160,7 @@ export class GameScene extends Phaser.Scene {
     // Enemigos que tocan al jugador le hacen daño (con invulnerabilidad corta).
     this.physics.add.overlap(this.player, this.enemies, (_p, e) => {
       const enemy = e as Enemy;
+      if (this.clock < this.ironManFlyingUntil) return;
       if (!enemy.dying && !enemy.harmless) this.player.takeDamage(enemy.contactDamage);
     });
     // Proyectiles que tocan enemigos.
@@ -173,6 +194,144 @@ export class GameScene extends Phaser.Scene {
     // Al volver del menú (CONTINUAR) la ronda sigue en pausa hasta que el jugador toque SEGUIR.
     this.events.on(Phaser.Scenes.Events.WAKE, () => this.scene.pause());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop(SCENE_KEYS.hud));
+  }
+
+  isIronManSelected(): boolean {
+    return this.player?.definition.id === 'ironman';
+  }
+
+  /** Estado de la ultimate para el control del HUD. */
+  getUltimateState(): { active: boolean; remainingMs: number; flightRemainingMs: number } {
+    const active = this.player?.definition.id === 'ironman' && this.clock < this.ironManFlyingUntil;
+    return {
+      active,
+      remainingMs: active ? 0 : Math.max(0, this.ultimateReadyAt - this.clock),
+      flightRemainingMs: active ? Math.max(0, this.ironManFlyingUntil - this.clock) : 0,
+    };
+  }
+
+  /** Activa el vuelo de Iron Man con E o desde el botón táctil del HUD. */
+  activateUltimate(): void {
+    if (this.player.definition.id !== 'ironman' || this.round.ended || this.frozen || this.player.isDead) return;
+    if (this.clock < this.ironManFlyingUntil || this.clock < this.ultimateReadyAt) return;
+    this.ironManFlyingUntil = this.clock + 5000;
+    this.nextUltimateShotAt = this.clock + 500;
+    this.nextIronManCloudAt = this.clock + 180;
+    this.player.setFlightHeight(9);
+    this.player.setMoveSpeed(this.player.moveSpeed * (125 / 85.5));
+    this.player.setScale(this.ironManBaseScaleX * 1.08, this.ironManBaseScaleY * 1.08);
+    this.player.setTint(0xb9f4ff);
+    this.ironManFlightEffect?.destroy();
+
+    // Propulsores y resplandor bajo los pies para que el vuelo se distinga del movimiento normal.
+    const flightShadow = this.add.ellipse(0, 13, 30, 10, 0x43dfff, 0.25);
+    const leftGlow = this.add.ellipse(-7, 5, 11, 23, 0x47cfff, 0.32);
+    const rightGlow = this.add.ellipse(7, 5, 11, 23, 0x47cfff, 0.32);
+    const leftThruster = this.add.ellipse(-7, 5, 7, 22, 0xffa640, 0.98);
+    const rightThruster = this.add.ellipse(7, 5, 7, 22, 0xffa640, 0.98);
+    const leftCore = this.add.ellipse(-7, 5, 3.5, 15, 0xd7fbff, 1);
+    const rightCore = this.add.ellipse(7, 5, 3.5, 15, 0xd7fbff, 1);
+    this.ironManFlightEffect = this.add.container(this.player.x, this.player.y + 7, [
+      flightShadow, leftGlow, rightGlow, leftThruster, rightThruster, leftCore, rightCore,
+    ]).setDepth(this.player.y - 1);
+    this.tweens.add({
+      targets: [leftGlow, rightGlow, leftThruster, rightThruster, leftCore, rightCore],
+      scaleY: { from: 0.7, to: 1.3 },
+      alpha: { from: 0.55, to: 1 },
+      duration: 100,
+      yoyo: true,
+      repeat: -1,
+    });
+  }
+
+  private updateUltimate(now: number): void {
+    if (this.player.definition.id !== 'ironman' || now >= this.ironManFlyingUntil) {
+      if (this.ironManFlyingUntil > 0 && now >= this.ironManFlyingUntil) {
+        this.ironManFlyingUntil = 0;
+        this.ultimateReadyAt = now + 40_000;
+        this.player.setFlightHeight(0);
+        this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
+        this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
+        this.player.clearTint();
+        this.ironManFlightEffect?.destroy();
+        this.ironManFlightEffect = null;
+      }
+      return;
+    }
+
+    // Leve flotación vertical para que el personaje no quede rígido en el aire.
+    this.player.setFlightHeight(8 + Math.sin(now / 180) * 2);
+    this.ironManFlightEffect?.setPosition(this.player.x, this.player.y + 7).setDepth(this.player.y - 1);
+    if (now >= this.nextIronManCloudAt) {
+      this.spawnIronManCloud();
+      this.nextIronManCloudAt = now + Phaser.Math.Between(260, 420);
+    }
+    while (now >= this.nextUltimateShotAt && this.nextUltimateShotAt < this.ironManFlyingUntil) {
+      const impactX = this.player.x;
+      const impactY = this.player.y - 8;
+      // Cada misil hace 1,5 veces el daño anterior: 12 -> 18.
+      this.spawnIronManUltimateMissile(impactX, impactY, 25);
+      this.nextUltimateShotAt += 500;
+    }
+  }
+
+  /** Misil visible que cae sobre la posición actual del jugador y aplica el daño al impactar. */
+  private spawnIronManUltimateMissile(targetX: number, targetY: number, damage: number): void {
+    const startX = targetX + Phaser.Math.Between(-22, 22);
+    const startY = targetY - 105;
+    const trail = this.add.ellipse(0, -13, 5, 23, 0xffa34a, 0.55);
+    const body = this.add.rectangle(0, 0, 7, 17, 0xdce8f2, 1);
+    body.setStrokeStyle(1, 0x536779, 1);
+    const nose = this.add.triangle(0, 11, -4, -2, 4, -2, 0, 5, 0xff6045, 1);
+    const finLeft = this.add.triangle(-5, 5, 0, -3, -5, 4, 0, 5, 0xe84f43, 1);
+    const finRight = this.add.triangle(5, 5, 0, -3, 5, 4, 0, 5, 0xe84f43, 1);
+    const missile = this.add.container(startX, startY, [trail, body, nose, finLeft, finRight]);
+    missile.setDepth(999_999);
+    this.tweens.add({
+      targets: missile,
+      x: targetX,
+      y: targetY,
+      duration: 260,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        missile.destroy();
+        damageArea(this.enemies, [], targetX, targetY, 30, damage);
+        // Destello cálido pequeño; se elimina el antiguo círculo azul de impacto.
+        const flash = this.add.star(targetX, targetY, 7, 2, 6, 0xffa34a, 0.8).setDepth(999_998);
+        this.tweens.add({
+          targets: flash,
+          scale: 1.8,
+          alpha: 0,
+          duration: 170,
+          onComplete: () => flash.destroy(),
+        });
+      },
+    });
+  }
+
+  /** Pequeñas nubes de estela: aparecen de forma espaciada y se desvanecen rápido. */
+  private spawnIronManCloud(): void {
+    const x = this.player.x + Phaser.Math.Between(-9, 9);
+    const y = this.player.y + Phaser.Math.Between(7, 17);
+    const puff = this.add.container(x, y);
+    const shade = Phaser.Math.Between(0, 1) ? 0xe5f8ff : 0xc9eefa;
+    const parts = [
+      this.add.ellipse(-4, 1, 11, 7, shade, 0.22),
+      this.add.ellipse(2, -1, 13, 9, shade, 0.25),
+      this.add.ellipse(7, 2, 9, 6, 0xffffff, 0.2),
+    ];
+    puff.add(parts);
+    puff.setDepth(this.player.y - 2);
+    this.tweens.add({
+      targets: puff,
+      x: x + Phaser.Math.Between(-12, 12),
+      y: y + Phaser.Math.Between(12, 20),
+      alpha: 0,
+      scaleX: 1.45,
+      scaleY: 1.3,
+      duration: 520,
+      onComplete: () => puff.destroy(),
+    });
   }
 
   getHudState(): HudSnapshot {
@@ -309,6 +468,13 @@ export class GameScene extends Phaser.Scene {
     if (this.round.ended) {
       if (!this.frozen) {
         this.frozen = true;
+        this.ironManFlightEffect?.destroy();
+        this.ironManFlightEffect = null;
+        this.ironManFlyingUntil = 0;
+        this.player.setFlightHeight(0);
+        this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
+        this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
+        this.player.clearTint();
         this.physics.pause();
         if (this.round.phase === 'lost') this.player.defeat();
         this.bankGold();
@@ -318,6 +484,8 @@ export class GameScene extends Phaser.Scene {
 
     this.clock += delta;
     const now = this.clock;
+    if (this.ultimateKey && Phaser.Input.Keyboard.JustDown(this.ultimateKey)) this.activateUltimate();
+    this.updateUltimate(now);
     this.player.step(this.moveInput.getVector());
     this.attack.update(now);
     this.missiles.update(now, delta);

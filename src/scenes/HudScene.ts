@@ -30,6 +30,8 @@ export class HudScene extends Phaser.Scene {
   /** Casilleros de las mejoras pasivas de la ronda (abajo a la izquierda). */
   private passiveIcons: Phaser.GameObjects.Image[] = [];
   private passiveCounts: Phaser.GameObjects.Text[] = [];
+  private ultimateButton!: Phaser.GameObjects.Rectangle;
+  private ultimateText!: Phaser.GameObjects.Text;
   private upgradeMenu!: UpgradeMenu;
   private result!: ResultOverlay;
   private pause!: PauseOverlay;
@@ -70,6 +72,17 @@ export class HudScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
+    this.ultimateButton = this.add.rectangle(0, 0, 76, 34, 0x16445b, 0.95)
+      .setStrokeStyle(2, 0x75e6ff)
+      .setDepth(10)
+      .setInteractive({ useHandCursor: true });
+    this.ultimateText = this.add.text(0, 0, 'ULT E', textStyle(12, '#ffffff'))
+      .setOrigin(0.5)
+      .setDepth(11);
+    this.ultimateButton.on(Phaser.Input.Events.POINTER_UP, () => {
+      if (this.upgradeMenu.isOpen || this.pause.isPaused) return;
+      this.gameScene.activateUltimate();
+    });
 
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
@@ -81,6 +94,19 @@ export class HudScene extends Phaser.Scene {
     this.touchVector.copy(this.joystick.vector);
 
     const state = this.gameScene.getHudState();
+    const ultimate = this.gameScene.getUltimateState();
+    const playerIsIronMan = this.gameScene.isIronManSelected();
+    this.ultimateButton.setVisible(playerIsIronMan);
+    this.ultimateText.setVisible(playerIsIronMan);
+    if (playerIsIronMan) {
+      const label = ultimate.active
+        ? `VUELO ${Math.ceil(ultimate.flightRemainingMs / 1000)}s`
+        : ultimate.remainingMs > 0
+          ? `ULT ${Math.ceil(ultimate.remainingMs / 1000)}s`
+          : 'ULT E';
+      this.ultimateText.setText(label);
+      this.ultimateButton.setFillStyle(ultimate.active ? 0x176b84 : ultimate.remainingMs > 0 ? 0x333b43 : 0x16445b, 0.95);
+    }
     this.latest = state;
     this.drawState(state);
 
@@ -105,6 +131,9 @@ export class HudScene extends Phaser.Scene {
     const ui = this.ui;
 
     this.timerText.setFontSize(Math.max(18, Math.round(7 * ui))).setPosition(width / 2, this.margin);
+    const xpBarHeight = Math.max(8, Math.round(2.5 * ui));
+    this.ultimateButton.setPosition(width - this.margin - 42, height - xpBarHeight - 27);
+    this.ultimateText.setPosition(this.ultimateButton.x, this.ultimateButton.y);
     this.killsText.setFontSize(Math.max(12, Math.round(3.5 * ui))).setPosition(width - this.margin, this.margin);
     this.healthText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));
     this.bossText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));

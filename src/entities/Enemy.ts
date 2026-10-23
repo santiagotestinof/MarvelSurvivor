@@ -48,6 +48,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
 
     this.setOrigin(kind.origin.x, kind.origin.y);
+    if (kind.scale && kind.scale !== 1) this.setScale(kind.scale);
     const { width, height, offsetX, offsetY } = kind.body;
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
     this.setCollideWorldBounds(true);
@@ -216,11 +217,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setTintFill(0xffffff);
     this.emit('died', this);
 
+    const baseScale = this.kind.scale ?? 1;
     this.scene.tweens.add({
       targets: this,
       alpha: 0,
-      scaleX: 1.25,
-      scaleY: 0.6,
+      scaleX: baseScale * 1.25,
+      scaleY: baseScale * 0.6,
       duration: 160,
       onComplete: () => this.destroy(),
     });

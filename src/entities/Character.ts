@@ -20,12 +20,15 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   private readonly movement: MovementSystem;
   private readonly animator: CharacterAnimator;
   private readonly shadow: Phaser.GameObjects.Image;
+  /** Copia visual elevada durante el vuelo; el sprite físico queda en el suelo para colisiones. */
+  private readonly flightSprite: Phaser.GameObjects.Sprite;
 
   private facing: Direction = Direction.Down;
   private action: CharacterAction = 'idle';
   private currentHealth: number;
   private invulnerableUntil = 0;
   private speed: number;
+  private flightHeight = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, definition: CharacterDefinition) {
     super(scene, x, y, definition.sheets.idle.textureKey, 0);
@@ -43,6 +46,9 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
 
     this.shadow = scene.add.image(x, y, TEXTURES.shadow);
+    this.flightSprite = scene.add.sprite(x, y, definition.sheets.idle.textureKey, 0)
+      .setOrigin(definition.origin.x, definition.origin.y)
+      .setVisible(false);
     this.speed = definition.stats.moveSpeed;
     this.movement = new MovementSystem(this.speed);
     this.animator = new CharacterAnimator(this, definition);
@@ -54,6 +60,7 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     this.once(Phaser.GameObjects.Events.DESTROY, () => {
       scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.syncVisuals, this);
       this.shadow.destroy();
+      this.flightSprite.destroy();
     });
   }
 
@@ -64,6 +71,11 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   setMoveSpeed(value: number): void {
     this.speed = value;
     this.movement.setMoveSpeed(value);
+  }
+
+  /** Eleva visualmente al personaje sin cambiar el punto de referencia de la sombra. */
+  setFlightHeight(height: number): void {
+    this.flightHeight = Math.max(0, height);
   }
 
   addMaxHealth(amount: number): void {
@@ -145,7 +157,25 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   }
 
   private syncVisuals(): void {
-    this.setDepth(this.y); // orden de dibujo por altura: más abajo = más adelante
-    this.shadow.setPosition(this.x, this.y - 1).setDepth(this.y - 0.5);
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const groundY = body.center.y;
+    this.setDepth(groundY);
+    this.shadow.setPosition(this.x, groundY - 1).setDepth(groundY - 0.5);
+
+    // No movemos el sprite con cuerpo físico: una copia visual sube mientras las colisiones
+    // y la sombra siguen en el suelo.
+    const flying = this.flightHeight > 0;
+    this.setVisible(!flying);
+    this.flightSprite.setVisible(flying && this.active);
+    if (flying) {
+      this.flightSprite
+        .setTexture(this.texture.key, this.frame.name)
+        .setPosition(this.x, groundY - this.flightHeight)
+        .setScale(this.scaleX, this.scaleY)
+        .setFlip(this.flipX, this.flipY)
+        .setAlpha(this.alpha)
+        .setTint(0xb9f4ff)
+        .setDepth(groundY + 0.1);
+    }
   }
 }

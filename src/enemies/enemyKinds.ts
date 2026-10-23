@@ -83,6 +83,8 @@ export interface EnemyKind {
   frameRate: number;
   /** Si tiene las 8 filas direccionales (frente, costado, espalda y las 4 diagonales 3/4). */
   directional?: boolean;
+  /** Escala visual del sprite (por defecto 1). */
+  scale?: number;
   origin: { x: number; y: number };
   /** Caja de colisión en píxeles desde la esquina superior izquierda del cuadro. */
   body: { width: number; height: number; offsetX: number; offsetY: number };
@@ -178,7 +180,7 @@ export const BRUTE: EnemyKind = {
   spawn: { fromProgress: 0.4, weight: 1.5 },
 };
 
-/** Cráneo Rojo (Red Skull): primer jefe grande, 8 direcciones con gabardina de HYDRA y 3 ataques principales. */
+/** Cráneo Rojo (Red Skull): primer jefe gigante, 8 direcciones con gabardina de HYDRA y 3 ataques principales. */
 export const OVERLORD: EnemyKind = {
   id: 'overlord',
   texture: 'enemy-overlord',
@@ -187,6 +189,7 @@ export const OVERLORD: EnemyKind = {
   frameCount: 4,
   frameRate: 6,
   directional: true,
+  scale: 1.65,
   origin: { x: 0.5, y: 0.92 },
   body: { width: 22, height: 18, offsetX: 13, offsetY: 26 },
   health: 440,
