@@ -13,7 +13,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { IRON_MAN_REF } from './ironman-reference.mjs';
-import { GW, GH, drawDrawnHero } from './hero-art.mjs';
+import { CAPITAN_REF } from './hero-trace-capitan.mjs';
+import { THOR_REF } from './hero-trace-thor.mjs';
 import { buildMetaIconSheet } from './meta-icons.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -566,20 +567,38 @@ function saveHero(id) {
 }
 
 
-// ---------------------------------------------------------------- Capitán y Thor (dibujados desde cero en tools/hero-art.mjs)
-const DRAWN_HEROES = ['capitan', 'thor'];
+// ---------------------------------------------------------------- Capitán y Thor (calcados de las referencias, como Iron Man)
+const DRAWN_REFS = { capitan: CAPITAN_REF, thor: THOR_REF };
+const DRAWN_HEROES = Object.keys(DRAWN_REFS);
 const DRAWN_FRAME = 48;
-/** Suelo en (24, 41): los pies terminan en la fila 40 de la grilla y el contorno en la 41. */
-function drawnFrame(id, { fx, fy, stride = 0, bob = 0 }) {
-  const { grid, palette } = drawDrawnHero(id, { back: fy < 0, stride, bob });
+/** Pies en la fila 40 del cuadro (el suelo está en (24, 41)). Un solo dibujo para todas las direcciones: mira a la derecha y se espeja a la izquierda. */
+function drawnFrame(id, { fx, stride = 0, bob = 0 }) {
+  const rows = DRAWN_REFS[id].map((row) => row.split(' '));
+  const h = rows.length;
+  const w = rows[0].length;
+  let g = rows.map((row) => row.map((c) => (c === '-' ? null : c)));
+  // Piernas: se abren y se cierran al caminar (las últimas filas del dibujo, separadas por la mitad de los pies).
+  const sway = Math.round(stride / 2);
+  if (sway !== 0) {
+    const legRow = Math.round(h * 0.68);
+    const xs = [];
+    for (let y = h - 6; y < h; y++) for (let x = 0; x < w; x++) if (g[y][x]) xs.push(x);
+    const mid = Math.round((Math.min(...xs) + Math.max(...xs)) / 2);
+    const out = g.map((row, y) => (y < legRow ? [...row] : Array(w).fill(null)));
+    for (let y = legRow; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const c = g[y][x];
+        if (!c) continue;
+        const nx = x + (x < mid ? -sway : sway);
+        if (nx >= 0 && nx < w) out[y][nx] = c;
+      }
+    g = out;
+  }
+  if (fx < 0) g = g.map((row) => [...row].reverse());
   const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
-  const ox = (DRAWN_FRAME - GW) / 2;
-  for (let y = 0; y < GH; y++)
-    for (let x = 0; x < GW; x++) {
-      const letter = fx < 0 ? grid[y][GW - 1 - x] : grid[y][x];
-      if (letter === '.') continue;
-      cv.set(ox + x, y, hex(palette[letter]));
-    }
+  const ox = Math.round((DRAWN_FRAME - w) / 2);
+  const oy = 41 - h + bob;
+  g.forEach((row, y) => row.forEach((c, x) => c && cv.set(ox + x, oy + y, hex(`#${c}`))));
   return cv;
 }
 function buildDrawnSheet(id, frames) {
