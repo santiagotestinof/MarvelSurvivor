@@ -15,7 +15,7 @@ export function formatTime(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export const UI_FONT = 'monospace';
+export const UI_FONT = 'Montserrat, "Segoe UI", system-ui, sans-serif';
 
 export function textStyle(size: number, color = '#ffffff'): Phaser.Types.GameObjects.Text.TextStyle {
   return {
@@ -24,7 +24,7 @@ export function textStyle(size: number, color = '#ffffff'): Phaser.Types.GameObj
     fontSize: `${Math.round(size)}px`,
     color,
     stroke: '#000000',
-    strokeThickness: Math.max(2, Math.round(size / 6)),
+    strokeThickness: Math.max(2, Math.round(size / 8)),
   };
 }
 
