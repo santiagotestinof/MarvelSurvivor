@@ -197,7 +197,7 @@ export class GameScene extends Phaser.Scene {
     this.nextUltimateShotAt = this.clock + 500;
     this.ironManFlightEffect?.destroy();
     this.ironManFlightEffect = this.add.ellipse(this.player.x, this.player.y - 5, 28, 10, 0x75e6ff, 0.65)
-      .setDepth(this.player.y - 1);
+      .setDepth(this.player.y - 0.25);
   }
 
   private updateUltimate(now: number): void {
@@ -211,7 +211,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.ironManFlightEffect?.setPosition(this.player.x, this.player.y - 5).setDepth(this.player.y - 1);
+    this.ironManFlightEffect?.setPosition(this.player.x, this.player.y - 5).setDepth(this.player.y - 0.25);
     while (now >= this.nextUltimateShotAt && this.nextUltimateShotAt < this.ironManFlyingUntil) {
       const impactX = this.player.x;
       const impactY = this.player.y - 8;
