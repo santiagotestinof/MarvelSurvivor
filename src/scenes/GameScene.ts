@@ -66,7 +66,10 @@ export class GameScene extends Phaser.Scene {
   private ironManFlyingUntil = 0;
   private nextUltimateShotAt = 0;
   private ultimateReadyAt = 0;
-  private ironManFlightEffect: Phaser.GameObjects.Ellipse | null = null;
+  private ironManFlightEffect: Phaser.GameObjects.Container | null = null;
+  private ironManBaseMoveSpeed = 0;
+  private ironManBaseScaleX = 1;
+  private ironManBaseScaleY = 1;
 
   constructor() {
     super(SCENE_KEYS.game);
@@ -96,6 +99,9 @@ export class GameScene extends Phaser.Scene {
     this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
     this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
+    this.ironManBaseMoveSpeed = this.player.moveSpeed;
+    this.ironManBaseScaleX = this.player.scaleX;
+    this.ironManBaseScaleY = this.player.scaleY;
     this.toolTotals = { reroll: this.stats.rerolls, skip: this.stats.skips, banish: this.stats.banishes };
     map.onPropBroken = (prop) => this.dropPropGold(prop);
 
@@ -200,9 +206,28 @@ export class GameScene extends Phaser.Scene {
     if (this.clock < this.ironManFlyingUntil || this.clock < this.ultimateReadyAt) return;
     this.ironManFlyingUntil = this.clock + 5000;
     this.nextUltimateShotAt = this.clock + 500;
+    this.player.setMoveSpeed(this.ironManBaseMoveSpeed * 1.25);
+    this.player.setScale(this.ironManBaseScaleX * 1.08, this.ironManBaseScaleY * 1.08);
+    this.player.setTint(0xb9f4ff);
     this.ironManFlightEffect?.destroy();
-    this.ironManFlightEffect = this.add.ellipse(this.player.x, this.player.y - 5, 28, 10, 0x75e6ff, 0.65)
-      .setDepth(this.player.y - 0.25);
+
+    // Propulsores y resplandor bajo los pies para que el vuelo se distinga del movimiento normal.
+    const flightShadow = this.add.ellipse(0, 8, 30, 11, 0x43dfff, 0.32);
+    const leftThruster = this.add.ellipse(-5, 5, 5, 13, 0xffa640, 0.95);
+    const rightThruster = this.add.ellipse(5, 5, 5, 13, 0xffa640, 0.95);
+    const leftCore = this.add.ellipse(-5, 5, 2.5, 8, 0x9df6ff, 1);
+    const rightCore = this.add.ellipse(5, 5, 2.5, 8, 0x9df6ff, 1);
+    this.ironManFlightEffect = this.add.container(this.player.x, this.player.y + 7, [
+      flightShadow, leftThruster, rightThruster, leftCore, rightCore,
+    ]).setDepth(this.player.y - 1);
+    this.tweens.add({
+      targets: [leftThruster, rightThruster, leftCore, rightCore],
+      scaleY: { from: 0.75, to: 1.25 },
+      alpha: { from: 0.65, to: 1 },
+      duration: 100,
+      yoyo: true,
+      repeat: -1,
+    });
   }
 
   private updateUltimate(now: number): void {
@@ -210,13 +235,16 @@ export class GameScene extends Phaser.Scene {
       if (this.ironManFlyingUntil > 0 && now >= this.ironManFlyingUntil) {
         this.ironManFlyingUntil = 0;
         this.ultimateReadyAt = now + 40_000;
+        this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
+        this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
+        this.player.clearTint();
         this.ironManFlightEffect?.destroy();
         this.ironManFlightEffect = null;
       }
       return;
     }
 
-    this.ironManFlightEffect?.setPosition(this.player.x, this.player.y - 5).setDepth(this.player.y - 0.25);
+    this.ironManFlightEffect?.setPosition(this.player.x, this.player.y + 7).setDepth(this.player.y - 1);
     while (now >= this.nextUltimateShotAt && this.nextUltimateShotAt < this.ironManFlyingUntil) {
       const impactX = this.player.x;
       const impactY = this.player.y - 8;
@@ -364,6 +392,9 @@ export class GameScene extends Phaser.Scene {
         this.ironManFlightEffect?.destroy();
         this.ironManFlightEffect = null;
         this.ironManFlyingUntil = 0;
+        this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
+        this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
+        this.player.clearTint();
         this.physics.pause();
         if (this.round.phase === 'lost') this.player.defeat();
         this.bankGold();
