@@ -66,7 +66,7 @@ export class HudScene extends Phaser.Scene {
 
     this.upgradeMenu = new UpgradeMenu(this);
     this.result = new ResultOverlay(this, () => this.backToMenu());
-    this.pause = new PauseOverlay(this, () => this.togglePause());
+    this.pause = new PauseOverlay(this, () => this.togglePause(), () => this.backToMenu());
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
