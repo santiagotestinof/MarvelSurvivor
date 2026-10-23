@@ -845,31 +845,31 @@ function drawUltronBot(fx, fy, frameIdx) {
   // ---------------- 1) PIERNAS (y = 20..30)
   const hipY = 20 + bob;
   if (!sideOnly) {
-    // En frente/espalda las piernas están separadas ±3 px; en diagonal 3/4 están a ±2 px y desplazadas según el paso.
+    // En frente/espalda y diagonal 3/4 las piernas van más juntas (±2 px) para una silueta más estilizada.
     for (const side of [-1, 1]) {
       const step = side * stride;
       const lift = step > 0 ? -1 : 0;
-      const sep = straight ? 3 : 2;
+      const sep = 2;
       const diagShift = diag ? Math.round((fx * side * stride) / 3) : 0;
       const lx = cx + side * sep - 1 + diagShift;
       const farLeg = diag && side !== fx;
       const legBase = farLeg ? mDark : mBase;
       const legLight = farLeg ? mBase : mLight;
-      // Muslo segmentado con brillo diagonal
-      cv.rect(lx, hipY, 3, 4, legBase);
-      cv.rect(lx, hipY, 1, 4, side < 0 ? legLight : mDark);
-      cv.rect(lx + 2, hipY, 1, 4, side > 0 ? legLight : mDark);
-      cv.set(lx + 1, hipY + 1, legLight);
+      // Muslo segmentado con brillo diagonal (2 px de ancho en frente/espalda, 3 px en diagonal)
+      const legW = straight ? 2 : 3;
+      const legX = straight ? (side < 0 ? cx - 3 : cx + 1) : lx;
+      cv.rect(legX, hipY, legW, 4, legBase);
+      cv.rect(legX + (side < 0 ? 0 : legW - 1), hipY, 1, 4, legLight);
       // Rodilla oscura
       const kneeY = hipY + 4 + lift;
-      cv.rect(lx, kneeY, 3, 2, mDeep);
+      cv.rect(legX, kneeY, legW, 2, mDeep);
       // Pantorrilla
-      const shinX = lx + (straight ? (side > 0 ? 1 : -1) * (Math.abs(stride) >= 2 ? 1 : 0) : fx);
-      cv.rect(shinX, kneeY + 2, 3, 3, legBase);
-      cv.rect(shinX + 1, kneeY + 2, 1, 3, legLight);
+      const shinX = straight ? legX : lx + fx;
+      cv.rect(shinX, kneeY + 2, legW, 3, legBase);
+      cv.rect(shinX + (legW > 2 ? 1 : 0), kneeY + 2, 1, 3, legLight);
       // Bota
       const footY = Math.min(30, kneeY + 5);
-      cv.rect(shinX - (side < 0 && straight ? 1 : 0), footY, 4, 2, mDark);
+      cv.rect(shinX - (side < 0 && straight ? 1 : 0), footY, 3, 2, mDark);
       cv.rect(shinX, footY, 2, 1, legLight);
     }
   } else {
@@ -923,12 +923,12 @@ function drawUltronBot(fx, fy, frameIdx) {
 
   // ---------------- 3) TORSO (y = 12..19)
   if (!sideOnly) {
-    // En frente/espalda mide 10 px; en diagonal 3/4 mide 8 px y el eje central se corre 1 px hacia fx.
-    const chestW = straight ? 10 : 8;
-    const waistW = straight ? 8 : 6;
-    const hipW = straight ? 6 : 5;
+    // En frente/espalda mide 8 px (más estilizado); en diagonal 3/4 mide 7 px.
+    const chestW = straight ? 8 : 7;
+    const waistW = straight ? 6 : 5;
+    const hipW = 5;
     const tx = cx - Math.floor(chestW / 2);
-    const centerShift = diag ? fx * 2 : 0;
+    const centerShift = diag ? fx : 0;
     const midX = cx + centerShift;
 
     cv.shaded(tx, ty, chestW, 5, mBase, mLight, mDark);
@@ -938,21 +938,21 @@ function drawUltronBot(fx, fy, frameIdx) {
     if (isFront) {
       // Brillo del esternón y ranuras pectorales desplazados hacia donde gira el torso
       cv.rect(midX - 1, ty + 1, 2, 3, mLight);
-      cv.set(midX - 3, ty + 2, mDeep);
-      if (midX + 2 < tx + chestW) cv.set(midX + 2, ty + 2, mDeep);
+      cv.set(midX - 2, ty + 2, mDeep);
+      if (midX + 1 < tx + chestW) cv.set(midX + 1, ty + 2, mDeep);
       // Nodos rojos en V del pecho
-      if (midX - 3 >= tx) cv.set(midX - 3, ty + 4, redGlow);
-      if (midX + 2 < tx + chestW) cv.set(midX + 2, ty + 4, redGlow);
-      cv.set(midX - 2, ty + 5, redBright);
-      cv.set(midX + 1, ty + 5, redBright);
+      if (midX - 2 >= tx) cv.set(midX - 2, ty + 4, redGlow);
+      if (midX + 1 < tx + chestW) cv.set(midX + 1, ty + 4, redGlow);
+      cv.set(midX - 1, ty + 5, redBright);
+      cv.set(midX, ty + 5, redBright);
       cv.rect(cx - Math.floor(hipW / 2), ty + 6, hipW, 1, mDeep);
     } else if (isBack) {
       // Columna vertebral cibernética (en diagonal 3/4 se desplaza levemente hacia -fx)
       const spineX = cx - (diag ? fx : 0);
       cv.rect(spineX - 1, ty, 2, 8, mDeep);
       for (let y = ty + 1; y <= ty + 6; y += 2) cv.rect(spineX - 1, y, 2, 1, mLight);
-      if (spineX - 3 >= tx) cv.set(spineX - 3, ty + 2, scarRed);
-      if (spineX + 2 < tx + chestW) cv.set(spineX + 2, ty + 2, scarRed);
+      if (spineX - 2 >= tx) cv.set(spineX - 2, ty + 2, scarRed);
+      if (spineX + 1 < tx + chestW) cv.set(spineX + 1, ty + 2, scarRed);
       cv.set(spineX - 2, ty + 4, redGlow);
       if (spineX + 1 < tx + chestW) cv.set(spineX + 1, ty + 4, redGlow);
     }
@@ -975,34 +975,34 @@ function drawUltronBot(fx, fy, frameIdx) {
   } else {
     for (const side of [-1, 1]) {
       const swing = Math.round((side * stride) / 2);
-      // En diagonal 3/4 los hombros están más cerca del centro para una transición suave hacia el perfil
+      // Hombros más pegados al torso (2 px por brazo) para que de frente y espaldas se vea más fino y proporcionado
       const shX = straight
-        ? (side < 0 ? cx - 8 : cx + 5)
-        : (side < 0 ? cx - 6 : cx + 4);
+        ? (side < 0 ? cx - 6 : cx + 4)
+        : (side < 0 ? cx - 5 : cx + 3);
       const shY = ty + (swing > 0 ? 1 : 0);
       const farArm = diag && side !== fx;
       const armBase = farArm ? mDark : mBase;
       const armLight = farArm ? mBase : mLight;
       const armDark = farArm ? mDeep : mDark;
 
-      cv.shaded(shX, shY, 3, 3, armBase, armLight, armDark);
+      cv.shaded(shX, shY, 2, 3, armBase, armLight, armDark);
       const raised = (isFront && (diag ? side === fx : side > 0)) || (isBack && (diag ? side === fx : side < 0));
       if (raised) {
-        const armX = shX + (diag ? fx : side);
-        cv.rect(armX, shY + 3, 3, 3, armBase);
-        cv.set(armX + 1, shY + 4, redGlow);
+        const armX = shX + (diag ? fx : 0);
+        cv.rect(armX, shY + 3, 2, 3, armBase);
+        cv.set(armX + (side > 0 ? 1 : 0), shY + 4, redGlow);
         const clawX = armX + (diag ? fx : side);
         const clawY = shY;
-        cv.shaded(clawX, clawY + 1, 3, 3, armBase, armLight, armDark);
+        cv.shaded(clawX, clawY + 1, 2, 3, armBase, armLight, armDark);
         cv.set(clawX, clawY - 1, mDeep);
-        cv.set(clawX + 2, clawY - 1, mDeep);
+        cv.set(clawX + 1, clawY - 1, mDeep);
       } else {
-        const armX = shX - (side < 0 && straight ? 1 : 0);
-        cv.shaded(armX, shY + 3, 3, 3, armBase, armLight, armDark);
-        cv.set(armX + 1, shY + 4, redGlow);
-        cv.shaded(armX, shY + 6, 3, 3, armBase, armLight, armDark);
-        cv.set(armX + 1, shY + 7, redGlow);
-        cv.rect(armX, shY + 9, 3, 2, armDark);
+        const armX = shX;
+        cv.shaded(armX, shY + 3, 2, 3, armBase, armLight, armDark);
+        cv.set(armX + (side < 0 ? 0 : 1), shY + 4, redGlow);
+        cv.shaded(armX, shY + 6, 2, 3, armBase, armLight, armDark);
+        cv.set(armX + (side < 0 ? 0 : 1), shY + 7, redGlow);
+        cv.rect(armX, shY + 9, 2, 2, armDark);
       }
     }
   }
@@ -1010,48 +1010,48 @@ function drawUltronBot(fx, fy, frameIdx) {
   // ---------------- 5) CABEZA (y = 2..11)
   const hy = 2 + bob;
   if (straight) {
-    cv.shaded(cx - 4, hy, 8, 2, mBase, mLight, mDark);
-    cv.shaded(cx - 5, hy + 2, 10, 5, mBase, mLight, mDark);
-    cv.shaded(cx - 4, hy + 7, 8, 3, mDark, mBase, mDeep);
-    cv.rect(cx - 6, hy + 4, 1, 3, mBase);
-    cv.rect(cx + 5, hy + 4, 1, 3, mBase);
+    cv.shaded(cx - 3, hy, 6, 2, mBase, mLight, mDark);
+    cv.shaded(cx - 4, hy + 2, 8, 5, mBase, mLight, mDark);
+    cv.shaded(cx - 3, hy + 7, 6, 3, mDark, mBase, mDeep);
+    cv.rect(cx - 5, hy + 4, 1, 2, mBase);
+    cv.rect(cx + 4, hy + 4, 1, 2, mBase);
 
     if (isFront) {
-      cv.rect(cx - 3, hy + 1, 2, 2, mLight);
+      cv.rect(cx - 2, hy + 1, 2, 2, mLight);
       cv.rect(cx - 2, hy + 2, 1, 3, scarRed);
-      cv.rect(cx + 2, hy + 2, 1, 3, scarRed);
-      cv.set(cx - 3, hy + 1, scarRed);
-      cv.rect(cx - 4, hy + 5, 3, 2, socket);
-      cv.rect(cx + 1, hy + 5, 3, 2, socket);
+      cv.rect(cx + 1, hy + 2, 1, 3, scarRed);
+      cv.set(cx - 2, hy + 1, scarRed);
+      cv.rect(cx - 3, hy + 5, 2, 2, socket);
+      cv.rect(cx + 1, hy + 5, 2, 2, socket);
       cv.rect(cx - 3, hy + 5, 2, 1, redBright);
-      cv.rect(cx + 2, hy + 5, 2, 1, redBright);
+      cv.rect(cx + 1, hy + 5, 2, 1, redBright);
       cv.set(cx - 2, hy + 6, redGlow);
-      cv.set(cx + 2, hy + 6, redGlow);
-      cv.rect(cx - 4, hy + 7, 8, 2, socket);
+      cv.set(cx + 1, hy + 6, redGlow);
+      cv.rect(cx - 3, hy + 7, 6, 2, socket);
       cv.set(cx - 2, hy + 8, mBase);
       cv.set(cx, hy + 8, mBase);
-      cv.set(cx + 2, hy + 8, mBase);
+      cv.set(cx + 1, hy + 8, mBase);
     } else {
-      cv.rect(cx - 3, hy + 1, 3, 2, mLight);
+      cv.rect(cx - 2, hy + 1, 2, 2, mLight);
       cv.rect(cx, hy + 1, 1, 7, mDeep);
-      cv.rect(cx - 3, hy + 6, 6, 1, mDeep);
+      cv.rect(cx - 2, hy + 6, 4, 1, mDeep);
       cv.rect(cx - 1, hy + 4, 2, 2, scarRed);
       cv.set(cx, hy + 4, redGlow);
     }
   } else if (diag) {
     // Cabeza en diagonal 3/4: punto intermedio entre frente/espalda y perfil
     const hx = cx - 4;
-    cv.shaded(hx + 1, hy, 7, 2, mBase, mLight, mDark);
-    cv.shaded(hx, hy + 2, 9, 5, mBase, mLight, mDark);
-    cv.shaded(hx + 1, hy + 7, 7, 3, mDark, mBase, mDeep);
+    cv.shaded(hx + 1, hy, 6, 2, mBase, mLight, mDark);
+    cv.shaded(hx, hy + 2, 8, 5, mBase, mLight, mDark);
+    cv.shaded(hx + 1, hy + 7, 6, 3, mDark, mBase, mDeep);
     // Oreja visible del lado cercano (-fx)
-    const earX = fx > 0 ? hx - 1 : hx + 9;
-    cv.rect(earX, hy + 4, 1, 3, mDark);
+    const earX = fx > 0 ? hx - 1 : hx + 8;
+    cv.rect(earX, hy + 4, 1, 2, mDark);
 
     if (isFront) {
       // En 3/4 de frente se ven los dos ojos y las dos marcas rojas pero desplazados hacia fx
-      const s1 = fx > 0 ? cx : cx - 3;
-      const s2 = fx > 0 ? cx + 3 : cx;
+      const s1 = fx > 0 ? cx - 1 : cx - 3;
+      const s2 = fx > 0 ? cx + 2 : cx;
       cv.rect(s1, hy + 2, 1, 3, scarRed);
       cv.rect(s2, hy + 2, 1, 3, scarRed);
       // Ojo cercano al centro (2 px) y ojo del borde (2 px)
@@ -1064,18 +1064,17 @@ function drawUltronBot(fx, fy, frameIdx) {
       cv.set(eNear + 1, hy + 6, redGlow);
       cv.set(eFar + (fx > 0 ? 1 : 0), hy + 6, redGlow);
       // Rejilla bucal desplazada hacia fx
-      const jawX = fx > 0 ? cx - 1 : cx - 4;
-      cv.rect(jawX, hy + 7, 6, 2, socket);
+      const jawX = fx > 0 ? cx - 1 : cx - 3;
+      cv.rect(jawX, hy + 7, 5, 2, socket);
       cv.set(jawX + 1, hy + 8, mBase);
       cv.set(jawX + 3, hy + 8, mBase);
-      cv.set(jawX + 5, hy + 8, mBase);
     } else {
       // En 3/4 de espaldas se ve la nuca desplazada hacia -fx y un destello del ojo/mandíbula en el borde fx
       const seamX = cx - fx;
       cv.rect(seamX, hy + 1, 1, 7, mDeep);
       cv.rect(seamX - 1, hy + 4, 2, 2, scarRed);
       cv.set(seamX, hy + 4, redGlow);
-      const edgeX = fx > 0 ? hx + 8 : hx;
+      const edgeX = fx > 0 ? hx + 7 : hx;
       cv.set(edgeX, hy + 5, redGlow);
       cv.rect(edgeX, hy + 6, 1, 2, socket);
     }
@@ -1411,15 +1410,15 @@ function drawOutrider(fx, fy, frameIdx) {
   // ---------------- 1) TENTÁCULOS DORSALES CURVOS (salen detrás de los hombros y se arquean arriba afuera)
   if (!sideOnly) {
     for (const side of [-1, 1]) {
-      const tx0 = cx + side * (straight ? 5 : 4);
+      const tx0 = cx + side * 4;
       const sway = frameIdx % 2 === 0 ? 0 : 1;
       // Tallo curvo bien separado de la cabeza con pinza dorada en la punta (como en la foto)
       cv.rect(tx0, ty - 1, 2, 1, sDark);
-      cv.rect(tx0 + side * 2, ty - 2, 2, 1, sDark);
-      cv.rect(tx0 + side * 3, ty - 4 + sway, 2, 2, sBase);
-      cv.set(tx0 + side * 4, ty - 5 + sway, sLight);
-      cv.set(tx0 + side * 3, ty - 6 + sway, goldDark);
-      cv.set(tx0 + side * 2, ty - 6 + sway, tooth);
+      cv.rect(tx0 + side, ty - 2, 2, 1, sDark);
+      cv.rect(tx0 + side * 2, ty - 4 + sway, 2, 2, sBase);
+      cv.set(tx0 + side * 3, ty - 5 + sway, sLight);
+      cv.set(tx0 + side * 2, ty - 6 + sway, goldDark);
+      cv.set(tx0 + side, ty - 6 + sway, tooth);
     }
   } else {
     // En perfil los tentáculos dorsales se arquean claramente detrás de la espalda (-fx)
@@ -1438,29 +1437,31 @@ function drawOutrider(fx, fy, frameIdx) {
     for (const side of [-1, 1]) {
       const step = side * stride;
       const lift = step > 0 ? -1 : 0;
-      const sep = straight ? 3 : 2;
+      const sep = 2;
       const diagShift = diag ? Math.round((fx * side * stride) / 3) : 0;
       const lx = cx + side * sep - 1 + diagShift;
       const farLeg = diag && side !== fx;
       const legBase = farLeg ? sDark : sBase;
       const legLight = farLeg ? sBase : sLight;
 
+      const legW = straight ? 2 : 3;
+      const legX = straight ? (side < 0 ? cx - 3 : cx + 1) : lx;
       // Muslo musculoso
-      cv.rect(lx, hipY, 3, 4, legBase);
-      cv.rect(lx + (side < 0 ? 0 : 1), hipY, 1, 3, legLight);
+      cv.rect(legX, hipY, legW, 4, legBase);
+      cv.rect(legX + (side < 0 ? 0 : legW - 1), hipY, 1, 3, legLight);
       // Rodilla y pantorrilla
       const kneeY = hipY + 4 + lift;
-      cv.rect(lx, kneeY, 3, 2, sDark);
-      const shinX = lx + (straight ? (side > 0 ? 1 : -1) * (Math.abs(stride) >= 2 ? 1 : 0) : fx);
-      cv.rect(shinX, kneeY + 2, 3, 3, legBase);
-      cv.set(shinX + 1, kneeY + 2, legLight);
-      // Pie con 3 garras amarillas como en la foto
+      cv.rect(legX, kneeY, legW, 2, sDark);
+      const shinX = straight ? legX : lx + fx;
+      cv.rect(shinX, kneeY + 2, legW, 3, legBase);
+      cv.set(shinX + (legW > 2 ? 1 : 0), kneeY + 2, legLight);
+      // Pie con garras amarillas como en la foto
       const footY = Math.min(30, kneeY + 5);
       const footX = shinX - (side < 0 && straight ? 1 : 0);
-      cv.rect(footX, footY, 4, 2, sDark);
+      cv.rect(footX, footY, 3, 2, sDark);
       cv.set(footX, footY + 1, tooth);
-      cv.set(footX + 2, footY + 1, tooth);
-      cv.set(footX + 3, footY + 1, gold);
+      cv.set(footX + 1, footY + 1, tooth);
+      cv.set(footX + 2, footY + 1, gold);
     }
   } else {
     for (const layer of [-1, 1]) {
@@ -1510,11 +1511,11 @@ function drawOutrider(fx, fy, frameIdx) {
 
   // ---------------- 4) TORSO CON MARCAS DORADAS EN V (y = 12..19)
   if (!sideOnly) {
-    const chestW = straight ? 10 : 8;
-    const waistW = straight ? 8 : 6;
-    const hipW = straight ? 6 : 5;
+    const chestW = straight ? 8 : 7;
+    const waistW = straight ? 6 : 5;
+    const hipW = 5;
     const tx = cx - Math.floor(chestW / 2);
-    const midX = cx + (diag ? fx * 2 : 0);
+    const midX = cx + (diag ? fx : 0);
 
     cv.shaded(tx, ty, chestW, 5, sBase, sLight, sDark);
     cv.shaded(cx - Math.floor(waistW / 2), ty + 5, waistW, 2, sBase, sLight, sDark);
@@ -1524,8 +1525,8 @@ function drawOutrider(fx, fy, frameIdx) {
       // Arnés/marcas doradas en V que bajan desde los hombros al centro del pecho (idénticas a la foto)
       cv.set(tx + 1, ty, gold);
       cv.set(tx + chestW - 2, ty, gold);
-      cv.set(midX - 3, ty + 1, gold);
-      if (midX + 2 < tx + chestW) cv.set(midX + 2, ty + 1, gold);
+      cv.set(midX - 2, ty + 1, gold);
+      if (midX + 1 < tx + chestW) cv.set(midX + 1, ty + 1, gold);
       cv.set(midX - 2, ty + 2, gold);
       cv.set(midX + 1, ty + 2, gold);
       cv.rect(midX - 1, ty + 3, 2, 2, goldDark);
@@ -1539,8 +1540,8 @@ function drawOutrider(fx, fy, frameIdx) {
       cv.rect(spineX - 1, ty, 2, 8, sDeep);
       for (let y = ty + 1; y <= ty + 6; y += 2) cv.rect(spineX - 1, y, 2, 1, sLight);
       // Tiras doradas cruzadas en la espalda
-      cv.set(spineX - 3, ty + 1, goldDark);
-      if (spineX + 2 < tx + chestW) cv.set(spineX + 2, ty + 1, goldDark);
+      cv.set(spineX - 2, ty + 1, goldDark);
+      if (spineX + 1 < tx + chestW) cv.set(spineX + 1, ty + 1, goldDark);
       cv.set(spineX - 2, ty + 2, gold);
       if (spineX + 1 < tx + chestW) cv.set(spineX + 1, ty + 2, gold);
     }
@@ -1562,16 +1563,16 @@ function drawOutrider(fx, fy, frameIdx) {
     for (const side of [-1, 1]) {
       const swing = Math.round((side * stride) / 2);
       const shX = straight
-        ? (side < 0 ? cx - 8 : cx + 5)
-        : (side < 0 ? cx - 6 : cx + 4);
+        ? (side < 0 ? cx - 6 : cx + 4)
+        : (side < 0 ? cx - 5 : cx + 3);
       const shY = ty + (swing > 0 ? 1 : 0);
       const farArm = diag && side !== fx;
       const armBase = farArm ? sDark : sBase;
       const armLight = farArm ? sBase : sLight;
 
-      // Hombrera con 2 franjas doradas horizontales como en la imagen
-      cv.shaded(shX, shY, 3, 3, armBase, armLight, sDark);
-      cv.rect(shX, shY + 1, 3, 1, gold);
+      // Hombrera con franja dorada horizontal como en la imagen
+      cv.shaded(shX, shY, 2, 3, armBase, armLight, sDark);
+      cv.rect(shX, shY + 1, 2, 1, gold);
 
       // Brazo principal superior: uno levantado con garras abiertas y el otro extendido abajo con garras
       const raised = (isFront && (diag ? side === fx : side > 0)) || (isBack && (diag ? side === fx : side < 0));
@@ -1582,26 +1583,26 @@ function drawOutrider(fx, fy, frameIdx) {
         cv.set(lowX + (side < 0 ? 0 : 1), shY + 9, tooth);
         cv.set(lowX + (side < 0 ? 1 : 0), shY + 9, gold);
 
-        const armX = shX + (diag ? fx : side);
-        cv.rect(armX, shY + 3, 3, 3, armBase);
+        const armX = shX + (diag ? fx : 0);
+        cv.rect(armX, shY + 3, 2, 3, armBase);
         const clawX = armX + (diag ? fx : side);
         const clawY = shY - 1;
-        cv.shaded(clawX, clawY + 1, 3, 3, armBase, armLight, sDark);
+        cv.shaded(clawX, clawY + 1, 2, 3, armBase, armLight, sDark);
         cv.set(clawX, clawY, tooth);
-        cv.set(clawX + 2, clawY, tooth);
+        cv.set(clawX + 1, clawY, tooth);
         cv.set(clawX - (diag ? fx : side), clawY + 1, gold);
       } else {
-        // Brazo secundario se abre en diagonal hacia afuera (como en la foto, se ven los dos brazos paralelos)
-        const armX = shX - (side < 0 && straight ? 1 : 0);
-        const lowX = armX + (side < 0 ? -2 : 3);
+        // Brazo secundario se abre en diagonal hacia afuera
+        const armX = shX;
+        const lowX = armX + (side < 0 ? -1 : 2);
         cv.rect(lowX, shY + 4, 2, 5, sDark);
         cv.set(lowX, shY + 9, tooth);
         cv.set(lowX + 1, shY + 9, gold);
 
-        cv.shaded(armX, shY + 3, 3, 5, armBase, armLight, sDark);
-        cv.rect(armX, shY + 8, 3, 2, sDark);
+        cv.shaded(armX, shY + 3, 2, 5, armBase, armLight, sDark);
+        cv.rect(armX, shY + 8, 2, 2, sDark);
         cv.set(armX, shY + 10, tooth);
-        cv.set(armX + 2, shY + 10, gold);
+        cv.set(armX + 1, shY + 10, gold);
       }
     }
   }
@@ -1610,28 +1611,25 @@ function drawOutrider(fx, fy, frameIdx) {
   const hy = 2 + bob;
   if (straight) {
     // Púas superiores de la cresta (como en la imagen de referencia)
-    cv.rect(cx - 4, hy - 1, 2, 2, sBase);
+    cv.rect(cx - 3, hy - 1, 2, 2, sBase);
     cv.rect(cx - 1, hy - 2, 2, 3, sLight);
-    cv.rect(cx + 2, hy - 1, 2, 2, sBase);
-    cv.set(cx - 5, hy + 1, sBase);
-    cv.shaded(cx - 5, hy + 1, 10, 5, sBase, sLight, sDark);
-    cv.shaded(cx - 4, hy + 6, 8, 4, sDark, sBase, sDeep);
+    cv.rect(cx + 1, hy - 1, 2, 2, sBase);
+    cv.shaded(cx - 4, hy + 1, 8, 5, sBase, sLight, sDark);
+    cv.shaded(cx - 3, hy + 6, 6, 4, sDark, sBase, sDeep);
 
     if (isFront) {
       // Líneas quitinosas de la cresta frontal
-      cv.rect(cx - 3, hy + 2, 1, 2, sLight);
+      cv.rect(cx - 2, hy + 2, 1, 2, sLight);
       cv.rect(cx, hy + 1, 1, 3, sLight);
       cv.rect(cx + 2, hy + 2, 1, 2, sLight);
       // Fauces feroces sin ojos: encía rojiza y colmillos amarillos arriba y abajo
-      cv.rect(cx - 3, hy + 5, 6, 4, sDeep);
-      cv.rect(cx - 3, hy + 5, 6, 1, gum);
-      cv.set(cx - 3, hy + 6, tooth);
-      cv.set(cx - 1, hy + 6, tooth);
-      cv.set(cx + 1, hy + 6, tooth);
+      cv.rect(cx - 2, hy + 5, 5, 4, sDeep);
+      cv.rect(cx - 2, hy + 5, 5, 1, gum);
+      cv.set(cx - 2, hy + 6, tooth);
+      cv.set(cx, hy + 6, tooth);
       cv.set(cx + 2, hy + 6, tooth);
-      cv.set(cx - 2, hy + 8, tooth);
-      cv.set(cx, hy + 8, tooth);
-      cv.set(cx + 1, hy + 8, gum);
+      cv.set(cx - 1, hy + 8, tooth);
+      cv.set(cx + 1, hy + 8, tooth);
     } else {
       // De espaldas: cresta espinosa dorsal
       cv.rect(cx - 1, hy, 2, 9, sDeep);
@@ -1640,27 +1638,26 @@ function drawOutrider(fx, fy, frameIdx) {
   } else if (diag) {
     const hx = cx - 4;
     // Púas inclinadas hacia atrás (-fx)
-    cv.rect(cx - fx * 3, hy - 1, 2, 2, sBase);
+    cv.rect(cx - fx * 2, hy - 1, 2, 2, sBase);
     cv.rect(cx - fx, hy - 2, 2, 3, sLight);
-    cv.set(cx - fx * 5, hy + 1, sBase);
-    cv.shaded(hx, hy + 1, 9, 5, sBase, sLight, sDark);
-    cv.shaded(hx + 1, hy + 6, 7, 4, sDark, sBase, sDeep);
+    cv.shaded(hx, hy + 1, 8, 5, sBase, sLight, sDark);
+    cv.shaded(hx + 1, hy + 6, 6, 4, sDark, sBase, sDeep);
 
     if (isFront) {
       // Fauces en 3/4 desplazadas hacia fx
-      const mawX = fx > 0 ? cx - 1 : cx - 4;
-      cv.rect(mawX, hy + 5, 5, 4, sDeep);
-      cv.rect(mawX, hy + 5, 5, 1, gum);
+      const mawX = fx > 0 ? cx - 1 : cx - 3;
+      cv.rect(mawX, hy + 5, 4, 4, sDeep);
+      cv.rect(mawX, hy + 5, 4, 1, gum);
       cv.set(mawX, hy + 6, tooth);
       cv.set(mawX + 2, hy + 6, tooth);
-      cv.set(mawX + 4, hy + 6, tooth);
+      cv.set(mawX + 3, hy + 6, tooth);
       cv.set(mawX + 1, hy + 8, tooth);
-      cv.set(mawX + 3, hy + 8, tooth);
+      cv.set(mawX + 2, hy + 8, tooth);
     } else {
       // 3/4 de espaldas: nuca espinosa y un colmillo asomando en el borde fx
       const spineX = cx - fx;
       cv.rect(spineX, hy + 1, 1, 8, sDeep);
-      const edgeX = fx > 0 ? hx + 8 : hx;
+      const edgeX = fx > 0 ? hx + 7 : hx;
       cv.set(edgeX, hy + 6, tooth);
       cv.set(edgeX, hy + 7, sDeep);
     }
