@@ -4,6 +4,8 @@
 
 import { CUSTOM_ICONS } from './meta-icons-custom.mjs';
 
+import { CUSTOM_ICONS_32 } from './meta-icons-custom32.mjs';
+
 export const ICON_SIZE = 16;
 /** Tamaño de cada cuadro en la hoja final: los dibujos de 16×16 se agrandan al doble (cada píxel pasa a ser 2×2). */
 export const SHEET_CELL = 32;
@@ -417,6 +419,36 @@ export function buildMetaIconSheet() {
   const width = SHEET_CELL * META_ICON_IDS.length;
   const px = new Uint8Array(width * SHEET_CELL * 4);
   META_ICON_IDS.forEach((id, index) => {
+    const big = CUSTOM_ICONS_32[id];
+    if (big) {
+      // Ícono hecho directamente en 32×32: se centra por su caja y se le agrega un contorno oscuro de 1 píxel.
+      const cells = new Map();
+      big.forEach((row, y) =>
+        row.split(' ').forEach((cell, x) => {
+          if (cell !== '-') cells.set(`${x},${y}`, hex(`#${cell}`));
+        }),
+      );
+      const pts = [...cells.keys()].map((k) => k.split(',').map(Number));
+      const minX = Math.min(...pts.map(([x]) => x));
+      const maxX = Math.max(...pts.map(([x]) => x));
+      const minY = Math.min(...pts.map(([, y]) => y));
+      const maxY = Math.max(...pts.map(([, y]) => y));
+      const spanX = maxX - minX + 1 + 2; // + contorno
+      const spanY = maxY - minY + 1 + 2;
+      const shiftX = Math.floor((SHEET_CELL - spanX) / 2) + 1 - minX;
+      const shiftY = Math.floor((SHEET_CELL - spanY) / 2) + 1 - minY;
+      const put = (x, y, color) => {
+        if (x >= 0 && y >= 0 && x < SHEET_CELL && y < SHEET_CELL) px.set(color, (y * width + index * SHEET_CELL + x) * 4);
+      };
+      for (const [x, y] of pts) {
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          if (!cells.has(`${x + dx},${y + dy}`)) put(x + dx + shiftX, y + dy + shiftY, C.K);
+        }
+      }
+      for (const [x, y] of pts) put(x + shiftX, y + shiftY, cells.get(`${x},${y}`));
+      console.log(`  ícono propio 32×32 ${id}: corrido ${shiftX},${shiftY}`);
+      return;
+    }
     const g = new Grid();
     const custom = CUSTOM_ICONS[id];
     if (custom) {
