@@ -15,6 +15,8 @@ import { fileURLToPath } from 'node:url';
 import { IRON_MAN_REF } from './ironman-reference.mjs';
 import { CAPITAN_REF } from './hero-trace-capitan.mjs';
 import { THOR_REF } from './hero-trace-thor.mjs';
+import { HULK_REF } from './hero-trace-hulk.mjs';
+import { SPIDERMAN_REF } from './hero-trace-spiderman.mjs';
 import { buildMetaIconSheet } from './meta-icons.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -568,7 +570,7 @@ function saveHero(id) {
 
 
 // ---------------------------------------------------------------- Capitán y Thor (calcados de las referencias, como Iron Man)
-const DRAWN_REFS = { capitan: CAPITAN_REF, thor: THOR_REF };
+const DRAWN_REFS = { capitan: CAPITAN_REF, thor: THOR_REF, hulk: HULK_REF, spiderman: SPIDERMAN_REF };
 const DRAWN_HEROES = Object.keys(DRAWN_REFS);
 const DRAWN_FRAME = 48;
 /** Pies en la fila 40 del cuadro (el suelo está en (24, 41)). Un solo dibujo para todas las direcciones: mira a la derecha y se espeja a la izquierda. */
