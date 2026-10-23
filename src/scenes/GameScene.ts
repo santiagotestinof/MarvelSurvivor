@@ -76,6 +76,11 @@ export class GameScene extends Phaser.Scene {
     this.frozen = false;
     const testMode = new URLSearchParams(window.location.search).get('test') === '1';
     this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
+    this.ironManFlyingUntil = 0;
+    this.nextUltimateShotAt = 0;
+    this.ultimateReadyAt = 0;
+    this.ironManFlightEffect?.destroy();
+    this.ironManFlightEffect = null;
     this.stats = new PlayerStats();
     this.progression = new ProgressionSystem();
     this.taken = {};
@@ -356,6 +361,9 @@ export class GameScene extends Phaser.Scene {
     if (this.round.ended) {
       if (!this.frozen) {
         this.frozen = true;
+        this.ironManFlightEffect?.destroy();
+        this.ironManFlightEffect = null;
+        this.ironManFlyingUntil = 0;
         this.physics.pause();
         if (this.round.phase === 'lost') this.player.defeat();
         this.bankGold();
