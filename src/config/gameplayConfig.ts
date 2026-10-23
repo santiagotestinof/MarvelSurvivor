@@ -120,3 +120,16 @@ export const REVIVAL = {
   blastRadius: 90,
   blastDamage: 40,
 };
+
+/** Gacha de héroes: se paga con oro; los repetidos devuelven oro según su rareza. */
+export const GACHA = {
+  pullCost: 100,
+  /** Tiradas de la tanda grande ("x10"). */
+  multiPulls: 10,
+  /** Si pasan tantas tiradas sin héroe épico o mejor, la siguiente garantiza uno. */
+  pityPulls: 10,
+  /** Probabilidad relativa de cada rareza (se ignoran las rarezas sin héroes). */
+  weights: { common: 55, rare: 30, epic: 12, legendary: 3 },
+  /** Oro que devuelve un héroe repetido. */
+  duplicateGold: { common: 30, rare: 60, epic: 120, legendary: 250 },
+} as const;

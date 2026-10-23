@@ -11,6 +11,8 @@ export const IRON_MAN_ID = 'ironman';
 export const ironManDefinition: CharacterDefinition = {
   id: IRON_MAN_ID,
   displayName: 'Iron Man',
+  rarity: 'common',
+  weaponText: 'Repulsores: disparan solos al enemigo más cercano',
   frame: { width: 32, height: 32 },
   origin: { x: 0.5, y: 30 / 32 },
   body: { width: 10, height: 8, offsetX: 11, offsetY: 22 },
@@ -19,6 +21,7 @@ export const ironManDefinition: CharacterDefinition = {
     maxHealth: 100,
     // Repulsores: disparo automático al enemigo más cercano.
     attack: {
+      kind: 'bolt',
       cooldownMs: 450,
       damage: 10,
       projectileTexture: TEXTURES.repulsor,

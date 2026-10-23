@@ -13,6 +13,13 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
   private readonly maxDistance: number;
   private pierceLeft: number;
   private readonly alreadyHit = new Set<object>();
+  /** Boomerang (escudo): al llegar al máximo da la vuelta hacia `owner` y desaparece al alcanzarlo. */
+  private readonly boomerang: { x: number; y: number } | null;
+  private readonly boomerangSpeed: number;
+  private returning = false;
+  private returned = false;
+  /** Frenado que deja al enemigo (telaraña). */
+  readonly slow: { ms: number; factor: number } | null;
 
   constructor(
     scene: Phaser.Scene,
@@ -23,7 +30,12 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     maxDistance: number,
     velocityX: number,
     velocityY: number,
-    options: { pierce?: number; critical?: boolean } = {},
+    options: {
+      pierce?: number;
+      critical?: boolean;
+      boomerang?: { x: number; y: number };
+      slow?: { ms: number; factor: number };
+    } = {},
   ) {
     super(scene, x, y, texture);
     this.damage = damage;
@@ -32,6 +44,9 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     this.maxDistance = maxDistance;
     this.pierceLeft = options.pierce ?? 0;
     this.critical = options.critical ?? false;
+    this.boomerang = options.boomerang ?? null;
+    this.boomerangSpeed = Math.hypot(velocityX, velocityY);
+    this.slow = options.slow ?? null;
     // El crítico se ve más grande y dorado.
     if (this.critical) this.setScale(1.5).setTint(0xffe272);
 
@@ -62,7 +77,28 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     return false;
   }
 
+  /** Avanza un cuadro: solo los boomerang hacen algo (dar la vuelta, volver y girar). */
+  step(): void {
+    const owner = this.boomerang;
+    if (!owner || !this.active) return;
+    if (!this.returning && Phaser.Math.Distance.Between(this.x, this.y, this.startX, this.startY) > this.maxDistance) {
+      this.returning = true;
+      this.alreadyHit.clear(); // a la vuelta les pega de nuevo
+    }
+    if (this.returning) {
+      const targetY = owner.y - 14;
+      if (Phaser.Math.Distance.Between(this.x, this.y, owner.x, targetY) < 10) {
+        this.returned = true;
+        return;
+      }
+      const angle = Math.atan2(targetY - this.y, owner.x - this.x);
+      this.setVelocity(Math.cos(angle) * this.boomerangSpeed, Math.sin(angle) * this.boomerangSpeed);
+    }
+    this.rotation += 0.35;
+  }
+
   hasExpired(): boolean {
+    if (this.boomerang) return this.returned;
     return Phaser.Math.Distance.Between(this.x, this.y, this.startX, this.startY) > this.maxDistance;
   }
 }

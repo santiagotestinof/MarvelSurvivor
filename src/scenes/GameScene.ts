@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
-import { IRON_MAN_ID } from '../characters/ironman/ironManDefinition';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { GOLD, PROGRESSION, REVIVAL, ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
@@ -78,7 +77,7 @@ export class GameScene extends Phaser.Scene {
     map.build();
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
-    this.player = createCharacter(this, IRON_MAN_ID, map.spawn.x, map.spawn.y);
+    this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
     this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.toolTotals = { reroll: this.stats.rerolls, skip: this.stats.skips, banish: this.stats.banishes };
@@ -108,6 +107,7 @@ export class GameScene extends Phaser.Scene {
       const enemy = e as Enemy;
       if (enemy.dying || !projectile.canHit(enemy)) return;
       enemy.takeDamage(projectile.damage);
+      if (projectile.slow && !enemy.dying) enemy.applySlow(projectile.slow.ms, projectile.slow.factor);
       if (projectile.registerHit(enemy)) projectile.destroy();
     });
 
@@ -197,7 +197,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private upgradeContext(): UpgradeContext {
-    return { stats: this.stats, player: this.player, missiles: this.missiles, taken: this.taken };
+    return {
+      stats: this.stats,
+      player: this.player,
+      missiles: this.missiles,
+      taken: this.taken,
+      basicKind: this.player.definition.stats.attack.kind,
+    };
   }
 
   /** Sortea las opciones y las muestra; repetir y desterrar vuelven acá con otras opciones. */

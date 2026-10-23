@@ -1,4 +1,5 @@
 import { BASIC_ATTACK_LIMITS, FIRE, MISSILES, PROGRESSION } from '../config/gameplayConfig';
+import type { AttackKind } from '../characters/CharacterDefinition';
 import type { Character } from '../entities/Character';
 import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
@@ -9,6 +10,8 @@ export interface UpgradeContext {
   missiles: MissileWeapon;
   /** Cuántas veces se eligió cada mejora en esta ronda (por `id`). */
   taken: Readonly<Record<string, number>>;
+  /** Cómo ataca el héroe: algunas mejoras del ataque básico no sirven para todos. */
+  basicKind: AttackKind;
 }
 
 export type UpgradeCategory = 'attack' | 'defense' | 'utility' | 'evolution';
@@ -125,7 +128,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: '+1 disparo en abanico',
     category: 'attack',
     describe: ({ stats }) => `+1 disparo en abanico (${stats.projectileCount} → ${stats.projectileCount + 1})`,
-    isAvailable: ({ stats }) => stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
+    isAvailable: ({ stats, basicKind }) => basicKind !== 'quake' && stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
     apply: ({ stats }) => stats.projectileCount++,
   },
   {
@@ -134,7 +137,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: 'El disparo atraviesa +1 enemigo',
     category: 'attack',
     describe: ({ stats }) => `El disparo atraviesa +1 enemigo (${stats.pierce} → ${stats.pierce + 1})`,
-    isAvailable: ({ stats }) => stats.pierce < BASIC_ATTACK_LIMITS.maxPierce,
+    isAvailable: ({ stats, basicKind }) => (basicKind === 'bolt' || basicKind === 'web') && stats.pierce < BASIC_ATTACK_LIMITS.maxPierce,
     apply: ({ stats }) => stats.pierce++,
   },
   {
@@ -142,7 +145,9 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     name: 'Velocidad del disparo',
     description: '+25% de velocidad de los disparos',
     category: 'attack',
-    isAvailable: (ctx) => times(ctx, 'shot-speed') < BASIC_ATTACK_LIMITS.maxSpeedUpgrades,
+    isAvailable: (ctx) =>
+      (ctx.basicKind === 'bolt' || ctx.basicKind === 'web' || ctx.basicKind === 'shield') &&
+      times(ctx, 'shot-speed') < BASIC_ATTACK_LIMITS.maxSpeedUpgrades,
     apply: ({ stats }) => (stats.projectileSpeedMult *= 1.25),
   },
   {

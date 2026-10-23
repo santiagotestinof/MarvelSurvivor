@@ -16,6 +16,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   harmless = false;
 
   private currentHealth: number;
+  private slowUntil = 0;
+  private slowFactor = 1;
+  private knockUntil = 0;
   private readonly moveSpeed: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number, kind: EnemyKind, scaling: EnemyScaling) {
@@ -42,11 +45,30 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setAlpha(0.6).setTint(0xb7c4d6);
   }
 
+  /** Lo frena: conserva `factor` de su velocidad durante `ms`. */
+  applySlow(ms: number, factor: number): void {
+    this.slowUntil = this.scene.time.now + ms;
+    this.slowFactor = factor;
+  }
+
+  /** Lo empuja en la dirección (dx, dy) durante `ms` (no persigue mientras tanto). */
+  knockback(dx: number, dy: number, speed: number, ms: number): void {
+    const length = Math.hypot(dx, dy) || 1;
+    this.setVelocity((dx / length) * speed, (dy / length) * speed);
+    this.knockUntil = this.scene.time.now + ms;
+  }
+
   get health(): number {
     return this.currentHealth;
   }
 
   chase(targetX: number, targetY: number, separationX = 0, separationY = 0): void {
+    const now = this.scene.time.now;
+    if (now < this.knockUntil) {
+      this.setDepth(this.y);
+      return;
+    }
+    const speed = this.moveSpeed * (now < this.slowUntil ? this.slowFactor : 1);
     const dx = targetX - this.x;
     const dy = targetY - this.y;
     const distance = Math.hypot(dx, dy);
@@ -56,7 +78,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const moveY = chaseY + separationY * 1.8;
     const moveLength = Math.hypot(moveX, moveY);
     if (moveLength > 0.001) {
-      this.setVelocity((moveX / moveLength) * this.moveSpeed, (moveY / moveLength) * this.moveSpeed);
+      this.setVelocity((moveX / moveLength) * speed, (moveY / moveLength) * speed);
     } else {
       this.setVelocity(0, 0);
     }

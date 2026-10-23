@@ -7,6 +7,9 @@ export const TEXTURES = {
   shadow: 'shadow',
   repulsor: 'repulsor',
   missile: 'missile',
+  shield: 'shield',
+  web: 'web',
+  thunder: 'thunder',
   fire: 'fire',
   gem: 'xp-gem',
   coin: 'gold-coin',
@@ -25,6 +28,9 @@ export const ASSET_PATHS = {
   crate: 'assets/props/crate.png',
   repulsor: 'assets/projectiles/repulsor.png',
   missile: 'assets/projectiles/missile.png',
+  shield: 'assets/projectiles/shield.png',
+  web: 'assets/projectiles/web.png',
+  thunder: 'assets/effects/thunder.png',
   /** Hoja de 3 cuadros de 32x32 (círculo plano). */
   fire: 'assets/effects/fire.png',
 } as const;
