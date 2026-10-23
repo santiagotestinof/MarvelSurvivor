@@ -49,6 +49,11 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     return this.active && !this.alreadyHit.has(target);
   }
 
+  /** Marca un objetivo como ya golpeado sin gastar perforación (para props, que no frenan el disparo). */
+  markHit(target: object): void {
+    this.alreadyHit.add(target);
+  }
+
   /** Registra el golpe. Devuelve true si el disparo tiene que desaparecer (ya no le queda perforación). */
   registerHit(target: object): boolean {
     this.alreadyHit.add(target);

@@ -8,6 +8,7 @@ import { Direction } from '../core/direction';
 import { DRONE, enemyAnimationKey } from '../enemies/enemyKinds';
 import { animationKey } from '../systems/AnimationSystem';
 import { UiButton } from '../ui/UiButton';
+import { saveData } from '../meta/saveData';
 import { drawPanel, formatTime, textStyle, uiScale } from '../ui/uiLayout';
 
 const DRONE_COUNT = 6;
@@ -30,6 +31,8 @@ export class MenuScene extends Phaser.Scene {
   private heroName!: Phaser.GameObjects.Text;
   private heroStats!: Phaser.GameObjects.Text;
   private playButton!: UiButton;
+  private shopButton!: UiButton;
+  private goldLabel!: Phaser.GameObjects.Text;
   private panel!: Phaser.GameObjects.Graphics;
   private help!: Phaser.GameObjects.Text;
   private version!: Phaser.GameObjects.Text;
@@ -72,6 +75,8 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.playButton = new UiButton(this, 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE']);
+    this.shopButton = new UiButton(this, 'MEJORAS', 20, () => this.scene.start(SCENE_KEYS.shop), ['M']);
+    this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
 
     this.panel = this.add.graphics();
     const touch = this.sys.game.device.input.touch;
@@ -81,7 +86,7 @@ export class MenuScene extends Phaser.Scene {
       `${ironManDefinition.displayName} dispara solo al enemigo más cercano.`,
     ];
     this.help = this.add.text(0, 0, lines.join('\n'), { ...textStyle(12, '#ffffff'), align: 'center', lineSpacing: 6 }).setOrigin(0.5);
-    this.version = this.add.text(0, 0, 'Fase 3 · prototipo', textStyle(10, '#7f9c88')).setOrigin(1, 1);
+    this.version = this.add.text(0, 0, 'Fase 6 · prototipo', textStyle(10, '#7f9c88')).setOrigin(1, 1);
 
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
@@ -148,7 +153,19 @@ export class MenuScene extends Phaser.Scene {
     this.heroName.setFontSize(Math.max(13, Math.round(4.4 * ui))).setPosition(cx, this.heroY + 6 * heroScale + 4 * ui);
     this.heroStats.setFontSize(Math.max(10, Math.round(3 * ui))).setPosition(cx, this.heroName.y + this.heroName.height * 0.5 + 3 * ui);
 
-    this.playButton.setFontSize(Math.max(16, Math.round(5.5 * ui))).setPosition(cx, height * (portrait ? 0.7 : 0.71));
+    const buttonSize = Math.max(16, Math.round(5.5 * ui));
+    this.playButton.setFontSize(buttonSize);
+    this.shopButton.setFontSize(buttonSize);
+    if (portrait) {
+      this.playButton.setPosition(cx, height * 0.69);
+      this.shopButton.setPosition(cx, height * 0.69 + this.playButton.height + 2.5 * ui);
+    } else {
+      const gap = 4 * ui;
+      const total = this.playButton.width + gap + this.shopButton.width;
+      this.playButton.setPosition(cx - total / 2 + this.playButton.width / 2, height * 0.71);
+      this.shopButton.setPosition(cx + total / 2 - this.shopButton.width / 2, height * 0.71);
+    }
+    this.goldLabel.setText(`ORO: ${saveData.gold}`).setFontSize(Math.max(12, Math.round(4 * ui))).setPosition(width - 3 * ui, 3 * ui);
 
     this.help.setFontSize(Math.max(10, Math.round(3 * ui)));
     this.help.setWordWrapWidth(Math.min(width * 0.86, 200 * ui));

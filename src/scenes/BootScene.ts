@@ -38,6 +38,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     this.createShadowTexture();
     this.createGemTexture();
+    this.createCoinTexture();
     registerUpgradeIcons(this);
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       registerCharacterAnimations(this, definition);
@@ -61,6 +62,16 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x37d5ff, 1).fillPoints([{ x: 4, y: 1 }, { x: 7, y: 4 }, { x: 4, y: 7 }, { x: 1, y: 4 }], true);
     g.fillStyle(0xd9f7ff, 1).fillRect(3, 2, 2, 2);
     g.generateTexture(TEXTURES.gem, 8, 8);
+    g.destroy();
+  }
+
+  /** Moneda de oro provisional: círculo dorado con brillo. */
+  private createCoinTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x7a4a00, 1).fillCircle(4, 4, 4);
+    g.fillStyle(0xffc933, 1).fillCircle(4, 4, 3);
+    g.fillStyle(0xfff0a6, 1).fillRect(2, 2, 2, 2);
+    g.generateTexture(TEXTURES.coin, 8, 8);
     g.destroy();
   }
 

@@ -7,6 +7,13 @@ export class PlayerStats {
   /** Distancia a la que las gemas empiezan a ir hacia el jugador. */
   pickupRadius = 36;
 
+  /** Multiplicador de la experiencia que dan las gemas. */
+  xpMult = 1;
+  /** Multiplicador del valor de cada moneda de oro. */
+  goldMult = 1;
+  /** Multiplicador de la probabilidad de que un enemigo suelte oro. */
+  goldChanceMult = 1;
+
   // Ataque básico (repulsor)
   /** Disparos por ataque, abiertos en abanico hacia el mismo objetivo. */
   projectileCount = 1;

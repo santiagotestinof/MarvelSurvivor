@@ -21,7 +21,8 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 - Fase 4 (hecha): enemigos Explorador (rápido, frágil, desde el 15%) y Blindado (lento, resistente, gema de 4 XP, desde el 40%); arma Minimisiles (se desbloquea con una mejora, hasta 4 misiles por ráfaga, daño en área).
 - Fase 5 (hecha): mejoras del repulsor (disparo múltiple, perforación, velocidad, crítico) y evolución Misiles incendiarios (misiles nv4 + "Más daño" x3; deja fuego en el piso; 4 mejoras de fuego de hasta 5 niveles). Las mejoras guardan cuántas veces se eligieron (`taken`) para los requisitos.
 - Rama `testi` (integrada): pausa (botón o ESC), separación entre enemigos y colisión con obstáculos, jefe con más vida/velocidad que invoca Drones, y `?test=1` para empezar a 1 minuto del jefe.
-- Pendiente / fuera de alcance por ahora: enemigos a distancia, habilidades únicas por héroe, gacha, más héroes (objetivo: 10) y mapas, guardado de progreso.
+- Fase 6 (hecha): oro y mejoras permanentes. Cajas y rocas se rompen con los disparos (el repulsor las apunta si no hay enemigos cerca) y sueltan monedas; algunos enemigos sueltan una con cierta chance. El oro se guarda en localStorage (`src/meta/saveData.ts`): si el jugador gana se guarda todo (+bono del jefe), si pierde la mitad. Tienda de mejoras permanentes en el menú (`ShopScene`, `src/meta/metaUpgrades.ts`): 8 mejoras de hasta 5 niveles, cada nivel cuesta 1,6 veces más, valen para todos los héroes.
+- Pendiente / fuera de alcance por ahora: **gacha para desbloquear personajes con rarezas (pedido por Santi, aún sin definir)**, enemigos a distancia, habilidades únicas por héroe, más héroes (objetivo: 10) y mapas.
 - Verificado en el navegador (`npm run dev`, con el juego avanzado cuadro por cuadro y eventos simulados): pantalla de VICTORIA, pantalla de DERROTA, botón "Volver al menú" (desde las dos; la ronda siguiente arranca de cero) y joystick con `?joystick` (8 direcciones, diagonal a la misma velocidad, se frena al soltar, ignora la mitad derecha).
 - Sin verificar: joystick en un celular real, cómo se siente en tiempo real y balance de dificultad (quieto se pierde en ~30 s; al jefe solo le pega cuando no hay drones más cerca).
 
@@ -29,6 +30,7 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 - Balance (oleadas, XP, duración, minimisiles, fuego, límites del repulsor): `src/config/gameplayConfig.ts`
 - Mejoras: `src/progression/upgrades.ts` (cada una con su ícono en `src/ui/upgradeIcons.ts`; `isAvailable` y `describe` para mejoras con estado, como las armas) · Enemigos: `src/enemies/enemyKinds.ts` (cuándo y cuánto aparecen: `spawn`)
 - Armas: `src/systems/AutoAttackSystem.ts` (repulsor) y `src/systems/MissileWeapon.ts` (minimisiles)
+- Oro y progreso permanente: `src/meta/` (guardado, mejoras permanentes) · balance del oro en `GOLD`, `BREAKABLE_PROPS` y `META` de `gameplayConfig.ts`
 - Interfaz: `src/ui/` (`UiButton`, `UpgradeCard`, `drawPanel` y escalas en `uiLayout.ts`)
 - Héroes: `src/characters/` (registro en `registry.ts`) · Escenas: `src/scenes/` (Boot, Menu, Game, Hud)
 - Detalles de sprites y cómo agregar animaciones o personajes: `README.md`

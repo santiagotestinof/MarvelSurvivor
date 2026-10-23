@@ -17,6 +17,8 @@ export interface EnemyKind {
   contactDamage: number;
   /** Experiencia que suelta al morir (0 = nada). */
   xpValue: number;
+  /** Probabilidad de soltar una moneda al morir y valor de esa moneda (sin `gold` no suelta nada). */
+  gold?: { chance: number; value: number };
   /**
    * Cómo aparece en las oleadas: desde qué punto de la ronda (0 = inicio, 1 = jefe) y con qué peso
    * relativo frente a los demás disponibles. Sin `spawn` no sale en oleadas (por ejemplo, el jefe).
@@ -37,6 +39,7 @@ export const DRONE: EnemyKind = {
   speed: 38,
   contactDamage: 8,
   xpValue: 1,
+  gold: { chance: 0.05, value: 1 },
   spawn: { fromProgress: 0, weight: 6 },
 };
 
@@ -54,6 +57,7 @@ export const SCOUT: EnemyKind = {
   speed: 64,
   contactDamage: 5,
   xpValue: 1,
+  gold: { chance: 0.05, value: 1 },
   spawn: { fromProgress: 0.15, weight: 3 },
 };
 
@@ -71,6 +75,7 @@ export const BRUTE: EnemyKind = {
   speed: 24,
   contactDamage: 14,
   xpValue: 4,
+  gold: { chance: 0.2, value: 3 },
   spawn: { fromProgress: 0.4, weight: 1.5 },
 };
 

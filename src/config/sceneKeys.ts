@@ -3,4 +3,5 @@ export const SCENE_KEYS = {
   menu: 'MenuScene',
   game: 'GameScene',
   hud: 'HudScene',
+  shop: 'ShopScene',
 } as const;

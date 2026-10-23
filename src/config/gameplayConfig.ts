@@ -89,3 +89,24 @@ export const BASIC_ATTACK_LIMITS = {
   /** Ángulo entre disparos del abanico (radianes). */
   spread: 0.2,
 };
+
+/** Oro: se junta en la ronda (props rotos y enemigos) y se gasta en mejoras permanentes del menú. */
+export const GOLD = {
+  /** Si el jugador pierde, se queda con esta parte del oro juntado. */
+  defeatKeepRatio: 0.5,
+  /** Oro extra por vencer al jefe. */
+  bossBonus: 20,
+};
+
+/** Props que se rompen con los disparos: vida y oro (mínimo y máximo) que sueltan. */
+export const BREAKABLE_PROPS = {
+  crate: { health: 15, gold: { min: 3, max: 6 } },
+  rock: { health: 30, gold: { min: 2, max: 5 } },
+} as const;
+
+export const META = {
+  /** Niveles máximos de cada mejora permanente. */
+  maxLevel: 5,
+  /** Cada nivel cuesta esta cantidad de veces más que el anterior. */
+  costGrowth: 1.6,
+};

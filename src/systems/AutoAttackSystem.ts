@@ -2,11 +2,21 @@ import Phaser from 'phaser';
 import type { AttackDefinition } from '../characters/CharacterDefinition';
 import { BASIC_ATTACK_LIMITS } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
+import type { BreakableProp } from '../entities/BreakableProp';
 import type { Enemy } from '../entities/Enemy';
 import { Projectile } from '../entities/Projectile';
 import type { PlayerStats } from '../progression/PlayerStats';
 
-/** Dispara automáticamente al enemigo más cercano dentro del alcance de puntería. */
+/** Punto al que se apunta un disparo. */
+interface AimPoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * Dispara automáticamente al enemigo más cercano dentro del alcance de puntería.
+ * Si no hay enemigos cerca, apunta a la caja o roca más cercana (para sacar oro).
+ */
 export class AutoAttackSystem {
   readonly projectiles: Phaser.Physics.Arcade.Group;
   private lastShotAt = -Infinity;
@@ -17,6 +27,7 @@ export class AutoAttackSystem {
     private readonly attack: AttackDefinition,
     private readonly enemies: Phaser.Physics.Arcade.Group,
     private readonly stats: PlayerStats,
+    private readonly props: () => Iterable<BreakableProp>,
   ) {
     this.projectiles = scene.physics.add.group({ allowGravity: false });
   }
@@ -25,14 +36,14 @@ export class AutoAttackSystem {
     this.removeExpiredProjectiles();
     if (now - this.lastShotAt < this.attack.cooldownMs * this.stats.cooldownMult) return;
 
-    const target = this.findNearestEnemy();
+    const target = this.findNearestEnemy() ?? this.findNearestProp();
     if (!target) return;
 
     this.fireAt(target);
     this.lastShotAt = now;
   }
 
-  private findNearestEnemy(): Enemy | null {
+  private findNearestEnemy(): AimPoint | null {
     let nearest: Enemy | null = null;
     let nearestSq = (this.attack.aimRange * this.stats.rangeMult) ** 2;
 
@@ -46,15 +57,30 @@ export class AutoAttackSystem {
         nearest = enemy;
       }
     }
+    return nearest ? { x: nearest.x, y: nearest.y - 8 } : null;
+  }
+
+  private findNearestProp(): AimPoint | null {
+    let nearest: AimPoint | null = null;
+    let nearestSq = (this.attack.aimRange * this.stats.rangeMult) ** 2;
+    for (const prop of this.props()) {
+      const dx = prop.x - this.owner.x;
+      const dy = prop.y - this.owner.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < nearestSq) {
+        nearestSq = distSq;
+        nearest = { x: prop.x, y: prop.y };
+      }
+    }
     return nearest;
   }
 
   /** Dispara `projectileCount` disparos en abanico, centrados en la dirección del objetivo. */
-  private fireAt(target: Enemy): void {
+  private fireAt(target: AimPoint): void {
     const { stats } = this;
     const originX = this.owner.x;
     const originY = this.owner.y - 14; // a la altura del pecho
-    const aim = Math.atan2(target.y - 8 - originY, target.x - originX);
+    const aim = Math.atan2(target.y - originY, target.x - originX);
     const speed = this.attack.projectileSpeed * stats.projectileSpeedMult;
     const count = stats.projectileCount;
 

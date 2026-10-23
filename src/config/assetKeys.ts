@@ -9,6 +9,7 @@ export const TEXTURES = {
   missile: 'missile',
   fire: 'fire',
   gem: 'xp-gem',
+  coin: 'gold-coin',
 } as const;
 
 /** Animaciones de efectos (no de personajes ni enemigos). */

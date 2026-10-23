@@ -30,6 +30,8 @@ export class MissileWeapon {
     private readonly owner: Character,
     private readonly enemies: Phaser.Physics.Arcade.Group,
     private readonly stats: PlayerStats,
+    /** Daño de área a cajas y rocas cerca de una explosión. */
+    private readonly splashProps: (x: number, y: number, radius: number, damage: number) => void,
   ) {
     this.missiles = scene.physics.add.group({ allowGravity: false });
     scene.physics.add.overlap(this.missiles, enemies, (m, e) => {
@@ -137,6 +139,8 @@ export class MissileWeapon {
       if (enemy === hit || !enemy.active || enemy.dying) continue;
       if ((enemy.x - x) ** 2 + (enemy.y - 6 - y) ** 2 <= splashSq) enemy.takeDamage(damage * MISSILES.splashDamageRatio);
     }
+
+    this.splashProps(x, y, MISSILES.splashRadius, damage);
 
     if (this.evolved) {
       this.fires.push(new FireZone(this.scene, x, y + 6, this.fireRadius, this.now + this.fireDurationMs, this.now));

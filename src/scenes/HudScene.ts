@@ -25,6 +25,7 @@ export class HudScene extends Phaser.Scene {
   private bossText!: Phaser.GameObjects.Text;
 
   private levelText!: Phaser.GameObjects.Text;
+  private goldText!: Phaser.GameObjects.Text;
   private upgradeMenu!: UpgradeMenu;
   private result!: ResultOverlay;
   private pause!: PauseOverlay;
@@ -50,6 +51,7 @@ export class HudScene extends Phaser.Scene {
     this.bossText = this.add.text(0, 0, 'JEFE', textStyle(12, '#ffd9d9')).setOrigin(0.5).setDepth(2).setVisible(false);
 
     this.levelText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
+    this.goldText = this.add.text(0, 0, '', textStyle(12, '#ffd24a')).setOrigin(0, 0).setDepth(2);
 
     this.upgradeMenu = new UpgradeMenu(this);
     this.result = new ResultOverlay(this, () => this.backToMenu());
@@ -77,7 +79,8 @@ export class HudScene extends Phaser.Scene {
     if ((state.phase === 'won' || state.phase === 'lost') && !this.resultScheduled) {
       this.resultScheduled = true;
       this.setJoystickEnabled(false);
-      this.time.delayedCall(RESULT_DELAY_MS, () => this.result.show(state));
+      // Se usa el estado más reciente: el oro guardado se calcula un cuadro después de terminar la ronda.
+      this.time.delayedCall(RESULT_DELAY_MS, () => this.result.show(this.latest ?? state));
     }
   }
 
@@ -95,6 +98,8 @@ export class HudScene extends Phaser.Scene {
     this.healthText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));
     this.bossText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));
 
+    this.goldText.setFontSize(Math.max(11, Math.round(3.4 * ui)));
+    this.goldText.setPosition(this.margin, this.margin + this.barHeight + 8);
     this.upgradeMenu.layout(ui);
     this.result.layout(ui, width, height);
     this.pause.layout(ui, width, height, this.margin);
@@ -125,6 +130,7 @@ export class HudScene extends Phaser.Scene {
     this.timerText.setText(bossAppeared ? '¡JEFE!' : formatTime(state.remainingMs));
     this.timerText.setColor(bossAppeared ? '#ff8a8a' : '#ffffff');
     this.killsText.setText(`Derrotados: ${state.kills}`);
+    this.goldText.setText(`ORO ${state.gold}`);
 
     // Experiencia (barra fina abajo de todo)
     const xpH = Math.max(8, Math.round(2.5 * this.ui));

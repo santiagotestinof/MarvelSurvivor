@@ -1,20 +1,27 @@
 import Phaser from 'phaser';
 import { TEXTURES } from '../config/assetKeys';
 
-/** Gema de experiencia que suelta un enemigo. Va hacia el jugador cuando éste se acerca. */
-export class XpGem extends Phaser.GameObjects.Image {
+export type PickupKind = 'xp' | 'gold';
+
+const TEXTURE_OF: Record<PickupKind, string> = { xp: TEXTURES.gem, gold: TEXTURES.coin };
+
+/** Objeto que se junta: gema de experiencia o moneda de oro. Va hacia el jugador cuando éste se acerca. */
+export class Pickup extends Phaser.GameObjects.Image {
+  readonly kind: PickupKind;
   readonly value: number;
   private magnetized = false;
   private pull = 60;
   private readonly bob: Phaser.Tweens.Tween;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, value: number) {
-    super(scene, x, y, TEXTURES.gem);
+  constructor(scene: Phaser.Scene, x: number, y: number, kind: PickupKind, value: number) {
+    super(scene, x, y, TEXTURE_OF[kind]);
+    this.kind = kind;
     this.value = value;
     scene.add.existing(this);
     this.setDepth(y - 1);
-    // Las gemas que valen más (de enemigos grandes) son más grandes y verdes.
-    if (value > 1) this.setScale(1.5).setTint(0x7dff9a);
+    // Las gemas que valen más (de enemigos grandes) son más grandes y verdes; las monedas grandes, más grandes.
+    if (value > 1) this.setScale(1.5);
+    if (kind === 'xp' && value > 1) this.setTint(0x7dff9a);
     this.bob = scene.tweens.add({ targets: this, y: y - 2, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
@@ -22,13 +29,13 @@ export class XpGem extends Phaser.GameObjects.Image {
     return this.magnetized;
   }
 
-  /** Empieza a ir hacia el jugador. Corta el flote: si no, el tween pisa `y` y la gema solo se mueve en `x`. */
+  /** Empieza a ir hacia el jugador. Corta el flote: si no, el tween pisa `y` y solo se mueve en `x`. */
   magnetize(): void {
     this.magnetized = true;
     this.bob.remove();
   }
 
-  /** Mueve la gema hacia el jugador (cada vez más rápido). Devuelve true si llegó. */
+  /** Mueve el objeto hacia el jugador (cada vez más rápido). Devuelve true si llegó. */
   moveToward(targetX: number, targetY: number, deltaMs: number): boolean {
     this.pull += deltaMs * 0.45;
     const dx = targetX - this.x;
