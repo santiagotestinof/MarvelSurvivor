@@ -1,5 +1,5 @@
 // Hulk: modelo calcado de la imagen de referencia que pasó Santi (achicado a 40 de alto), igual que Iron Man.
-// Cada fila son los píxeles en hexadecimal sin '#', '-' = transparente. Se espeja para ir a la derecha.
+// Cada fila son los píxeles en hexadecimal sin '#', '-' = transparente. Se espeja según hacia dónde mira (ver DRAWN_FACES_LEFT en el generador).
 export const HULK_REF = [
   '- - - - - - - - - 0f110e 0f110e - 0f110e 0f110e 0f110e - - - - - - - - - - -',
   '- - - - - - - 0f110e 0f110e 0a0c07 0a0c07 0a0c07 0a0c07 0a0c07 0a0c07 101413 - - - - - - - - - -',

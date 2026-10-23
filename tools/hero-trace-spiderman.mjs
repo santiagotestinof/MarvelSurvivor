@@ -1,5 +1,5 @@
 // Spider-Man: modelo calcado de la imagen de referencia que pasó Santi (achicado a 40 de alto), igual que Iron Man.
-// Cada fila son los píxeles en hexadecimal sin '#', '-' = transparente. Se espeja para ir a la derecha.
+// Cada fila son los píxeles en hexadecimal sin '#', '-' = transparente. Se espeja según hacia dónde mira (ver DRAWN_FACES_LEFT en el generador).
 export const SPIDERMAN_REF = [
   '- - - - - 1c1c1c 1c1c1c 1c1c1c 1c1c1c 1c1c1c - - - - - - - - -',
   '- - - 1c1c1c 1c1c1c e60000 e60000 e60000 e60000 e60000 1c1c1c 1c1c1c - - - - - - -',

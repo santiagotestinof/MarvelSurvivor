@@ -573,7 +573,9 @@ function saveHero(id) {
 const DRAWN_REFS = { capitan: CAPITAN_REF, thor: THOR_REF, hulk: HULK_REF, spiderman: SPIDERMAN_REF };
 const DRAWN_HEROES = Object.keys(DRAWN_REFS);
 const DRAWN_FRAME = 48;
-/** Pies en la fila 40 del cuadro (el suelo está en (24, 41)). Un solo dibujo para todas las direcciones: queda mirando a la izquierda y se espeja para ir a la derecha. */
+/** Las referencias de estos héroes miran a la izquierda (Capitán e Iron Man miran a la derecha). */
+const DRAWN_FACES_LEFT = ['thor', 'hulk', 'spiderman'];
+/** Pies en la fila 40 del cuadro (el suelo está en (24, 41)). Un solo dibujo para todas las direcciones: se espeja según hacia dónde mira el original (`DRAWN_FACES_LEFT`). */
 function drawnFrame(id, { fx, stride = 0, bob = 0 }) {
   const rows = DRAWN_REFS[id].map((row) => row.split(' '));
   const h = rows.length;
@@ -596,7 +598,9 @@ function drawnFrame(id, { fx, stride = 0, bob = 0 }) {
       }
     g = out;
   }
-  if (fx > 0) g = g.map((row) => [...row].reverse());
+  // Hacia dónde mira el dibujo original: al ir al lado contrario (o quieto / de frente) se espeja, así sin movimiento lateral todos miran a la derecha.
+  const mirror = DRAWN_FACES_LEFT.includes(id) ? fx >= 0 : fx < 0;
+  if (mirror) g = g.map((row) => [...row].reverse());
   const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
   const ox = Math.round((DRAWN_FRAME - w) / 2);
   const oy = 41 - h + bob;
