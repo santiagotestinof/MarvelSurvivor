@@ -262,7 +262,7 @@ export class GameScene extends Phaser.Scene {
       const impactX = this.player.x;
       const impactY = this.player.y - 8;
       // Cada misil hace 1,5 veces el daño anterior: 12 -> 18.
-      this.spawnIronManUltimateMissile(impactX, impactY, 18);
+      this.spawnIronManUltimateMissile(impactX, impactY, 25);
       this.nextUltimateShotAt += 500;
     }
   }
