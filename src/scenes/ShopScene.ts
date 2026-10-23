@@ -144,7 +144,7 @@ export class ShopScene extends Phaser.Scene {
     const boxTop = y + h * 0.05 + nameSize * 1.25 * (name.height > nameSize * 1.5 ? 2 : 1) + 2;
     const boxBottom = y + h - pipsH - h * 0.08;
     const box = Math.max(16, Math.min(boxBottom - boxTop, w * 0.62));
-    const iconScale = Math.max(1, Math.floor((box * 0.97) / META_ITEM_SIZE));
+    const iconScale = Math.max(0.5, Math.floor(((box * 0.97) / META_ITEM_SIZE) * 2) / 2);
     const boxX = x + w / 2 - box / 2;
     const boxY = boxTop + (boxBottom - boxTop - box) / 2;
     const frame = this.add.graphics();
@@ -192,7 +192,7 @@ export class ShopScene extends Phaser.Scene {
     g.fillStyle(0x050b14, 1).fillRoundedRect(boxX, boxY, box, box, 6);
     g.fillStyle(color, 0.25).fillRoundedRect(boxX, boxY, box, box, 6);
     g.lineStyle(3, maxed ? GOLD : color, 1).strokeRoundedRect(boxX, boxY, box, box, 6);
-    const iconScale = Math.max(2, Math.floor((box * 0.97) / META_ITEM_SIZE));
+    const iconScale = Math.max(1, Math.floor(((box * 0.97) / META_ITEM_SIZE) * 2) / 2);
     this.dynamicObjects.push(this.add.image(boxX + box / 2, boxY + box / 2, META_ITEM_TEXTURE, metaItemFrame(def.id)).setScale(iconScale));
 
     const textX = boxX + box + pad;

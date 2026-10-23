@@ -5,6 +5,9 @@
 import { CUSTOM_ICONS } from './meta-icons-custom.mjs';
 
 export const ICON_SIZE = 16;
+/** Tamaño de cada cuadro en la hoja final: los dibujos de 16×16 se agrandan al doble (cada píxel pasa a ser 2×2). */
+export const SHEET_CELL = 32;
+const SHEET_SCALE = SHEET_CELL / ICON_SIZE;
 export const META_ICON_IDS = [
   'might', 'armor', 'max-health', 'recovery', 'cooldown', 'area', 'projectile-speed', 'duration',
   'amount', 'move-speed', 'magnet', 'luck', 'growth', 'greed', 'curse', 'revival',
@@ -411,8 +414,8 @@ const DRAW = {
 
 /** Devuelve la hoja de íconos: una fila de `META_ICON_IDS.length` cuadros de 16×16, como píxeles RGBA. */
 export function buildMetaIconSheet() {
-  const width = ICON_SIZE * META_ICON_IDS.length;
-  const px = new Uint8Array(width * ICON_SIZE * 4);
+  const width = SHEET_CELL * META_ICON_IDS.length;
+  const px = new Uint8Array(width * SHEET_CELL * 4);
   META_ICON_IDS.forEach((id, index) => {
     const g = new Grid();
     const custom = CUSTOM_ICONS[id];
@@ -440,8 +443,11 @@ export function buildMetaIconSheet() {
     for (let y = 0; y < ICON_SIZE; y++)
       for (let x = 0; x < ICON_SIZE; x++) {
         const color = g.p[y][x];
-        if (color) px.set(color, (y * width + index * ICON_SIZE + x) * 4);
+        if (!color) continue;
+        for (let dy = 0; dy < SHEET_SCALE; dy++)
+          for (let dx = 0; dx < SHEET_SCALE; dx++)
+            px.set(color, ((y * SHEET_SCALE + dy) * width + index * SHEET_CELL + x * SHEET_SCALE + dx) * 4);
       }
   });
-  return { width, height: ICON_SIZE, px };
+  return { width, height: SHEET_CELL, px };
 }

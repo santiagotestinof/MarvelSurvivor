@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 
 /**
  * Íconos de la tienda de mejoras permanentes: un objeto de Marvel por mejora, dibujados con
- * `tools/meta-icons.mjs` (hoja `public/assets/ui/meta-items.png`, cuadros de 16×16 en una fila).
+ * `tools/meta-icons.mjs` (hoja `public/assets/ui/meta-items.png`, cuadros de 32×32 en una fila).
  * El orden de `META_ICON_IDS` tiene que ser el mismo que el del generador.
  */
 export const META_ICON_IDS: readonly string[] = [
@@ -11,7 +11,7 @@ export const META_ICON_IDS: readonly string[] = [
   'omni', 'charm', 'defang', 'reroll', 'skip', 'banish', 'preserve',
 ];
 
-export const META_ITEM_SIZE = 16;
+export const META_ITEM_SIZE = 32;
 declare const __BUILD_ID__: string;
 
 export const META_ITEM_TEXTURE = 'meta-items';
