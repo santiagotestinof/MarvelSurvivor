@@ -342,8 +342,8 @@ const IM_FRAME = { w: 48, h: 48 };
 const IM_SCALE = 0.8;
 /** Fila (de la referencia) donde terminan las piernas; abajo de eso solo hay llama de los propulsores. */
 const IM_FEET_ROW = 43;
-/** Fila del cuadro donde apoyan los pies. */
-const IM_FEET_Y = 41;
+/** Fila del cuadro donde están los pies: 6 filas más arriba que el suelo (41), así flota en el aire. */
+const IM_FEET_Y = 35;
 
 const refGrid = () => IRON_MAN_REF.map((row) => [...row]);
 

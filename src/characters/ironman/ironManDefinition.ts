@@ -6,7 +6,7 @@ export const IRON_MAN_ID = 'ironman';
 /**
  * Los spritesheets actuales son provisionales (generados con tools/generate-sprites.mjs).
  * Para reemplazarlos por arte definitivo alcanza con sustituir los PNG respetando el formato:
- * cuadros de 48×48 (Iron Man es más grande que el resto), una fila por dirección (orden de core/direction.ts), los pies en (24, 41).
+ * cuadros de 48×48 (Iron Man es más grande que el resto), una fila por dirección (orden de core/direction.ts), el suelo en (24, 41) y el cuerpo flota 6 px arriba.
  */
 export const ironManDefinition: CharacterDefinition = {
   id: IRON_MAN_ID,
