@@ -1,7 +1,6 @@
 import type Phaser from 'phaser';
 import { ROUND } from '../config/gameplayConfig';
 import { DRONE, OVERLORD } from '../enemies/enemyKinds';
-import { WAVES } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { WaveSystem } from './WaveSystem';
@@ -57,8 +56,10 @@ export class RoundController {
       return;
     }
 
+    const elapsed = now - this.startedAt;
+    const progress = elapsed / ROUND.durationMs;
+
     if (this.phase === 'waves') {
-      const elapsed = now - this.startedAt;
       if (elapsed >= ROUND.durationMs) {
         this.phase = 'boss';
         this.waves.stopped = true;
@@ -68,13 +69,10 @@ export class RoundController {
         });
         this.nextBossMinionAt = now + ROUND.bossMinionIntervalMs;
       } else {
-        this.waves.update(now, elapsed / ROUND.durationMs);
+        this.waves.update(now, progress);
       }
     } else if (this.phase === 'boss' && now >= this.nextBossMinionAt) {
-      this.waves.spawnEnemy(DRONE, {
-        health: 1 + WAVES.healthGrowth,
-        speed: 1 + WAVES.speedGrowth,
-      });
+      this.waves.spawnEnemy(DRONE, this.waves.getScaling(progress));
       this.nextBossMinionAt = now + ROUND.bossMinionIntervalMs;
     }
   }

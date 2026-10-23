@@ -27,7 +27,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private slowUntil = 0;
   private slowFactor = 1;
   private knockUntil = 0;
-  private readonly moveSpeed: number;
+  private moveSpeed: number;
+  private speedScale: number;
   private facingAngle = Math.PI / 2;
   private facingReady = false;
   private currentDir: EnemyDirection = 'down';
@@ -37,6 +38,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.kind = kind;
     this.maxHealth = Math.round(kind.health * scaling.health);
     this.currentHealth = this.maxHealth;
+    this.speedScale = scaling.speed;
     this.moveSpeed = kind.speed * scaling.speed;
     this.contactDamage = kind.contactDamage;
 
@@ -49,6 +51,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     if (kind.id === 'sentinel') this.setTint(0xffb36b);
     this.play(enemyAnimationKey(kind, this.currentDir));
+    this.anims.timeScale = Math.min(1.6, 0.85 + scaling.speed * 0.15);
+  }
+
+  /** Si la ronda avanzó desde que apareció este enemigo, actualiza su velocidad para acompañar el ritmo actual. */
+  syncTimeSpeed(currentSpeedScale: number): void {
+    if (this.kind.id === 'overlord' || currentSpeedScale <= this.speedScale) return;
+    this.speedScale = currentSpeedScale;
+    this.moveSpeed = this.kind.speed * currentSpeedScale;
+    this.anims.timeScale = Math.min(1.6, 0.85 + currentSpeedScale * 0.15);
   }
 
   /** Lo deja sin poder dañar y lo pinta pálido para que se note. */

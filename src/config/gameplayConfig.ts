@@ -44,9 +44,10 @@ export const WAVES = {
   maxAlive: 60,
   /** Distancia fuera de la pantalla donde aparecen. */
   spawnMargin: 28,
-  /** Al final de la ronda los enemigos tienen (1 + growth) veces la vida base. */
-  healthGrowth: 1.5,
-  speedGrowth: 0.4,
+  /** Al final de la ronda los enemigos tienen (1 + healthGrowth) veces la vida base. */
+  healthGrowth: 2.4,
+  /** Al final de la ronda los enemigos son (1 + speedGrowth) veces más rápidos. */
+  speedGrowth: 0.55,
 };
 
 /** Minimisiles teledirigidos (se desbloquean con la mejora "Minimisiles"). */

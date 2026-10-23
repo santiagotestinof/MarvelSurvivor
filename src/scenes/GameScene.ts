@@ -317,7 +317,9 @@ export class GameScene extends Phaser.Scene {
     this.updatePickups(delta);
     if (this.stats.regenPerSecond > 0) this.player.heal((this.stats.regenPerSecond * delta) / 1000);
     const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);
+    const currentSpeedScale = this.waves.getScaling(now / ROUND.durationMs).speed;
     for (const enemy of activeEnemies) {
+      enemy.syncTimeSpeed(currentSpeedScale);
       let separationX = 0;
       let separationY = 0;
       for (let otherIndex = 0; otherIndex < activeEnemies.length; otherIndex++) {

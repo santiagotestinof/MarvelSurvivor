@@ -5,7 +5,7 @@ import type { Character } from '../entities/Character';
 import { Enemy, type EnemyScaling } from '../entities/Enemy';
 import type { PlayerStats } from '../progression/PlayerStats';
 
-/** Genera enemigos fuera de la pantalla, cada vez más seguido a medida que avanza la ronda. */
+/** Genera enemigos fuera de la pantalla, cada vez más seguido y más fuertes/rápidos a medida que avanza el tiempo. */
 export class WaveSystem {
   private nextSpawnAt = 0;
   stopped = false;
@@ -18,6 +18,15 @@ export class WaveSystem {
     private readonly onEnemyDied: (enemy: Enemy) => void,
     private readonly stats: PlayerStats,
   ) {}
+
+  /** Multiplicadores de vida y velocidad según el progreso del tiempo (`0` al inicio, `1` al llegar al jefe y sigue subiendo). */
+  getScaling(progress: number): EnemyScaling {
+    const p = Math.max(0, progress);
+    return {
+      health: (1 + p * WAVES.healthGrowth) * this.stats.curseMult,
+      speed: (1 + p * WAVES.speedGrowth) * this.stats.curseMult,
+    };
+  }
 
   /** `progress` va de 0 (inicio de la ronda) a 1 (aparece el jefe). */
   update(now: number, progress: number): void {
@@ -33,10 +42,7 @@ export class WaveSystem {
     // Entre 1 y N enemigos por aparición; N crece de 1 a WAVES.maxBatch durante la ronda.
     const maxBatch = Math.max(1, Math.round(Phaser.Math.Linear(1, WAVES.maxBatch, progress)));
     const batch = Math.max(1, Math.round(Phaser.Math.Between(1, maxBatch) * crowd));
-    const scaling: EnemyScaling = {
-      health: (1 + progress * WAVES.healthGrowth) * this.stats.curseMult,
-      speed: (1 + progress * WAVES.speedGrowth) * this.stats.curseMult,
-    };
+    const scaling = this.getScaling(progress);
     for (let i = 0; i < batch && this.aliveCount() < maxAlive; i++) {
       this.spawnEnemy(pickWaveEnemy(progress), scaling);
     }
