@@ -27,6 +27,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private slowUntil = 0;
   private slowFactor = 1;
   private knockUntil = 0;
+  private aimLockUntil = 0;
+  private aimTarget: { x: number; y: number } | null = null;
   private moveSpeed: number;
   private speedScale: number;
   private facingAngle = Math.PI / 2;
@@ -49,7 +51,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const { width, height, offsetX, offsetY } = kind.body;
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
     this.setCollideWorldBounds(true);
-    if (kind.id === 'sentinel') this.setTint(0xffb36b);
     this.play(enemyAnimationKey(kind, this.currentDir));
     this.anims.timeScale = Math.min(1.6, 0.85 + scaling.speed * 0.15);
   }
@@ -60,6 +61,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.speedScale = currentSpeedScale;
     this.moveSpeed = this.kind.speed * currentSpeedScale;
     this.anims.timeScale = Math.min(1.6, 0.85 + currentSpeedScale * 0.15);
+  }
+
+  /** Lo deja quieto durante `ms` apuntando hacia `(targetX, targetY)` mientras marca su disparo. */
+  lockForShot(ms: number, targetX: number, targetY: number): void {
+    this.aimLockUntil = this.scene.time.now + ms;
+    this.aimTarget = { x: targetX, y: targetY };
+    this.setVelocity(0, 0);
   }
 
   /** Lo deja sin poder dañar y lo pinta pálido para que se note. */
@@ -91,6 +99,26 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setDepth(this.y);
       return;
     }
+
+    // Mientras está marcando un disparo a distancia se queda clavado en el lugar durante 1 segundo.
+    if (now < this.aimLockUntil) {
+      this.setVelocity(0, 0);
+      if (this.kind.directional && this.aimTarget) {
+        const adx = this.aimTarget.x - this.x;
+        const ady = this.aimTarget.y - this.y;
+        this.updateFacing(adx, ady);
+        if (this.anims.isPlaying && this.anims.currentAnim?.frames[0]) {
+          this.anims.pause(this.anims.currentAnim.frames[0]);
+        }
+      }
+      this.setDepth(this.y);
+      return;
+    }
+
+    if (this.anims.isPaused) {
+      this.anims.resume();
+    }
+
     const speed = this.moveSpeed * (now < this.slowUntil ? this.slowFactor : 1);
     const dx = targetX - this.x;
     const dy = targetY - this.y;
@@ -119,26 +147,30 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.kind.directional && distance > 1) {
-      // Suaviza el ángulo de mirada hacia el objetivo/movimiento para pasar por las vistas diagonales (3/4).
-      const targetAngle = Math.atan2(dy, dx);
-      const dt = Math.min(0.05, (this.scene.game.loop.delta || 16.6) / 1000);
-      if (!this.facingReady) {
-        this.facingAngle = targetAngle;
-        this.facingReady = true;
-      } else {
-        this.facingAngle = Phaser.Math.Angle.RotateTo(this.facingAngle, targetAngle, FACING_TURN_SPEED * dt);
-      }
-      const nextDir = enemyDirectionFromAngle(this.facingAngle, this.currentDir);
-      if (nextDir !== this.currentDir) {
-        this.currentDir = nextDir;
-        const nextKey = enemyAnimationKey(this.kind, nextDir);
-        const progress = this.anims.getProgress();
-        this.play(nextKey, true);
-        this.anims.setProgress(progress);
-      }
+      this.updateFacing(dx, dy);
     }
 
     this.setDepth(this.y);
+  }
+
+  private updateFacing(dx: number, dy: number): void {
+    // Suaviza el ángulo de mirada hacia el objetivo/movimiento para pasar por las vistas diagonales (3/4).
+    const targetAngle = Math.atan2(dy, dx);
+    const dt = Math.min(0.05, (this.scene.game.loop.delta || 16.6) / 1000);
+    if (!this.facingReady) {
+      this.facingAngle = targetAngle;
+      this.facingReady = true;
+    } else {
+      this.facingAngle = Phaser.Math.Angle.RotateTo(this.facingAngle, targetAngle, FACING_TURN_SPEED * dt);
+    }
+    const nextDir = enemyDirectionFromAngle(this.facingAngle, this.currentDir);
+    if (nextDir !== this.currentDir) {
+      this.currentDir = nextDir;
+      const nextKey = enemyAnimationKey(this.kind, nextDir);
+      const progress = this.anims.getProgress();
+      this.play(nextKey, true);
+      this.anims.setProgress(progress);
+    }
   }
 
   /** Devuelve true si el golpe se aplicó. */
@@ -155,8 +187,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         if (this.harmless) {
           this.setTint(0xb7c4d6);
-        } else if (this.kind.id === 'sentinel') {
-          this.setTint(0xffb36b);
         } else {
           this.clearTint();
         }

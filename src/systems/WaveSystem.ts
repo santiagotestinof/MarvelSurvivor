@@ -44,7 +44,8 @@ export class WaveSystem {
     const batch = Math.max(1, Math.round(Phaser.Math.Between(1, maxBatch) * crowd));
     const scaling = this.getScaling(progress);
     for (let i = 0; i < batch && this.aliveCount() < maxAlive; i++) {
-      this.spawnEnemy(pickWaveEnemy(progress), scaling);
+      const kind = pickWaveEnemy(progress, (id) => this.aliveCountOfKind(id));
+      this.spawnEnemy(kind, scaling);
     }
   }
 
@@ -59,6 +60,14 @@ export class WaveSystem {
 
   aliveCount(): number {
     return this.enemies.countActive(true);
+  }
+
+  private aliveCountOfKind(kindId: string): number {
+    let count = 0;
+    for (const child of this.enemies.getChildren() as Enemy[]) {
+      if (child.active && !child.dying && child.kind.id === kindId) count++;
+    }
+    return count;
   }
 
   /** Punto justo fuera de lo que se ve en pantalla, dentro de los límites del mapa. */

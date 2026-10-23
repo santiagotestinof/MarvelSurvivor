@@ -1408,29 +1408,438 @@ function makeScout() {
   return sheet;
 }
 
-// Blindado: robot pesado y lento, hoja de 2 cuadros de 32x32.
-function makeBrute() {
-  const sheet = new Canvas(64, 32);
-  const armor = [hex('#8fa06a'), hex('#5f6e3f'), hex('#3a4426')];
-  const steel = [hex('#b9bec8'), hex('#7c8291'), hex('#4f5462')];
-  for (let f = 0; f < 2; f++) {
-    const cv = new Canvas(32, 32);
-    const bob = f;
-    cv.rect(f ? 9 : 8, 25, 6, f ? 4 : 5, steel[2]); // piernas
-    cv.rect(f ? 17 : 18, 25, 6, f ? 5 : 4, steel[2]);
-    cv.shaded(2, 10 - bob, 7, 9, steel[1], steel[0], steel[2]); // hombreras
-    cv.shaded(23, 10 - bob, 7, 9, steel[1], steel[0], steel[2]);
-    fillEllipse(cv, 16, 17 - bob, 10.5, 9.5, (dx, dy) => {
-      const t = dy + dx * 0.35;
-      return t > 0.5 ? armor[2] : t > -0.25 ? armor[1] : armor[0];
-    });
-    cv.rect(9, 12 - bob, 14, 4, hex('#14180c')); // visor
-    cv.rect(11, 13 - bob, 10, 2, hex('#ff8a2a'));
-    cv.rect(11, 13 - bob, 10, 1, hex('#ffd0a0'));
-    cv.shaded(12, 19 - bob, 8, 5, armor[1], armor[0], armor[2]); // placa frontal
-    cv.rect(15, 20 - bob, 2, 2, steel[0]);
-    sheet.blit(addOutline(cv, hex('#0e1108')), f * 32, 0);
+// Chitauri (enemigo que dispara, SENTINEL): 8 direcciones (orden DIRECTIONS) x 4 cuadros de 32x32.
+// Basado en las imágenes de Chitauri Footsoldier / Commander: piel gris pálida alienígena,
+// casco/máscara dorada con tubos laterales, pechera y faldón bronce con luces azules,
+// grebas oscuras con pies de 3 dedos y rifle de energía Chitauri dorado/azul en las manos.
+function drawChitauri(fx, fy, frameIdx) {
+  const cv = new Canvas(32, 32);
+  const outline = hex('#0a0b10');
+  const skinLight = hex('#bcc2ca');
+  const skinBase = hex('#8f96a0');
+  const skinDark = hex('#5e646e');
+  const goldLight = hex('#dfc070');
+  const goldBase = hex('#ad8d42');
+  const goldDark = hex('#6e5623');
+  const cloth = hex('#4a3126');
+  const greave = hex('#2b303a');
+  const greaveLight = hex('#464e5c');
+  const blueGlow = hex('#38a8ff');
+  const blueBright = hex('#9ce8ff');
+  const darkMetal = hex('#1b1e26');
+
+  const strides = [-2, -1, 2, 1];
+  const bobs = [0, -1, 0, -1];
+  const stride = strides[frameIdx] ?? 0;
+  const bob = bobs[frameIdx] ?? 0;
+
+  const cx = 16;
+  const straight = fx === 0;
+  const sideOnly = fx !== 0 && fy === 0;
+  const diag = fx !== 0 && fy !== 0;
+  const isFront = fy > 0;
+  const isBack = fy < 0;
+  const ty = 12 + bob;
+
+  // ---------------- 1) PIERNAS (muslos grises pálidos, rodilleras/grebas oscuras y pies de 3 dedos)
+  const hipY = 20 + bob;
+  if (!sideOnly) {
+    for (const side of [-1, 1]) {
+      const step = side * stride;
+      const lift = step > 0 ? -1 : 0;
+      const sep = straight ? 3 : 2;
+      const diagShift = diag ? Math.round((fx * side * stride) / 3) : 0;
+      const lx = cx + side * sep - 1 + diagShift;
+      const farLeg = diag && side !== fx;
+      const sB = farLeg ? skinDark : skinBase;
+      const sL = farLeg ? skinBase : skinLight;
+
+      // Muslo alienígena gris pálido con placa lateral bronce
+      cv.rect(lx, hipY, 3, 4, sB);
+      cv.set(lx + 1, hipY + 1, sL);
+      cv.set(lx + (side < 0 ? 0 : 2), hipY + 1, goldDark);
+      // Rodillera y greba oscura metálica
+      const kneeY = hipY + 4 + lift;
+      cv.rect(lx, kneeY, 3, 2, darkMetal);
+      const shinX = lx + (straight ? (side > 0 ? 1 : -1) * (Math.abs(stride) >= 2 ? 1 : 0) : fx);
+      cv.rect(shinX, kneeY + 2, 3, 3, greave);
+      cv.set(shinX + 1, kneeY + 2, greaveLight);
+      cv.set(shinX + 1, kneeY + 3, goldDark);
+      // Pie alienígena gris pálido de dedos separados
+      const footY = Math.min(30, kneeY + 5);
+      const footX = shinX - (side < 0 && straight ? 1 : 0);
+      cv.rect(footX, footY, 4, 2, sB);
+      cv.set(footX, footY + 1, sL);
+      cv.set(footX + 2, footY + 1, sL);
+      cv.set(footX + 1, footY + 1, skinDark);
+    }
+  } else {
+    for (const layer of [-1, 1]) {
+      const step = layer * stride;
+      const dark = layer < 0;
+      const sB = dark ? skinDark : skinBase;
+      const sL = dark ? skinBase : skinLight;
+      const thighX = cx - 1 + Math.round(step * 0.6);
+      const kneeX = cx - 1 + step;
+      const lift = step * fx > 0 ? -1 : 0;
+      cv.rect(thighX, hipY, 3, 4, sB);
+      cv.set(thighX + 1, hipY + 1, goldBase);
+      cv.rect(kneeX, hipY + 4 + lift, 3, 2, darkMetal);
+      cv.rect(kneeX, hipY + 6 + lift, 3, 3, greave);
+      cv.set(kneeX + 1, hipY + 6 + lift, greaveLight);
+      const footY = Math.min(30, hipY + 9 + lift);
+      const footX = fx > 0 ? kneeX : kneeX - 1;
+      cv.rect(footX, footY, 4, 2, sB);
+      cv.set(footX + (fx > 0 ? 3 : 0), footY + 1, sL);
+    }
   }
+
+  // ---------------- 2) TORSO, ARMADURA BRONCE/DORADA Y FALDÓN (y = 12..23)
+  if (!sideOnly) {
+    const chestW = straight ? 10 : 8;
+    const waistW = straight ? 8 : 6;
+    const tx = cx - Math.floor(chestW / 2);
+    const midX = cx + (diag ? fx : 0);
+
+    // Pecho gris pálido con arnés bronce/dorado encima
+    cv.shaded(tx, ty, chestW, 5, skinBase, skinLight, skinDark);
+    cv.shaded(tx + 1, ty, chestW - 2, 4, goldBase, goldLight, goldDark);
+    cv.shaded(cx - Math.floor(waistW / 2), ty + 5, waistW, 3, goldDark, goldBase, cloth);
+
+    // Faldón / taparrabos blindado característico del Chitauri entre las piernas (y = 19..23)
+    cv.rect(midX - 2, ty + 7, 4, 5, cloth);
+    cv.rect(midX - 1, ty + 7, 2, 4, goldDark);
+    cv.set(midX - 2, ty + 7, goldLight);
+    cv.set(midX + 1, ty + 7, goldLight);
+    cv.set(midX - 2, ty + 8, blueGlow);
+    cv.set(midX + 1, ty + 8, blueGlow);
+
+    if (isBack) {
+      const spineX = cx - (diag ? fx : 0);
+      cv.rect(spineX - 1, ty, 2, 7, darkMetal);
+      for (let y = ty + 1; y <= ty + 5; y += 2) cv.rect(spineX - 1, y, 2, 1, goldLight);
+      cv.set(spineX - 2, ty + 3, blueGlow);
+      cv.set(spineX + 1, ty + 3, blueGlow);
+    }
+  } else {
+    const tx = cx - 3;
+    cv.shaded(tx, ty, 6, 5, goldBase, goldLight, goldDark);
+    cv.shaded(tx + 1, ty + 5, 5, 3, cloth, goldDark, darkMetal);
+    // Faldón lateral con luz azul Chitauri
+    cv.rect(cx - 2, ty + 7, 4, 4, goldDark);
+    cv.set(cx, ty + 7, blueGlow);
+  }
+
+  // ---------------- 3) BRAZOS Y RIFLE DE ENERGÍA CHITAURI DORADO Y AZUL
+  if (sideOnly) {
+    // En perfil sostiene el rifle apuntando hacia fx
+    const shX = cx - 1;
+    cv.shaded(shX, ty + 1, 3, 4, skinBase, skinLight, skinDark);
+    cv.rect(shX, ty, 3, 2, goldBase);
+    // Rifle Chitauri alargado hacia fx
+    const gunX = fx > 0 ? cx - 1 : cx - 9;
+    const gunY = ty + 3;
+    cv.rect(gunX, gunY, 10, 3, goldBase);
+    cv.rect(gunX + 1, gunY, 8, 1, goldLight);
+    cv.rect(gunX + 2, gunY + 1, 6, 1, blueBright);
+    cv.set(fx > 0 ? gunX + 9 : gunX, gunY + 1, blueGlow);
+    cv.rect(gunX + 3, gunY + 2, 4, 1, goldDark);
+  } else {
+    for (const side of [-1, 1]) {
+      const shX = straight
+        ? (side < 0 ? cx - 8 : cx + 5)
+        : (side < 0 ? cx - 6 : cx + 4);
+      const shY = ty;
+      // Hombrera bronce y brazo gris pálido musculoso
+      cv.shaded(shX, shY, 3, 2, goldBase, goldLight, goldDark);
+      cv.shaded(shX, shY + 2, 3, 5, skinBase, skinLight, skinDark);
+      cv.rect(shX, shY + 5, 3, 2, goldDark); // brazalete
+    }
+    if (isFront) {
+      // Rifle de energía Chitauri cruzado sobre el pecho (dorado curvo con núcleo azul brillante, como en la foto 1)
+      const gx = cx - 6 + (diag ? fx : 0);
+      const gy = ty + 3;
+      cv.rect(gx, gy, 12, 3, goldBase);
+      cv.rect(gx + 1, gy, 10, 1, goldLight);
+      cv.rect(gx + 1, gy + 2, 10, 1, goldDark);
+      cv.rect(gx + 3, gy + 1, 6, 1, blueBright);
+      cv.set(gx + 2, gy + 1, blueGlow);
+      cv.set(gx + 9, gy + 1, blueGlow);
+    }
+  }
+
+  // ---------------- 4) CABEZA CON CASCO DORADO CHITAURI Y TUBOS LATERALES (y = 2..11)
+  const hy = 2 + bob;
+  if (straight) {
+    // Tubos/rastas metálicas a los costados del cuello
+    cv.rect(cx - 5, hy + 5, 2, 5, darkMetal);
+    cv.rect(cx + 3, hy + 5, 2, 5, darkMetal);
+    cv.set(cx - 5, hy + 6, skinDark);
+    cv.set(cx + 4, hy + 6, skinDark);
+    // Casco dorado con cresta en V
+    cv.shaded(cx - 4, hy, 8, 3, goldBase, goldLight, goldDark);
+    cv.set(cx - 4, hy - 1, goldLight);
+    cv.set(cx + 3, hy - 1, goldLight);
+    cv.shaded(cx - 4, hy + 3, 8, 6, skinBase, skinLight, skinDark);
+
+    if (isFront) {
+      // Máscara facial bronce en V sobre el rostro gris
+      cv.rect(cx - 4, hy + 2, 8, 2, goldLight);
+      cv.rect(cx - 1, hy + 3, 2, 3, goldBase);
+      // Ojos hundidos con destello celeste Chitauri
+      cv.rect(cx - 3, hy + 4, 2, 1, darkMetal);
+      cv.rect(cx + 1, hy + 4, 2, 1, darkMetal);
+      cv.set(cx - 3, hy + 4, blueBright);
+      cv.set(cx + 2, hy + 4, blueBright);
+      // Mandíbula metálica oscura con colmillos/barrotes grises
+      cv.rect(cx - 3, hy + 6, 6, 3, darkMetal);
+      cv.set(cx - 2, hy + 7, skinLight);
+      cv.set(cx, hy + 7, skinLight);
+      cv.set(cx + 2, hy + 7, skinLight);
+    } else {
+      // Nuca del casco dorado
+      cv.shaded(cx - 4, hy + 2, 8, 5, goldDark, goldBase, darkMetal);
+      cv.rect(cx - 1, hy + 1, 2, 7, darkMetal);
+    }
+  } else if (diag) {
+    const hx = cx - 4;
+    cv.rect(cx - fx * 4, hy + 5, 2, 5, darkMetal);
+    cv.shaded(hx + 1, hy, 7, 3, goldBase, goldLight, goldDark);
+    cv.shaded(hx, hy + 3, 8, 6, skinBase, skinLight, skinDark);
+    if (isFront) {
+      const maskX = fx > 0 ? cx - 2 : cx - 4;
+      cv.rect(maskX, hy + 2, 6, 2, goldLight);
+      cv.set(maskX + 1, hy + 4, blueBright);
+      cv.set(maskX + 4, hy + 4, blueBright);
+      cv.rect(maskX + 1, hy + 6, 5, 3, darkMetal);
+      cv.set(maskX + 2, hy + 7, skinLight);
+      cv.set(maskX + 4, hy + 7, skinLight);
+    } else {
+      cv.shaded(hx + 1, hy + 2, 7, 5, goldDark, goldBase, darkMetal);
+    }
+  } else {
+    const hx = cx - 4;
+    cv.rect(cx - fx * 2, hy + 5, 2, 5, darkMetal);
+    cv.shaded(hx + 1, hy, 7, 3, goldBase, goldLight, goldDark);
+    cv.shaded(hx + 1, hy + 3, 7, 6, skinBase, skinLight, skinDark);
+    const faceX = fx > 0 ? hx + 5 : hx + 1;
+    cv.rect(faceX, hy + 2, 3, 2, goldLight);
+    cv.set(faceX + (fx > 0 ? 1 : 0), hy + 4, blueBright);
+    cv.rect(faceX, hy + 6, 3, 3, darkMetal);
+    cv.set(faceX + 1, hy + 7, skinLight);
+  }
+
+  return addOutline(cv, outline);
+}
+
+function makeSentinel() {
+  const framesPerDir = 4;
+  const sheet = new Canvas(32 * framesPerDir, 32 * DIRECTIONS.length);
+  DIRECTIONS.forEach(([fx, fy], row) => {
+    for (let col = 0; col < framesPerDir; col++) {
+      sheet.blit(drawChitauri(fx, fy, col), col * 32, row * 32);
+    }
+  });
+  return sheet;
+}
+
+// Doombot (reemplaza a los bichos gorditos en BRUTE): 8 direcciones (orden DIRECTIONS) x 4 cuadros de 32x32.
+// Basado en la 3ra imagen: capucha y capa verde oscuro estilo Doctor Doom, máscara de titanio con ojos
+// amarillo-verdosos brillantes, hombreras metálicas angulares gigantes, pechera verde militar blindada y faldón verde con borde claro.
+function drawDoombot(fx, fy, frameIdx) {
+  const cv = new Canvas(32, 32);
+  const outline = hex('#090d07');
+  const gLight = hex('#58703a');
+  const gBase = hex('#3d4f27');
+  const gDark = hex('#253117');
+  const gDeep = hex('#161e0d');
+  const trim = hex('#95ad68');
+  const stLight = hex('#c4cad4');
+  const stBase = hex('#8a919e');
+  const stDark = hex('#525863');
+  const stDeep = hex('#2a2e36');
+  const eyeGlow = hex('#ebff6e');
+  const eyeDim = hex('#a8cf32');
+
+  const strides = [-2, -1, 2, 1];
+  const bobs = [0, -1, 0, -1];
+  const stride = strides[frameIdx] ?? 0;
+  const bob = bobs[frameIdx] ?? 0;
+
+  const cx = 16;
+  const straight = fx === 0;
+  const sideOnly = fx !== 0 && fy === 0;
+  const diag = fx !== 0 && fy !== 0;
+  const isFront = fy > 0;
+  const isBack = fy < 0;
+  const ty = 11 + bob;
+
+  // ---------------- 1) CAPA VERDE DE DOOM (en vistas frontales y de perfil cae por detrás)
+  if (!isBack) {
+    const capeW = straight ? 14 : sideOnly ? 7 : 12;
+    const capeX = sideOnly ? (fx > 0 ? cx - 6 : cx - 1) : cx - Math.floor(capeW / 2);
+    cv.shaded(capeX, ty + 1, capeW, 15, gDark, gBase, gDeep);
+    // Puntas desgarradas abajo de la capa (como en la imagen de referencia)
+    for (let x = capeX; x < capeX + capeW; x += 2) {
+      cv.set(x, ty + 16, gDeep);
+    }
+  }
+
+  // ---------------- 2) BOTAS Y PIERNAS BLINDADAS PESADAS (y = 21..30)
+  const hipY = 20 + bob;
+  if (!sideOnly) {
+    for (const side of [-1, 1]) {
+      const step = side * stride;
+      const lift = step > 0 ? -1 : 0;
+      const sep = straight ? 4 : 3;
+      const lx = cx + side * sep - 2;
+      const bootY = Math.min(29, hipY + 6 + lift);
+      cv.shaded(lx, hipY + 2, 4, 5, stDark, stBase, stDeep);
+      cv.shaded(lx - (side < 0 ? 1 : 0), bootY, 5, 3, stDeep, stDark, outline);
+      cv.rect(lx, bootY, 3, 1, stLight);
+    }
+  } else {
+    for (const layer of [-1, 1]) {
+      const step = layer * stride;
+      const lift = step * fx > 0 ? -1 : 0;
+      const lx = cx - 2 + step;
+      cv.shaded(lx, hipY + 2, 4, 5, layer < 0 ? stDeep : stDark, stBase, stDeep);
+      const bootY = Math.min(29, hipY + 6 + lift);
+      cv.shaded(lx, bootY, 5, 3, stDeep, stDark, outline);
+      cv.set(lx + (fx > 0 ? 3 : 1), bootY, stLight);
+    }
+  }
+
+  // ---------------- 3) TORSO ANCHO ("GORDITO") Y FALDÓN TÚNICA VERDE CON BORDE CLARO
+  if (!sideOnly) {
+    const chestW = straight ? 12 : 10;
+    const tx = cx - Math.floor(chestW / 2);
+    const midX = cx + (diag ? fx : 0);
+
+    // Pechera verde militar pesada y cinturón metálico en V
+    cv.shaded(tx, ty, chestW, 8, gBase, gLight, gDark);
+    cv.shaded(midX - 3, ty + 7, 6, 3, stBase, stLight, stDark);
+
+    // Faldón verde abierto a los costados + tabardo central con ribete verde claro (idéntico a la imagen 3)
+    cv.shaded(tx - 1, ty + 8, chestW + 2, 7, gBase, gLight, gDark);
+    cv.rect(tx - 1, ty + 14, chestW + 2, 1, trim);
+    cv.shaded(midX - 2, ty + 9, 4, 7, gLight, trim, gBase);
+    cv.rect(midX - 1, ty + 10, 2, 5, gBase);
+
+    if (isFront) {
+      // Placas pectorales angulares y núcleo hexagonal oscuro en el pecho
+      cv.rect(midX - 4, ty + 1, 2, 2, stLight);
+      cv.rect(midX + 2, ty + 1, 2, 2, stLight);
+      cv.rect(midX - 1, ty + 2, 2, 2, stDeep);
+      cv.rect(midX - 3, ty + 4, 6, 1, gLight);
+      cv.rect(midX - 2, ty + 6, 4, 1, stLight);
+    }
+  } else {
+    const tx = cx - 4;
+    cv.shaded(tx, ty, 8, 8, gBase, gLight, gDark);
+    cv.shaded(tx, ty + 8, 8, 7, gBase, gLight, gDark);
+    cv.rect(tx, ty + 14, 8, 1, trim);
+    cv.rect(fx > 0 ? tx + 5 : tx + 1, ty + 7, 2, 7, stBase);
+  }
+
+  // ---------------- 4) HOMBRERAS METÁLICAS GIGANTES Y BRAZOS ROBÓTICOS
+  if (sideOnly) {
+    const shX = cx - 2;
+    // Hombrera angular plateada con relieve
+    cv.shaded(shX - 1, ty - 1, 5, 5, stBase, stLight, stDark);
+    cv.rect(shX, ty, 3, 2, stLight);
+    // Brazo y guantelete blindado
+    cv.shaded(shX + fx, ty + 4, 4, 6, stDark, stBase, stDeep);
+    cv.rect(shX + fx + 1, ty + 5, 2, 3, stLight);
+  } else {
+    for (const side of [-1, 1]) {
+      const swing = Math.round((side * stride) / 2);
+      const shX = straight
+        ? (side < 0 ? cx - 10 : cx + 6)
+        : (side < 0 ? cx - 8 : cx + 5);
+      const shY = ty - 1 + (swing > 0 ? 1 : 0);
+      // Hombrera grande de titanio en punta hacia arriba (4x5)
+      cv.shaded(shX, shY, 4, 5, stBase, stLight, stDark);
+      cv.rect(shX + 1, shY - 1, 2, 2, stLight);
+      cv.set(shX + (side < 0 ? 1 : 2), shY + 2, stDeep);
+      // Brazo y guantelete de acero
+      cv.shaded(shX + (side < 0 ? 0 : 0), shY + 5, 4, 6, stDark, stBase, stDeep);
+      cv.rect(shX + 1, shY + 6, 2, 2, stLight);
+    }
+  }
+
+  // ---------------- 5) CAPA DORSAL COMPLETA (cuando está de espaldas o en 3/4 de espaldas)
+  if (isBack) {
+    const capeW = straight ? 14 : 12;
+    const capeX = cx - Math.floor(capeW / 2) - (diag ? fx : 0);
+    cv.shaded(capeX, ty, capeW, 16, gBase, gLight, gDark);
+    cv.rect(capeX + 1, ty + 14, capeW - 2, 1, trim);
+    // Borde inferior rasgado de la capa
+    for (let x = capeX; x < capeX + capeW; x += 2) {
+      cv.rect(x, ty + 16, 1, 2, gDark);
+    }
+  }
+
+  // ---------------- 6) CAPUCHA VERDE Y MÁSCARA METÁLICA DE DOCTOR DOOM (y = 1..11)
+  const hy = 1 + bob;
+  if (straight) {
+    // Capucha verde ancha y en punta
+    cv.shaded(cx - 4, hy, 8, 2, gBase, gLight, gDark);
+    cv.shaded(cx - 5, hy + 2, 10, 8, gBase, gLight, gDark);
+    if (isFront) {
+      // Hueco de la capucha y máscara metálica con ojos amarillo-verdosos encendidos
+      cv.rect(cx - 4, hy + 3, 8, 7, gDeep);
+      cv.shaded(cx - 3, hy + 3, 6, 6, stBase, stLight, stDark);
+      // Ojos brillantes de Doombot
+      cv.rect(cx - 3, hy + 5, 2, 1, eyeGlow);
+      cv.rect(cx + 1, hy + 5, 2, 1, eyeGlow);
+      cv.set(cx - 2, hy + 6, eyeDim);
+      cv.set(cx + 1, hy + 6, eyeDim);
+      // Respirador / rejilla bucal metálica
+      cv.rect(cx - 2, hy + 7, 4, 2, stDeep);
+      cv.set(cx - 1, hy + 7, stLight);
+      cv.set(cx + 1, hy + 7, stLight);
+    } else {
+      // Pliegues traseros de la capucha
+      cv.rect(cx - 1, hy + 2, 2, 7, gDark);
+      cv.rect(cx - 3, hy + 8, 6, 2, trim);
+    }
+  } else if (diag) {
+    const hx = cx - 5;
+    cv.shaded(hx + 1, hy, 8, 2, gBase, gLight, gDark);
+    cv.shaded(hx, hy + 2, 10, 8, gBase, gLight, gDark);
+    if (isFront) {
+      const maskX = fx > 0 ? cx - 2 : cx - 4;
+      cv.rect(maskX, hy + 3, 6, 6, stBase);
+      cv.rect(maskX, hy + 5, 2, 1, eyeGlow);
+      cv.rect(maskX + 3, hy + 5, 2, 1, eyeGlow);
+      cv.rect(maskX + 1, hy + 7, 4, 2, stDeep);
+      cv.set(maskX + 2, hy + 7, stLight);
+    } else {
+      cv.rect(cx - fx, hy + 2, 2, 7, gDark);
+    }
+  } else {
+    // Capucha de perfil adelantada sobre la máscara metálica
+    const hx = cx - 4;
+    cv.shaded(hx + 1, hy, 7, 2, gBase, gLight, gDark);
+    cv.shaded(hx, hy + 2, 9, 8, gBase, gLight, gDark);
+    const faceX = fx > 0 ? hx + 6 : hx;
+    cv.rect(faceX, hy + 3, 3, 6, stBase);
+    cv.rect(faceX + (fx > 0 ? 1 : 0), hy + 5, 2, 1, eyeGlow);
+    cv.rect(faceX, hy + 7, 2, 2, stDeep);
+  }
+
+  return addOutline(cv, outline);
+}
+
+function makeBrute() {
+  const framesPerDir = 4;
+  const sheet = new Canvas(32 * framesPerDir, 32 * DIRECTIONS.length);
+  DIRECTIONS.forEach(([fx, fy], row) => {
+    for (let col = 0; col < framesPerDir; col++) {
+      sheet.blit(drawDoombot(fx, fy, col), col * 32, row * 32);
+    }
+  });
   return sheet;
 }
 
@@ -1556,8 +1965,10 @@ const crate = makeCrate();
 save(rock, 'props/rock.png');
 save(crate, 'props/crate.png');
 const drone = makeDrone();
+const sentinel = makeSentinel();
 const overlord = makeOverlord();
 save(drone, 'enemies/drone.png');
+save(sentinel, 'enemies/sentinel.png');
 save(overlord, 'enemies/overlord.png');
 const scout = makeScout();
 const brute = makeBrute();
@@ -1583,11 +1994,12 @@ if (previewIdx !== -1) {
     writeFileSync(join(dir, `${id}-walk.png`), encodePng(previewOf(sheets.walk, 4)));
   }
   writeFileSync(join(dir, 'drone.png'), encodePng(previewOf(drone, 6)));
+  writeFileSync(join(dir, 'sentinel.png'), encodePng(previewOf(sentinel, 6)));
   writeFileSync(join(dir, 'rock.png'), encodePng(previewOf(rock, 8)));
   writeFileSync(join(dir, 'crate.png'), encodePng(previewOf(crate, 8)));
   writeFileSync(join(dir, 'overlord.png'), encodePng(previewOf(overlord, 6)));
-  writeFileSync(join(dir, 'scout.png'), encodePng(previewOf(scout, 8)));
-  writeFileSync(join(dir, 'brute.png'), encodePng(previewOf(brute, 8)));
+  writeFileSync(join(dir, 'scout.png'), encodePng(previewOf(scout, 6)));
+  writeFileSync(join(dir, 'brute.png'), encodePng(previewOf(brute, 6)));
   writeFileSync(join(dir, 'missile.png'), encodePng(previewOf(missile, 10)));
   writeFileSync(join(dir, 'fire.png'), encodePng(previewOf(fire, 8)));
   console.log('  vistas previas en', dir);

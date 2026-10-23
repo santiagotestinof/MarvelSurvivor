@@ -99,7 +99,7 @@ export interface EnemyKind {
    * Cómo aparece en las oleadas: desde qué punto de la ronda (0 = inicio, 1 = jefe) y con qué peso
    * relativo frente a los demás disponibles. Sin `spawn` no sale en oleadas (por ejemplo, el jefe).
    */
-  spawn?: { fromProgress: number; weight: number };
+  spawn?: { fromProgress: number; weight: number; maxAlive?: number };
 }
 
 export const DRONE: EnemyKind = {
@@ -120,23 +120,24 @@ export const DRONE: EnemyKind = {
   spawn: { fromProgress: 0, weight: 6 },
 };
 
-/** Enemigo de apoyo: dispara desde lejos y tiene poca presión por contacto. */
+/** Chitauri tirador: se frena 1 s para marcar y disparar desde lejos, tiene poca vida y aparece en poca cantidad. */
 export const SENTINEL: EnemyKind = {
   id: 'sentinel',
   texture: 'enemy-sentinel',
-  path: 'assets/enemies/drone.png',
+  path: 'assets/enemies/sentinel.png',
   frame: { width: 32, height: 32 },
   frameCount: 4,
   frameRate: 6,
   directional: true,
   origin: { x: 0.5, y: 0.94 },
   body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
-  health: 24,
+  health: 12,
   speed: 24.2,
   contactDamage: 4,
   xpValue: 2,
-  rangedAttack: { range: 260, cooldownMs: 2200, damage: 5, projectileSpeed: 150 },
-  spawn: { fromProgress: 0.3, weight: 1.4 },
+  gold: { chance: 0.1, value: 1 },
+  rangedAttack: { range: 250, cooldownMs: 2600, damage: 6, projectileSpeed: 165 },
+  spawn: { fromProgress: 0.25, weight: 0.45, maxAlive: 3 },
 };
 
 /** Outrider (súbdito de Thanos en Endgame): rápido y frágil, conserva la velocidad, vida y daño originales. */
@@ -158,19 +159,20 @@ export const SCOUT: EnemyKind = {
   spawn: { fromProgress: 0.15, weight: 3 },
 };
 
-/** Lento y resistente: pega fuerte y suelta más experiencia. */
+/** Doombot (tanque pesado): más lento, menos daño por contacto, pero mucha más vida y giro suave en 8 direcciones. */
 export const BRUTE: EnemyKind = {
   id: 'brute',
   texture: 'enemy-brute',
   path: 'assets/enemies/brute.png',
   frame: { width: 32, height: 32 },
-  frameCount: 2,
-  frameRate: 3,
-  origin: { x: 0.5, y: 0.92 },
-  body: { width: 18, height: 10, offsetX: 7, offsetY: 20 },
-  health: 100,
-  speed: 26.4,
-  contactDamage: 14,
+  frameCount: 4,
+  frameRate: 5,
+  directional: true,
+  origin: { x: 0.5, y: 0.94 },
+  body: { width: 18, height: 12, offsetX: 7, offsetY: 18 },
+  health: 110,
+  speed: 25,
+  contactDamage: 8,
   xpValue: 4,
   gold: { chance: 0.2, value: 3 },
   spawn: { fromProgress: 0.4, weight: 1.5 },
@@ -194,8 +196,12 @@ export const OVERLORD: EnemyKind = {
 export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, SENTINEL, SCOUT, BRUTE, OVERLORD];
 
 /** Elige al azar (por peso) uno de los enemigos de oleada disponibles en este punto de la ronda. */
-export function pickWaveEnemy(progress: number): EnemyKind {
-  const available = ENEMY_KINDS.filter((kind) => kind.spawn && progress >= kind.spawn.fromProgress);
+export function pickWaveEnemy(progress: number, countByKind?: (id: string) => number): EnemyKind {
+  const available = ENEMY_KINDS.filter((kind) => {
+    if (!kind.spawn || progress < kind.spawn.fromProgress) return false;
+    if (kind.spawn.maxAlive !== undefined && countByKind && countByKind(kind.id) >= kind.spawn.maxAlive) return false;
+    return true;
+  });
   const total = available.reduce((sum, kind) => sum + (kind.spawn?.weight ?? 0), 0);
   let roll = Math.random() * total;
   for (const kind of available) {

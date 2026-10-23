@@ -12,12 +12,15 @@ interface EnemyShot {
 interface EnemyCharge {
   enemy: Enemy;
   line: Phaser.GameObjects.Line;
+  reticle: Phaser.GameObjects.Arc;
+  startedAt: number;
   fireAt: number;
   targetX: number;
   targetY: number;
 }
 
-const TELEGRAPH_MS = 450;
+/** Se queda quieto durante 1 segundo marcando la trayectoria antes de disparar. */
+const TELEGRAPH_MS = 1000;
 const HIT_RADIUS = 13;
 
 export class RangedAttackSystem {
@@ -40,6 +43,7 @@ export class RangedAttackSystem {
     for (const [enemy, charge] of this.charges) {
       if (!active.has(enemy)) {
         charge.line.destroy();
+        charge.reticle.destroy();
         this.charges.delete(enemy);
       }
     }
@@ -60,29 +64,49 @@ export class RangedAttackSystem {
 
       const targetX = this.player.x;
       const targetY = this.player.y - 8;
-      const line = this.scene.add.line(0, 0, enemy.x, enemy.y - 8, targetX, targetY, 0xff6b4a, 0.8);
+      // Clava al Chitauri en el lugar durante 1 segundo mirando hacia donde marcó el tiro.
+      enemy.lockForShot(TELEGRAPH_MS, targetX, targetY);
+
+      const line = this.scene.add.line(0, 0, enemy.x, enemy.y - 10, targetX, targetY, 0x38a8ff, 0.85);
       line.setOrigin(0, 0);
       line.setLineWidth(2, 1);
       line.setDepth(enemy.y + 1);
-      this.charges.set(enemy, { enemy, line, fireAt: now + TELEGRAPH_MS, targetX, targetY });
+
+      const reticle = this.scene.add.circle(targetX, targetY, 9, 0x38a8ff, 0.18);
+      reticle.setStrokeStyle(1.5, 0x9ce8ff, 0.9);
+      reticle.setDepth(enemy.y + 1);
+
+      this.charges.set(enemy, {
+        enemy,
+        line,
+        reticle,
+        startedAt: now,
+        fireAt: now + TELEGRAPH_MS,
+        targetX,
+        targetY,
+      });
     }
 
     for (const [enemy, charge] of this.charges) {
-      charge.line.setTo(enemy.x, enemy.y - 8, charge.targetX, charge.targetY);
-      charge.line.setAlpha(0.5 + Math.sin(now / 45) * 0.35);
+      const ratio = Phaser.Math.Clamp((now - charge.startedAt) / TELEGRAPH_MS, 0, 1);
+      charge.line.setTo(enemy.x, enemy.y - 10, charge.targetX, charge.targetY);
+      charge.line.setAlpha(0.45 + Math.sin(now / 40) * 0.35);
+      charge.reticle.setScale(1.15 - ratio * 0.55);
+      charge.reticle.setAlpha(0.4 + ratio * 0.55);
 
       if (now < charge.fireAt) continue;
 
       const attack = enemy.kind.rangedAttack;
       if (!attack) {
         charge.line.destroy();
+        charge.reticle.destroy();
         this.charges.delete(enemy);
         continue;
       }
 
-      const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y - 8, charge.targetX, charge.targetY);
-      const sprite = this.scene.add.circle(enemy.x, enemy.y - 8, 4, 0xff8a36);
-      sprite.setStrokeStyle(2, 0xffd7a8);
+      const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y - 10, charge.targetX, charge.targetY);
+      const sprite = this.scene.add.circle(enemy.x, enemy.y - 10, 4, 0x38a8ff);
+      sprite.setStrokeStyle(2, 0xd4f6ff);
       sprite.setDepth(enemy.y + 1);
       this.shots.push({
         sprite,
@@ -92,6 +116,7 @@ export class RangedAttackSystem {
       });
 
       charge.line.destroy();
+      charge.reticle.destroy();
       this.charges.delete(enemy);
       this.nextShotAt.set(enemy, now + attack.cooldownMs);
     }
@@ -122,7 +147,10 @@ export class RangedAttackSystem {
 
   destroy(): void {
     for (const shot of this.shots) shot.sprite.destroy();
-    for (const charge of this.charges.values()) charge.line.destroy();
+    for (const charge of this.charges.values()) {
+      charge.line.destroy();
+      charge.reticle.destroy();
+    }
     this.shots.length = 0;
     this.charges.clear();
     this.nextShotAt.clear();
