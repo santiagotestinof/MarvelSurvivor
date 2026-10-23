@@ -32,7 +32,7 @@ export const capitanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 85,
+    moveSpeed: 76.5,
     maxHealth: 130,
     attack: {
       kind: 'shield',
@@ -57,7 +57,7 @@ export const spidermanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 118,
+    moveSpeed: 106.2,
     maxHealth: 80,
     attack: {
       kind: 'web',
@@ -84,11 +84,11 @@ export const thorDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 90,
+    moveSpeed: 81,
     maxHealth: 110,
     attack: {
       kind: 'thunder',
-      cooldownMs: 850,
+      cooldownMs: 500,
       damage: 16,
       projectileTexture: TEXTURES.thunder,
       projectileSpeed: 0,
