@@ -2,6 +2,34 @@ import Phaser from 'phaser';
 import { createRandom } from '../core/random';
 import type { ParkBounds } from './ParkPaths';
 
+/** Cuatro cruces por intersección, con franjas perpendiculares al recorrido peatonal. */
+export function drawCityCrosswalks(g: Phaser.GameObjects.Graphics, roadXs: number[], roadYs: number[]): void {
+  for (const rx of roadXs) {
+    for (const ry of roadYs) {
+      // Cruces norte y sur sobre la avenida vertical.
+      for (const y of [ry - 72, ry + 304]) {
+        g.fillStyle(0x424b55).fillRect(rx, y - 20, 288, 96);
+        for (let offset = 8; offset < 280; offset += 24) {
+          g.fillStyle(0xe3e2d4).fillRect(rx + offset, y, 12, 56);
+          g.fillStyle(0xf4f0df).fillRect(rx + offset, y, 12, 2);
+        }
+        const stopY = y < ry ? y - 14 : y + 68;
+        g.fillStyle(0xd7d9cf).fillRect(rx + 8, stopY, 272, 3);
+      }
+      // Cruces oeste y este sobre la avenida horizontal.
+      for (const x of [rx - 72, rx + 304]) {
+        g.fillStyle(0x424b55).fillRect(x - 20, ry, 96, 288);
+        for (let offset = 8; offset < 280; offset += 24) {
+          g.fillStyle(0xe3e2d4).fillRect(x, ry + offset, 56, 12);
+          g.fillStyle(0xf4f0df).fillRect(x, ry + offset, 56, 2);
+        }
+        const stopX = x < rx ? x - 14 : x + 68;
+        g.fillStyle(0xd7d9cf).fillRect(stopX, ry + 8, 3, 272);
+      }
+    }
+  }
+}
+
 /** Acabados de vereda exclusivamente visuales: no agregan obstáculos. */
 export function drawCityPaving(g: Phaser.GameObjects.Graphics, park: ParkBounds, width: number, height: number,
   roadXs: number[], roadYs: number[]): void {
