@@ -100,12 +100,12 @@ export const thorDefinition: CharacterDefinition = {
   sheets: sheets(THOR_ID),
 };
 
-/** Hulk: lento y con muchísima vida; golpea el piso y empuja a todos los que lo rodean. */
+/** Hulk: lento y con muchísima vida; su zarpazo es un abanico fino (cuerpo a cuerpo) que se puede ir ampliando. */
 export const hulkDefinition: CharacterDefinition = {
   id: HULK_ID,
   displayName: 'Hulk',
   rarity: 'legendary',
-  weaponText: 'Golpe al piso: onda de choque que empuja a todos',
+  weaponText: 'Zarpazo: abanico fino que se ensancha y alarga con mejoras',
   frame: FRAME,
   origin: ORIGIN,
   body: { width: 12, height: 8, offsetX: 10, offsetY: 22 },
@@ -113,14 +113,14 @@ export const hulkDefinition: CharacterDefinition = {
     moveSpeed: 80,
     maxHealth: 190,
     attack: {
-      kind: 'quake',
-      cooldownMs: 1100,
-      damage: 13,
+      kind: 'fan',
+      cooldownMs: 700,
+      damage: 15,
       projectileTexture: TEXTURES.repulsor,
       projectileSpeed: 0,
-      aimRange: 60,
-      maxDistance: 60,
-      radius: 52,
+      aimRange: 72,
+      maxDistance: 62,
+      arcDegrees: 38,
     },
   },
   sheets: sheets(HULK_ID),

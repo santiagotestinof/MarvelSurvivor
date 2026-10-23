@@ -25,15 +25,17 @@ export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 /**
  * Cómo ataca el héroe:
  * - bolt: disparo recto (repulsor) · shield: escudo que rebota y vuelve · web: telaraña que frena
- * - thunder: rayo instantáneo en área sobre los enemigos cercanos · quake: onda de choque alrededor del héroe
+ * - thunder: rayo instantáneo en área sobre los enemigos cercanos · fan: abanico fino cuerpo a cuerpo (Hulk)
  */
-export type AttackKind = 'bolt' | 'shield' | 'web' | 'thunder' | 'quake';
+export type AttackKind = 'bolt' | 'shield' | 'web' | 'thunder' | 'fan';
 
 /** Ataque automático básico: dispara al enemigo más cercano dentro de `aimRange`. */
 export interface AttackDefinition {
   kind: AttackKind;
-  /** thunder y quake: radio del daño en área (px). */
+  /** thunder: radio del daño en área (px). */
   radius?: number;
+  /** fan: ángulo del abanico en grados (el alcance es `maxDistance`). */
+  arcDegrees?: number;
   /** web: cuánto dura el frenado (ms) y qué fracción de su velocidad conserva el enemigo. */
   slowMs?: number;
   slowFactor?: number;

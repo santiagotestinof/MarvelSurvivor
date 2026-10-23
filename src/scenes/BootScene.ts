@@ -4,7 +4,6 @@ import { ASSET_PATHS, EFFECT_ANIMS, TEXTURES } from '../config/assetKeys';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds';
 import { loadCharacterAssets, registerCharacterAnimations } from '../systems/AnimationSystem';
-import { saveData } from '../meta/saveData';
 import { registerUpgradeIcons } from '../ui/upgradeIcons';
 
 /** Carga todos los recursos, registra las animaciones y pasa a la escena de juego. */
@@ -56,16 +55,7 @@ export class BootScene extends Phaser.Scene {
         repeat: -1,
       });
     }
-    this.applyTestParams();
     this.scene.start(SCENE_KEYS.menu);
-  }
-
-  /** Atajos para probar: `?heroes` desbloquea a todos y `?oro=5000` suma oro al guardado. */
-  private applyTestParams(): void {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('heroes')) for (const id of Object.keys(CHARACTER_REGISTRY)) saveData.unlock(id);
-    const gold = Number(params.get('oro'));
-    if (Number.isFinite(gold) && gold > 0) saveData.addGold(gold);
   }
 
   /** Gema de experiencia provisional: rombo celeste. */

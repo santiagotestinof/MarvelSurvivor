@@ -17,6 +17,7 @@ import { ProgressionSystem, type ProgressState } from '../progression/Progressio
 import { passiveTypesTaken, passivesTaken, pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
+import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import { MissileWeapon } from '../systems/MissileWeapon';
 import { RoundController, type HudState } from '../systems/RoundController';
 import { WaveSystem } from '../systems/WaveSystem';
@@ -46,6 +47,7 @@ export class GameScene extends Phaser.Scene {
   private progression = new ProgressionSystem();
   /** Veces que se eligió cada mejora en esta ronda (algunas tienen requisitos, como la evolución). */
   private taken: Record<string, number> = {};
+  private heroWeapon: HeroWeapon | null = null;
   /** Mejoras desterradas en esta ronda (no vuelven a salir). */
   private banished = new Set<string>();
   /** Usos de repetir, saltear y desterrar con los que empezó la ronda. */
@@ -87,6 +89,14 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.enemies, map.obstacles);
     this.physics.add.collider(this.enemies, this.enemies);
     this.attack = new AutoAttackSystem(this, this.player, this.player.definition.stats.attack, this.enemies, this.stats, () => map.breakables);
+    this.heroWeapon =
+      HERO_WEAPONS[this.player.definition.id]?.create({
+        scene: this,
+        owner: this.player,
+        enemies: this.enemies,
+        stats: this.stats,
+        props: () => map.breakables,
+      }) ?? null;
     this.missiles = new MissileWeapon(this, this.player, this.enemies, this.stats, (x, y, radius, damage) =>
       map.damagePropsInRadius(x, y, radius, damage),
     );
@@ -203,6 +213,8 @@ export class GameScene extends Phaser.Scene {
       missiles: this.missiles,
       taken: this.taken,
       basicKind: this.player.definition.stats.attack.kind,
+      heroId: this.player.definition.id,
+      heroWeapon: this.heroWeapon,
     };
   }
 
@@ -276,6 +288,7 @@ export class GameScene extends Phaser.Scene {
     this.player.step(this.moveInput.getVector());
     this.attack.update(now);
     this.missiles.update(now, delta);
+    this.heroWeapon?.update(now, delta);
     this.updatePickups(delta);
     if (this.stats.regenPerSecond > 0) this.player.heal((this.stats.regenPerSecond * delta) / 1000);
     const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);

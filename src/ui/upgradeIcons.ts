@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { HERO_ICONS } from './heroIcons';
 import { META_ICONS } from './metaIcons';
 
 /**
@@ -22,6 +23,7 @@ const PALETTE: Record<string, number> = {
 };
 
 const ICONS: Record<string, string[]> = {
+  ...HERO_ICONS,
   ...Object.fromEntries(Object.entries(META_ICONS).map(([id, rows]) => [`meta-${id}`, rows])),
   damage: [
     '....O.....',

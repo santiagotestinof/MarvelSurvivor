@@ -1,6 +1,7 @@
 import { BASIC_ATTACK_LIMITS, FIRE, MISSILES, PROGRESSION } from '../config/gameplayConfig';
 import type { AttackKind } from '../characters/CharacterDefinition';
 import type { Character } from '../entities/Character';
+import { HERO_WEAPONS, HERO_WEAPON_MAX_LEVEL, type HeroWeapon } from '../systems/HeroWeapons';
 import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
 
@@ -12,6 +13,10 @@ export interface UpgradeContext {
   taken: Readonly<Record<string, number>>;
   /** Cómo ataca el héroe: algunas mejoras del ataque básico no sirven para todos. */
   basicKind: AttackKind;
+  /** Héroe elegido: algunas mejoras son exclusivas de uno. */
+  heroId: string;
+  /** Arma secundaria exclusiva del héroe (si tiene). */
+  heroWeapon: HeroWeapon | null;
 }
 
 export type UpgradeCategory = 'attack' | 'defense' | 'utility' | 'evolution';
@@ -43,10 +48,13 @@ export interface UpgradeDefinition {
    * tipos distintos; los que ya se tienen se pueden seguir mejorando.
    */
   passive?: boolean;
+  /** Si está, la mejora solo le sale a esos héroes. */
+  exclusiveTo?: readonly string[];
   /** Peso al sortear las 3 opciones (1 por defecto). Más alto = sale más seguido. */
   weight?: number;
 }
 
+const IRON_MAN_ONLY = ['ironman'] as const;
 const times = (ctx: UpgradeContext, id: string): number => ctx.taken[id] ?? 0;
 const pct = (value: number): string => `${Math.round(value * 100)}%`;
 
@@ -57,6 +65,7 @@ function fireUpgrade(kind: FireUpgrade, id: string, name: string, text: string):
     name,
     description: text,
     category: 'attack',
+    exclusiveTo: IRON_MAN_ONLY,
     describe: ({ missiles }) => `${text} (nv ${missiles.fireLevels[kind]} → ${missiles.fireLevels[kind] + 1})`,
     isAvailable: ({ missiles }) => missiles.evolved && missiles.fireLevels[kind] < FIRE.upgradeMaxLevel,
     apply: ({ missiles }) => missiles.upgradeFire(kind),
@@ -84,7 +93,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   {
     id: 'speed',
     passive: true,
-    name: 'Propulsores',
+    name: 'Velocidad',
     description: '+10% de velocidad de movimiento',
     category: 'utility',
     apply: ({ player }) => player.setMoveSpeed(player.moveSpeed * 1.1),
@@ -127,8 +136,9 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     name: 'Disparo múltiple',
     description: '+1 disparo en abanico',
     category: 'attack',
-    describe: ({ stats }) => `+1 disparo en abanico (${stats.projectileCount} → ${stats.projectileCount + 1})`,
-    isAvailable: ({ stats, basicKind }) => basicKind !== 'quake' && stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
+    describe: ({ stats, basicKind }) =>
+      `${basicKind === 'fan' ? '+1 zarpazo en otra dirección' : basicKind === 'thunder' ? '+1 rayo por ataque' : '+1 disparo en abanico'} (${stats.projectileCount} → ${stats.projectileCount + 1})`,
+    isAvailable: ({ stats }) => stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
     apply: ({ stats }) => stats.projectileCount++,
   },
   {
@@ -163,6 +173,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   // ---- Minimisiles y su evolución
   {
     id: 'missiles',
+    exclusiveTo: IRON_MAN_ONLY,
     name: 'Minimisiles',
     description: 'Misiles teledirigidos que explotan',
     category: 'attack',
@@ -176,6 +187,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   },
   {
     id: 'missiles-evolution',
+    exclusiveTo: IRON_MAN_ONLY,
     name: 'Misiles incendiarios',
     description: 'Las explosiones dejan fuego que quema',
     category: 'evolution',
@@ -189,7 +201,47 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   fireUpgrade('damage', 'burn-damage', 'Fuego intenso', '+30% de daño del fuego'),
   fireUpgrade('rate', 'burn-rate', 'Fuego voraz', 'Quema 18% más seguido'),
   fireUpgrade('size', 'burn-size', 'Fuego expansivo', '+20% de tamaño del área'),
+
+  // ---- Armas exclusivas de cada héroe (solo le salen a ese héroe)
+  ...Object.entries(HERO_WEAPONS).map(
+    ([heroId, weapon]): UpgradeDefinition => ({
+      id: weapon.upgradeId,
+      name: weapon.name,
+      description: weapon.text,
+      category: 'attack',
+      exclusiveTo: [heroId],
+      describe: ({ heroWeapon }) => {
+        const level = heroWeapon?.level ?? 0;
+        return level === 0 ? `ARMA NUEVA: ${weapon.text}` : `${weapon.text} (nv ${level} → ${level + 1})`;
+      },
+      isAvailable: ({ heroWeapon }) => !!heroWeapon && !heroWeapon.maxed,
+      apply: ({ heroWeapon }) => heroWeapon?.levelUp(),
+    }),
+  ),
+
+  // ---- Zarpazo de Hulk (abanico)
+  {
+    id: 'fan-width',
+    name: 'Abanico ancho',
+    description: '+25% de ángulo del zarpazo',
+    category: 'attack',
+    exclusiveTo: ['hulk'],
+    describe: (ctx) => `+25% de ángulo del zarpazo (nv ${times(ctx, 'fan-width')} → ${times(ctx, 'fan-width') + 1})`,
+    isAvailable: (ctx) => times(ctx, 'fan-width') < HERO_WEAPON_MAX_LEVEL,
+    apply: ({ stats }) => (stats.fanAngleMult *= 1.25),
+  },
+  {
+    id: 'fan-reach',
+    name: 'Brazos largos',
+    description: '+20% de alcance del zarpazo',
+    category: 'attack',
+    exclusiveTo: ['hulk'],
+    describe: (ctx) => `+20% de alcance del zarpazo (nv ${times(ctx, 'fan-reach')} → ${times(ctx, 'fan-reach') + 1})`,
+    isAvailable: (ctx) => times(ctx, 'fan-reach') < HERO_WEAPON_MAX_LEVEL,
+    apply: ({ stats }) => (stats.fanReachMult *= 1.2),
+  },
 ];
+
 
 /** Tipos distintos de mejoras pasivas que ya se tomaron en la ronda. */
 export function passiveTypesTaken(taken: Readonly<Record<string, number>>): number {
@@ -216,7 +268,13 @@ export function pickUpgradeChoices(
   ctx: UpgradeContext,
   banished: ReadonlySet<string> = new Set(),
 ): UpgradeDefinition[] {
-  const pool = UPGRADES.filter((upgrade) => !banished.has(upgrade.id) && hasSlot(upgrade, ctx.taken) && (upgrade.isAvailable?.(ctx) ?? true));
+  const pool = UPGRADES.filter(
+    (upgrade) =>
+      !banished.has(upgrade.id) &&
+      (!upgrade.exclusiveTo || upgrade.exclusiveTo.includes(ctx.heroId)) &&
+      hasSlot(upgrade, ctx.taken) &&
+      (upgrade.isAvailable?.(ctx) ?? true),
+  );
   const picked: UpgradeDefinition[] = [];
   while (picked.length < count && pool.length > 0) {
     const total = pool.reduce((sum, upgrade) => sum + (upgrade.weight ?? 1), 0);
