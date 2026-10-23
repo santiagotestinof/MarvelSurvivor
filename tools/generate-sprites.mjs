@@ -491,6 +491,10 @@ const WALK_STRIDE = [0, 2, 2, 0, -2, -2];
 const WALK_BOB = [-1, 0, 0, -1, 0, 0];
 const WALK_FRAMES = WALK_STRIDE.map((stride, i) => ({ stride, bob: WALK_BOB[i], pulse: i % 2 ? 1 : 0 }));
 
+// Iron Man flota: el cuerpo no se mueve, solo cambia el largo de las llamas de los propulsores.
+const IM_IDLE_FRAMES = [0, 1, 2, 1].map((pulse) => ({ pulse }));
+const IM_WALK_FRAMES = [0, 1, 2, 1, 2, 1].map((pulse) => ({ pulse }));
+
 
 // ---------------------------------------------------------------- héroes: un estilo por personaje
 // `pal` pisa colores del traje base. red* = traje, gold* = detalles, arc* = emblema del pecho.
@@ -889,8 +893,8 @@ function previewOf(cv, scale, bg = hex('#5f8f58')) {
 // ---------------------------------------------------------------- main
 
 console.log('Generando recursos provisionales...');
-const ironIdle = buildIronManSheet(IDLE_FRAMES);
-const ironWalk = buildIronManSheet(WALK_FRAMES);
+const ironIdle = buildIronManSheet(IM_IDLE_FRAMES);
+const ironWalk = buildIronManSheet(IM_WALK_FRAMES);
 save(ironIdle, 'characters/ironman/ironman-idle.png');
 save(ironWalk, 'characters/ironman/ironman-walk.png');
 const idle = ironIdle;
