@@ -3,7 +3,7 @@ import { UPGRADE_CATEGORIES, type UpgradeDefinition } from '../progression/upgra
 import { UPGRADE_ICON_SIZE, upgradeIconKey } from './upgradeIcons';
 import { UI_FONT, drawPanel, textStyle } from './uiLayout';
 
-const CARD_FILL = 0x101a24;
+const CARD_FILL = 0x0a1322;
 
 function hex(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`;
@@ -74,7 +74,7 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
     const g = this.bg;
     g.clear();
     drawPanel(g, left, top, w, h, {
-      fill: this.hovered ? 0x17283a : CARD_FILL,
+      fill: this.hovered ? 0x14284a : CARD_FILL,
       alpha: 0.96,
       border: this.color,
       borderAlpha: this.hovered ? 1 : 0.55,

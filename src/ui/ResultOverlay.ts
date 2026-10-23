@@ -21,7 +21,7 @@ export class ResultOverlay {
       .setOrigin(0.5)
       .setDepth(DEPTH + 1)
       .setVisible(false);
-    this.button = new UiButton(scene, 'VOLVER AL MENÚ', 18, () => this.shown && onBackToMenu(), ['ENTER', 'SPACE'])
+    this.button = new UiButton(scene, 'VOLVER AL MENÚ', 18, () => this.shown && onBackToMenu(), ['ENTER', 'SPACE'], true)
       .setDepth(DEPTH + 1)
       .setVisible(false)
       .setEnabled(false);
