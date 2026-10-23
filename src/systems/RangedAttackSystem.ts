@@ -33,7 +33,11 @@ export class RangedAttackSystem {
       const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y - 8);
       if (distance > attack.range) continue;
 
-      const nextShot = this.nextShotAt.get(enemy) ?? now + attack.cooldownMs * 0.5;
+      const nextShot = this.nextShotAt.get(enemy);
+      if (nextShot === undefined) {
+        this.nextShotAt.set(enemy, now + attack.cooldownMs * 0.5);
+        continue;
+      }
       if (now < nextShot) continue;
 
       const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y - 8, this.player.x, this.player.y - 8);
@@ -55,9 +59,7 @@ export class RangedAttackSystem {
       shot.sprite.x += shot.velocityX * (delta / 1000);
       shot.sprite.y += shot.velocityY * (delta / 1000);
 
-      if (
-        Phaser.Math.Distance.Between(shot.sprite.x, shot.sprite.y, this.player.x, this.player.y - 8) <= 16
-      ) {
+      if (Phaser.Math.Distance.Between(shot.sprite.x, shot.sprite.y, this.player.x, this.player.y - 8) <= 16) {
         this.player.takeDamage(shot.damage);
         shot.sprite.destroy();
         this.shots.splice(i, 1);
