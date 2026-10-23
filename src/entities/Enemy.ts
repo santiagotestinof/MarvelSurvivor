@@ -146,7 +146,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (distance < preferredRange - 28) {
         moveX *= -1;
         moveY *= -1;
-      } else if (distance <= preferredRange + 28) {
+      } else if (distance <= preferredRange - 6) {
         moveX = 0;
         moveY = 0;
       }
