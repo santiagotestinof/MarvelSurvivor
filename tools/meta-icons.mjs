@@ -4,7 +4,7 @@
 
 import { CUSTOM_ICONS } from './meta-icons-custom.mjs';
 
-import { CUSTOM_ICONS_32 } from './meta-icons-custom32.mjs';
+import { CUSTOM_32_WITH_OUTLINE, CUSTOM_ICONS_32 } from './meta-icons-custom32.mjs';
 
 export const ICON_SIZE = 16;
 /** Tamaño de cada cuadro en la hoja final: los dibujos de 16×16 se agrandan al doble (cada píxel pasa a ser 2×2). */
@@ -433,14 +433,15 @@ export function buildMetaIconSheet() {
       const maxX = Math.max(...pts.map(([x]) => x));
       const minY = Math.min(...pts.map(([, y]) => y));
       const maxY = Math.max(...pts.map(([, y]) => y));
-      const spanX = maxX - minX + 1 + 2; // + contorno
-      const spanY = maxY - minY + 1 + 2;
-      const shiftX = Math.floor((SHEET_CELL - spanX) / 2) + 1 - minX;
-      const shiftY = Math.floor((SHEET_CELL - spanY) / 2) + 1 - minY;
+      const margin = CUSTOM_32_WITH_OUTLINE.includes(id) ? 0 : 1;
+      const spanX = maxX - minX + 1 + 2 * margin; // + contorno
+      const spanY = maxY - minY + 1 + 2 * margin;
+      const shiftX = Math.floor((SHEET_CELL - spanX) / 2) + margin - minX;
+      const shiftY = Math.floor((SHEET_CELL - spanY) / 2) + margin - minY;
       const put = (x, y, color) => {
         if (x >= 0 && y >= 0 && x < SHEET_CELL && y < SHEET_CELL) px.set(color, (y * width + index * SHEET_CELL + x) * 4);
       };
-      for (const [x, y] of pts) {
+      for (const [x, y] of margin ? pts : []) {
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
           if (!cells.has(`${x + dx},${y + dy}`)) put(x + dx + shiftX, y + dy + shiftY, C.K);
         }
