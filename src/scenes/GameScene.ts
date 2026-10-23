@@ -175,6 +175,10 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop(SCENE_KEYS.hud));
   }
 
+  isIronManSelected(): boolean {
+    return this.player?.definition.id === 'ironman';
+  }
+
   /** Estado de la ultimate para el control del HUD. */
   getUltimateState(): { active: boolean; remainingMs: number; flightRemainingMs: number } {
     const active = this.player?.definition.id === 'ironman' && this.clock < this.ironManFlyingUntil;
