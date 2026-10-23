@@ -7,13 +7,11 @@ export interface UpgradeContext {
   stats: PlayerStats;
   player: Character;
   missiles: MissileWeapon;
-  /** Cuántas veces se eligió cada mejora en esta ronda (por `id`). */
   taken: Readonly<Record<string, number>>;
 }
 
 export type UpgradeCategory = 'attack' | 'defense' | 'utility' | 'evolution';
 
-/** Nombre y color de cada categoría en la tarjeta de mejora. */
 export const UPGRADE_CATEGORIES: Record<UpgradeCategory, { label: string; color: number }> = {
   attack: { label: 'ATAQUE', color: 0xff6b4a },
   defense: { label: 'DEFENSA', color: 0x3ddc84 },
@@ -21,28 +19,20 @@ export const UPGRADE_CATEGORIES: Record<UpgradeCategory, { label: string; color:
   evolution: { label: 'EVOLUCIÓN', color: 0xf5c518 },
 };
 
-/**
- * Una mejora que se puede elegir al subir de nivel. Para sumar otra: agregar una entrada a UPGRADES
- * y su ícono (mismo `id`) en `ui/upgradeIcons.ts`.
- */
 export interface UpgradeDefinition {
   id: string;
   name: string;
   description: string;
   category: UpgradeCategory;
   apply: (ctx: UpgradeContext) => void;
-  /** Texto según el estado actual (reemplaza a `description` en la tarjeta). */
   describe?: (ctx: UpgradeContext) => string;
-  /** Si devuelve false no se ofrece (por ejemplo, un arma al nivel máximo). */
   isAvailable?: (ctx: UpgradeContext) => boolean;
-  /** Peso al sortear las 3 opciones (1 por defecto). Más alto = sale más seguido. */
   weight?: number;
 }
 
 const times = (ctx: UpgradeContext, id: string): number => ctx.taken[id] ?? 0;
 const pct = (value: number): string => `${Math.round(value * 100)}%`;
 
-/** Mejora de fuego: solo existe después de evolucionar los misiles. */
 function fireUpgrade(kind: FireUpgrade, id: string, name: string, text: string): UpgradeDefinition {
   return {
     id,
@@ -56,7 +46,6 @@ function fireUpgrade(kind: FireUpgrade, id: string, name: string, text: string):
 }
 
 export const UPGRADES: readonly UpgradeDefinition[] = [
-  // ---- Stats generales
   {
     id: 'damage',
     name: 'Más daño',
@@ -93,6 +82,15 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     apply: ({ player }) => player.heal(40),
   },
   {
+    id: 'regeneration',
+    name: 'Nanorreparación',
+    description: '+0,75 de vida por segundo',
+    category: 'defense',
+    describe: ({ stats }) => `+${(stats.regenPerSecond + 0.75).toLocaleString('es-AR')} de vida/s (actual: ${stats.regenPerSecond.toLocaleString('es-AR')})`,
+    isAvailable: (ctx) => times(ctx, 'regeneration') < 3,
+    apply: ({ stats }) => (stats.regenPerSecond += 0.75),
+  },
+  {
     id: 'magnet',
     name: 'Imán',
     description: '+40% de radio para juntar gemas',
@@ -106,8 +104,6 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     category: 'attack',
     apply: ({ stats }) => (stats.rangeMult *= 1.2),
   },
-
-  // ---- Ataque básico (repulsor)
   {
     id: 'multishot',
     name: 'Disparo múltiple',
@@ -143,8 +139,6 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     isAvailable: ({ stats }) => stats.critChance < BASIC_ATTACK_LIMITS.maxCritChance - 1e-6,
     apply: ({ stats }) => (stats.critChance = Math.min(BASIC_ATTACK_LIMITS.maxCritChance, stats.critChance + 0.1)),
   },
-
-  // ---- Minimisiles y su evolución
   {
     id: 'missiles',
     name: 'Minimisiles',
@@ -166,7 +160,6 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     isAvailable: (ctx) =>
       ctx.missiles.maxed && !ctx.missiles.evolved && times(ctx, 'damage') >= MISSILES.evolutionDamagePicks,
     apply: ({ missiles }) => missiles.evolve(),
-    // Es la recompensa de juntar los requisitos: que no tarde en salir.
     weight: 4,
   },
   fireUpgrade('duration', 'burn-duration', 'Fuego duradero', '+30% de duración del fuego'),
@@ -175,7 +168,6 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   fireUpgrade('size', 'burn-size', 'Fuego expansivo', '+20% de tamaño del área'),
 ];
 
-/** Elige `count` mejoras distintas al azar (según su peso) entre las disponibles, con el texto según el estado. */
 export function pickUpgradeChoices(count: number, ctx: UpgradeContext): UpgradeDefinition[] {
   const pool = UPGRADES.filter((upgrade) => upgrade.isAvailable?.(ctx) ?? true);
   const picked: UpgradeDefinition[] = [];
