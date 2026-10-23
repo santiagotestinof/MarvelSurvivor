@@ -251,6 +251,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    // Leve flotación vertical para que el personaje no quede rígido en el aire.
+    this.player.setFlightHeight(8 + Math.sin(now / 180) * 2);
     this.ironManFlightEffect?.setPosition(this.player.x, this.player.y + 7).setDepth(this.player.y - 1);
     if (now >= this.nextIronManCloudAt) {
       this.spawnIronManCloud();
