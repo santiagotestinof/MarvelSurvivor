@@ -2,6 +2,8 @@
 // Arte original (formas simples con código), sin material de terceros.
 // Orden de los íconos en la hoja = orden de META_ICON_IDS (debe coincidir con src/ui/metaItemIcons.ts).
 
+import { CUSTOM_ICONS } from './meta-icons-custom.mjs';
+
 export const ICON_SIZE = 16;
 export const META_ICON_IDS = [
   'might', 'armor', 'max-health', 'recovery', 'cooldown', 'area', 'projectile-speed', 'duration',
@@ -389,8 +391,18 @@ export function buildMetaIconSheet() {
   const px = new Uint8Array(width * ICON_SIZE * 4);
   META_ICON_IDS.forEach((id, index) => {
     const g = new Grid();
-    DRAW[id](g);
-    g.outline(C.K);
+    const custom = CUSTOM_ICONS[id];
+    if (custom) {
+      // Ícono hecho a mano: se copia tal cual, sin contorno extra.
+      custom.forEach((row, y) =>
+        row.split(' ').forEach((cell, x) => {
+          if (cell !== '-') g.set(x, y, hex(`#${cell}`));
+        }),
+      );
+    } else {
+      DRAW[id](g);
+      g.outline(C.K);
+    }
     for (let y = 0; y < ICON_SIZE; y++)
       for (let x = 0; x < ICON_SIZE; x++) {
         const color = g.p[y][x];
