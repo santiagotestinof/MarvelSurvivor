@@ -61,7 +61,7 @@ export const spidermanDefinition: CharacterDefinition = {
     maxHealth: 80,
     attack: {
       kind: 'web',
-      cooldownMs: 330,
+      cooldownMs: 550,
       damage: 6,
       projectileTexture: TEXTURES.web,
       projectileSpeed: 280,
