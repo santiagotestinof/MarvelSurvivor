@@ -56,7 +56,7 @@ export const SENTINEL: EnemyKind = {
   speed: 22,
   contactDamage: 4,
   xpValue: 2,
-  rangedAttack: { range: 260, cooldownMs: 2200, damage: 5, projectileSpeed: 110 },
+  rangedAttack: { range: 260, cooldownMs: 2200, damage: 5, projectileSpeed: 150 },
   spawn: { fromProgress: 0.3, weight: 1.4 },
 };
 
