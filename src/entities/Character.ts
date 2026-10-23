@@ -26,6 +26,7 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   private currentHealth: number;
   private invulnerableUntil = 0;
   private speed: number;
+  private flightHeight = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, definition: CharacterDefinition) {
     super(scene, x, y, definition.sheets.idle.textureKey, 0);
@@ -64,6 +65,11 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   setMoveSpeed(value: number): void {
     this.speed = value;
     this.movement.setMoveSpeed(value);
+  }
+
+  /** Eleva visualmente al personaje sin cambiar el punto de referencia de la sombra. */
+  setFlightHeight(height: number): void {
+    this.flightHeight = Math.max(0, height);
   }
 
   addMaxHealth(amount: number): void {
@@ -145,7 +151,11 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   }
 
   private syncVisuals(): void {
-    this.setDepth(this.y); // orden de dibujo por altura: más abajo = más adelante
-    this.shadow.setPosition(this.x, this.y - 1).setDepth(this.y - 0.5);
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const groundY = body.center.y;
+    // El sprite sube, pero la sombra y la referencia de profundidad permanecen en el suelo.
+    this.setY(groundY - this.flightHeight);
+    this.setDepth(groundY);
+    this.shadow.setPosition(this.x, groundY - 1).setDepth(groundY - 0.5);
   }
 }
