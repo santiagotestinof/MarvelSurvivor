@@ -19,8 +19,26 @@ export interface ActionSheet {
   loop: boolean;
 }
 
+/** Rarezas del gacha (de más común a más rara). */
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+/**
+ * Cómo ataca el héroe:
+ * - bolt: disparo recto (repulsor) · shield: escudo que rebota y vuelve · web: telaraña que frena
+ * - thunder: rayo instantáneo en área sobre los enemigos cercanos · fan: abanico fino cuerpo a cuerpo (Hulk)
+ */
+export type AttackKind = 'bolt' | 'shield' | 'web' | 'thunder' | 'fan';
+
 /** Ataque automático básico: dispara al enemigo más cercano dentro de `aimRange`. */
 export interface AttackDefinition {
+  kind: AttackKind;
+  /** thunder: radio del daño en área (px). */
+  radius?: number;
+  /** fan: ángulo del abanico en grados (el alcance es `maxDistance`). */
+  arcDegrees?: number;
+  /** web: cuánto dura el frenado (ms) y qué fracción de su velocidad conserva el enemigo. */
+  slowMs?: number;
+  slowFactor?: number;
   cooldownMs: number;
   damage: number;
   projectileTexture: string;
@@ -35,6 +53,9 @@ export interface AttackDefinition {
 export interface CharacterDefinition {
   id: string;
   displayName: string;
+  rarity: Rarity;
+  /** Frase corta con lo que hace el arma, para el menú. */
+  weaponText: string;
   /** Tamaño de cada cuadro. Debe ser igual en todas las acciones del personaje. */
   frame: { width: number; height: number };
   /** Punto de anclaje (0..1) dentro del cuadro: los pies. Igual para todas las animaciones. */

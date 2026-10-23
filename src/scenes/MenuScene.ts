@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { ironManDefinition } from '../characters/ironman/ironManDefinition';
+import { RARITY_INFO } from '../characters/rarity';
+import { CHARACTER_REGISTRY, STARTER_ID } from '../characters/registry';
 import { TEXTURES } from '../config/assetKeys';
 import { computeZoom } from '../config/cameraConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
@@ -32,6 +33,9 @@ export class MenuScene extends Phaser.Scene {
   private heroStats!: Phaser.GameObjects.Text;
   private playButton!: UiButton;
   private shopButton!: UiButton;
+  private charactersButton!: UiButton;
+  private gachaButton!: UiButton;
+  private heroRarity!: Phaser.GameObjects.Text;
   private goldLabel!: Phaser.GameObjects.Text;
   private panel!: Phaser.GameObjects.Graphics;
   private help!: Phaser.GameObjects.Text;
@@ -64,18 +68,24 @@ export class MenuScene extends Phaser.Scene {
     this.tagline = this.add.text(0, 0, 'Resistí la invasión de drones', textStyle(14, '#d7e6ef')).setOrigin(0.5);
 
     this.platform = this.add.graphics();
+    // El héroe que se muestra es el elegido en PERSONAJES.
+    const entry = CHARACTER_REGISTRY[saveData.selectedCharacter] ?? CHARACTER_REGISTRY[STARTER_ID];
+    const def = entry.definition;
     this.hero = this.add
-      .sprite(0, 0, ironManDefinition.sheets.idle.textureKey, 0)
-      .setOrigin(0.5, ironManDefinition.origin.y)
-      .play(animationKey(ironManDefinition.id, 'idle', Direction.Down));
-    const { stats } = ironManDefinition;
-    this.heroName = this.add.text(0, 0, ironManDefinition.displayName.toUpperCase(), textStyle(16, '#ffffff')).setOrigin(0.5);
+      .sprite(0, 0, def.sheets.idle.textureKey, 0)
+      .setOrigin(0.5, def.origin.y)
+      .play(animationKey(def.id, 'idle', Direction.Down));
+    const { stats } = def;
+    this.heroName = this.add.text(0, 0, def.displayName.toUpperCase(), textStyle(16, '#ffffff')).setOrigin(0.5);
+    this.heroRarity = this.add.text(0, 0, RARITY_INFO[def.rarity].label, textStyle(11, RARITY_INFO[def.rarity].css)).setOrigin(0.5);
     this.heroStats = this.add
       .text(0, 0, `VIDA ${stats.maxHealth}   VELOCIDAD ${stats.moveSpeed}   DAÑO ${stats.attack.damage}`, textStyle(11, '#ffd27a'))
       .setOrigin(0.5);
 
     this.playButton = new UiButton(this, 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE']);
     this.shopButton = new UiButton(this, 'MEJORAS', 20, () => this.scene.start(SCENE_KEYS.shop), ['M']);
+    this.charactersButton = new UiButton(this, 'PERSONAJES', 20, () => this.scene.start(SCENE_KEYS.characters), ['P']);
+    this.gachaButton = new UiButton(this, 'INVOCAR', 20, () => this.scene.start(SCENE_KEYS.gacha), ['G']);
     this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
 
     this.panel = this.add.graphics();
@@ -83,10 +93,10 @@ export class MenuScene extends Phaser.Scene {
     const lines = [
       `Sobreviví ${formatTime(ROUND.durationMs)} y derrotá al jefe.`,
       touch ? 'Mover: deslizá el dedo en la mitad izquierda.' : 'Mover: WASD o flechas · Jugar: ENTER',
-      `${ironManDefinition.displayName} dispara solo al enemigo más cercano.`,
+      `${def.displayName}: ${def.weaponText}.`,
     ];
     this.help = this.add.text(0, 0, lines.join('\n'), { ...textStyle(12, '#ffffff'), align: 'center', lineSpacing: 6 }).setOrigin(0.5);
-    this.version = this.add.text(0, 0, 'Fase 6 · prototipo', textStyle(10, '#7f9c88')).setOrigin(1, 1);
+    this.version = this.add.text(0, 0, 'Fase 7 · prototipo', textStyle(10, '#7f9c88')).setOrigin(1, 1);
 
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
@@ -148,23 +158,32 @@ export class MenuScene extends Phaser.Scene {
 
     // Escala entera para que el pixel art quede nítido.
     const heroScale = Math.max(2, Math.floor(height / (portrait ? 150 : 120)));
-    this.heroY = height * (portrait ? 0.47 : 0.48);
+    this.heroY = height * (portrait ? 0.48 : 0.495);
     this.hero.setScale(heroScale).setPosition(cx, this.heroY);
     this.heroName.setFontSize(Math.max(13, Math.round(4.4 * ui))).setPosition(cx, this.heroY + 6 * heroScale + 4 * ui);
-    this.heroStats.setFontSize(Math.max(10, Math.round(3 * ui))).setPosition(cx, this.heroName.y + this.heroName.height * 0.5 + 3 * ui);
+    this.heroRarity.setFontSize(Math.max(10, Math.round(3 * ui))).setPosition(cx, this.heroName.y + this.heroName.height * 0.5 + 2 * ui);
+    this.heroStats.setFontSize(Math.max(10, Math.round(3 * ui))).setPosition(cx, this.heroRarity.y + this.heroRarity.height * 0.5 + 2.5 * ui);
 
     const buttonSize = Math.max(16, Math.round(5.5 * ui));
     this.playButton.setFontSize(buttonSize);
-    this.shopButton.setFontSize(buttonSize);
-    if (portrait) {
-      this.playButton.setPosition(cx, height * 0.69);
-      this.shopButton.setPosition(cx, height * 0.69 + this.playButton.height + 2.5 * ui);
-    } else {
-      const gap = 4 * ui;
-      const total = this.playButton.width + gap + this.shopButton.width;
-      this.playButton.setPosition(cx - total / 2 + this.playButton.width / 2, height * 0.71);
-      this.shopButton.setPosition(cx + total / 2 - this.shopButton.width / 2, height * 0.71);
-    }
+    const small = Math.max(12, Math.round(buttonSize * 0.72));
+    const secondary = [this.charactersButton, this.gachaButton, this.shopButton];
+    for (const button of secondary) button.setFontSize(small);
+    const gap = Math.round(small * 0.8);
+    const rowWidth = secondary.reduce((sum, button) => sum + button.width, 0) + gap * (secondary.length - 1);
+    const playY = height * (portrait ? 0.66 : 0.68);
+    this.playButton.setPosition(cx, playY);
+    // Los tres botones de abajo van en una fila si entran; si no, en dos.
+    const rows = rowWidth <= width * 0.94 ? [secondary] : [secondary.slice(0, 2), secondary.slice(2)];
+    const rowStep = this.playButton.height * 0.85;
+    rows.forEach((row, rowIndex) => {
+      const total = row.reduce((sum, button) => sum + button.width, 0) + gap * (row.length - 1);
+      let x = cx - total / 2;
+      for (const button of row) {
+        button.setPosition(x + button.width / 2, playY + this.playButton.height * 0.95 + rowIndex * rowStep);
+        x += button.width + gap;
+      }
+    });
     this.goldLabel.setText(`ORO: ${saveData.gold}`).setFontSize(Math.max(12, Math.round(4 * ui))).setPosition(width - 3 * ui, 3 * ui);
 
     this.help.setFontSize(Math.max(10, Math.round(3 * ui)));

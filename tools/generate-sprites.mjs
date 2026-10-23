@@ -12,6 +12,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { IRON_MAN_REF } from './ironman-reference.mjs';
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'public', 'assets');
 const FRAME = 32;
@@ -163,9 +165,22 @@ const C = {
   eye: hex('#dff6ff'),
 };
 
+/** Completa los colores de un héroe: lo que no se define se toma del traje base (rojo y dorado, Iron Man). */
+function heroPalette(pal = {}) {
+  const base = { ...C, ...pal };
+  return {
+    leg: base.red, legLight: base.redLight, legDark: base.redDark, legDeep: base.redDeep, boot: base.redDeep,
+    belt: base.gold, beltLight: base.goldLight, beltDark: base.goldDark,
+    head: base.red, headLight: base.redLight, headDark: base.redDark,
+    face: base.gold, faceLight: base.goldLight, faceDark: base.goldDark,
+    ...base,
+  };
+}
+
 // fx, fy: hacia dónde mira (-1, 0, 1). stride: -2..2 (zancada). bob: 0/-1 (cuerpo arriba).
 // head: 0/1 (respiración). pulse: 0..2 (brillo del reactor ARC).
-function drawIronMan({ fx, fy, stride = 0, bob = 0, head = 0, pulse = 0 }) {
+function drawHero(style, { fx, fy, stride = 0, bob = 0, head = 0, pulse = 0 }) {
+  const P = heroPalette(style.pal);
   const cv = new Canvas(FRAME, FRAME);
   const cx = 16;
   const straight = fx === 0;
@@ -173,7 +188,7 @@ function drawIronMan({ fx, fy, stride = 0, bob = 0, head = 0, pulse = 0 }) {
   const diag = fx !== 0 && fy !== 0;
   const back = fy < 0;
 
-  const torsoW = straight ? 10 : sideOnly ? 8 : 9;
+  const torsoW = (straight ? 10 : sideOnly ? 8 : 9) + (style.wide ? 2 : 0);
   const tx = cx - Math.floor(torsoW / 2) + (diag ? fx : 0);
   const ty = 12 + bob;
   const tb = 20 + bob;
@@ -193,28 +208,34 @@ function drawIronMan({ fx, fy, stride = 0, bob = 0, head = 0, pulse = 0 }) {
       legTop,
       4,
       bottom - legTop + 1,
-      far ? C.redDark : C.red,
-      far ? C.red : C.redLight,
-      far ? C.redDeep : C.redDark,
+      far ? P.legDark : P.leg,
+      far ? P.leg : P.legLight,
+      far ? P.legDeep : P.legDark,
     );
-    if (!sideOnly) cv.rect(x0 + 1, legTop + 3, 2, 2, far ? C.goldDark : C.gold); // rodillera
-    cv.rect(x0, bottom - 3, 4, 1, far ? C.goldDark : C.gold); // tobillo
-    cv.rect(x0, bottom - 1, 4, 2, C.redDeep); // bota
+    if (!sideOnly && !style.plainLegs) cv.rect(x0 + 1, legTop + 3, 2, 2, far ? P.goldDark : P.gold); // rodillera
+    if (!style.plainLegs) cv.rect(x0, bottom - 3, 4, 1, far ? P.goldDark : P.gold); // tobillo
+    cv.rect(x0, bottom - 1, 4, 2, P.boot); // bota
   }
 
   const drawArm = (x, top, dark) => {
-    cv.shaded(x, top, 3, 8, dark ? C.redDark : C.red, dark ? C.red : C.redLight, dark ? C.redDeep : C.redDark);
-    cv.rect(x, top, 3, 2, dark ? C.goldDark : C.gold); // hombrera
-    cv.rect(x, top + 6, 3, 2, dark ? C.goldDark : C.gold); // guantelete
+    cv.shaded(x, top, 3, 8, dark ? P.redDark : P.red, dark ? P.red : P.redLight, dark ? P.redDeep : P.redDark);
+    if (style.bareArms) {
+      cv.rect(x, top + 5, 3, 3, dark ? P.faceDark : P.face); // brazo descubierto
+    }
+    cv.rect(x, top, 3, 2, dark ? P.goldDark : P.gold); // hombrera
+    cv.rect(x, top + 6, 3, 2, dark ? P.goldDark : P.gold); // guantelete
   };
   const armSwing = (side) => (sideOnly ? -fx * side * stride : Math.round((-fy * side * stride) / 2));
 
   // Brazo lejano (solo en vistas de perfil, queda detrás del torso)
   if (sideOnly) drawArm(cx - 1 + armSwing(-1), ty + 1, true);
 
+  // Capa: asoma por detrás en las vistas de frente y de perfil
+  if (P.cape && !back) cv.shaded(tx - 1, ty + 1, torsoW + 2, 12, P.cape, P.capeLight, P.capeDark);
+
   // Torso
-  cv.shaded(tx, ty, torsoW, torsoH, C.red, C.redLight, C.redDark);
-  cv.shaded(tx + 1, tb - 3, torsoW - 2, 4, C.gold, C.goldLight, C.goldDark); // abdomen dorado
+  cv.shaded(tx, ty, torsoW, torsoH, P.red, P.redLight, P.redDark);
+  cv.shaded(tx + 1, tb - 3, torsoW - 2, 4, P.belt, P.beltLight, P.beltDark); // cinturón / abdomen
 
   if (!back) {
     // Reactor ARC
@@ -222,20 +243,24 @@ function drawIronMan({ fx, fy, stride = 0, bob = 0, head = 0, pulse = 0 }) {
     const ax = cx - 1 + off;
     const ay = ty + 2;
     if (!sideOnly) {
-      const ring = pulse === 1 ? C.arcDim : C.arcGlow;
+      const ring = pulse === 1 ? P.arcDim : P.arcGlow;
       const pts = [
         [ax - 1, ay], [ax - 1, ay + 1], [ax + 2, ay], [ax + 2, ay + 1],
         [ax, ay - 1], [ax + 1, ay - 1], [ax, ay + 2], [ax + 1, ay + 2],
       ];
       for (const [x, y] of pts) if (x >= tx && x <= tx + torsoW - 1) cv.set(x, y, ring);
     }
-    cv.rect(ax, ay, 2, 2, pulse === 2 ? C.arcWhite : C.arc);
+    cv.rect(ax, ay, 2, 2, pulse === 2 ? P.arcWhite : P.arc);
   } else {
     // Mochila / propulsores en la espalda
-    const bx = cx - 2 + (diag ? fx : 0);
-    cv.rect(bx, ty + 1, 4, 4, C.goldDark);
-    cv.rect(bx, ty + 1, 4, 1, C.gold);
-    cv.rect(bx + 1, ty + 4, 2, 1, C.arcDim);
+    if (P.cape) {
+      cv.shaded(tx - 1, ty, torsoW + 2, 13, P.cape, P.capeLight, P.capeDark);
+    } else if (!style.noPack) {
+      const bx = cx - 2 + (diag ? fx : 0);
+      cv.rect(bx, ty + 1, 4, 4, P.goldDark);
+      cv.rect(bx, ty + 1, 4, 1, P.gold);
+      cv.rect(bx + 1, ty + 4, 2, 1, P.arcDim);
+    }
   }
 
   // Brazos
@@ -250,7 +275,7 @@ function drawIronMan({ fx, fy, stride = 0, bob = 0, head = 0, pulse = 0 }) {
   const hy = 3 + bob + head;
   const headW = sideOnly ? 9 : 10;
   const hx = cx - Math.floor(headW / 2) + (diag ? fx : 0);
-  cv.shaded(hx, hy, headW, 9, C.red, C.redLight, C.redDark);
+  cv.shaded(hx, hy, headW, 9, P.head, P.headLight, P.headDark);
 
   if (fy >= 0) {
     let fxs;
@@ -269,17 +294,17 @@ function drawIronMan({ fx, fy, stride = 0, bob = 0, head = 0, pulse = 0 }) {
       fxs = cx - 2 + fx * 3;
       eyes = fx > 0 ? [[fxs, 1], [fxs + 3, 2]] : [[fxs + 4, 1], [fxs, 2]];
     }
-    cv.shaded(fxs, hy + 2, fw, 7, C.gold, C.goldLight, C.goldDark);
-    for (const [ex, ew] of eyes) cv.rect(ex, hy + 4, ew, 1, C.eye);
-    if (!sideOnly) cv.rect(fxs + Math.floor(fw / 2) - 1, hy + 7, 2, 1, C.goldDark); // boca
+    cv.shaded(fxs, hy + 2, fw, 7, P.face, P.faceLight, P.faceDark);
+    for (const [ex, ew] of eyes) cv.rect(ex, hy + 4, ew, 1, P.eye);
+    if (!sideOnly) cv.rect(fxs + Math.floor(fw / 2) - 1, hy + 7, 2, 1, P.faceDark); // boca
   } else if (straight) {
-    cv.rect(cx, hy + 1, 1, 7, C.redDark); // costura trasera del casco
+    cv.rect(cx, hy + 1, 1, 7, P.headDark); // costura trasera del casco
   } else {
-    cv.rect(fx > 0 ? hx + headW - 1 : hx, hy + 3, 1, 4, C.goldDark); // borde del visor asomando
-    cv.rect(cx + fx, hy + 1, 1, 7, C.redDark);
+    cv.rect(fx > 0 ? hx + headW - 1 : hx, hy + 3, 1, 4, P.faceDark); // borde del visor asomando
+    cv.rect(cx + fx, hy + 1, 1, 7, P.headDark);
   }
 
-  return addOutline(cv, C.outline);
+  return addOutline(cv, P.outline);
 }
 
 // Orden de filas: abajo, abajo-izq, izq, arriba-izq, arriba, arriba-der, der, abajo-der
@@ -287,11 +312,169 @@ const DIRECTIONS = [
   [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1],
 ];
 
-function buildSheet(frames) {
+function buildSheet(style, frames) {
   const sheet = new Canvas(frames.length * FRAME, DIRECTIONS.length * FRAME);
   DIRECTIONS.forEach(([fx, fy], row) => {
     frames.forEach((f, col) => {
-      sheet.blit(drawIronMan({ fx, fy, ...f }), col * FRAME, row * FRAME);
+      sheet.blit(drawHero(style, { fx, fy, ...f }), col * FRAME, row * FRAME);
+    });
+  });
+  return sheet;
+}
+
+
+// ---------------------------------------------------------------- Iron Man (a partir de la imagen de referencia)
+
+const REF_PALETTE = {
+  K: hex('#150909'),
+  R: hex('#c80000'),
+  r: hex('#880000'),
+  d: hex('#560000'),
+  Y: hex('#f4d434'),
+  O: hex('#c4a400'),
+  o: hex('#947200'),
+  B: hex('#84b4f4'),
+  W: hex('#d4e4f4'),
+};
+
+/** Tamaño del cuadro de Iron Man (más alto que el resto por los propulsores) y escala de la referencia. */
+const IM_FRAME = { w: 48, h: 48 };
+const IM_SCALE = 0.8;
+/** Fila (de la referencia) donde terminan las piernas; abajo de eso solo hay llama de los propulsores. */
+const IM_FEET_ROW = 43;
+/** Fila del cuadro donde están los pies: 6 filas más arriba que el suelo (41), así flota en el aire. */
+const IM_FEET_Y = 35;
+
+const refGrid = () => IRON_MAN_REF.map((row) => [...row]);
+
+/** Achica la grilla de letras a `scale`: cada píxel nuevo toma la letra que más ocupa su zona (el contorno pesa un poco más). */
+function shrinkGrid(grid, scale) {
+  const h = grid.length;
+  const w = grid[0].length;
+  const ow = Math.ceil(w * scale);
+  const oh = Math.ceil(h * scale);
+  const out = [];
+  for (let oy = 0; oy < oh; oy++) {
+    const row = [];
+    for (let ox = 0; ox < ow; ox++) {
+      const x0 = ox / scale;
+      const x1 = (ox + 1) / scale;
+      const y0 = oy / scale;
+      const y1 = (oy + 1) / scale;
+      const weights = {};
+      let total = 0;
+      for (let y = Math.floor(y0); y < Math.min(h, Math.ceil(y1)); y++)
+        for (let x = Math.floor(x0); x < Math.min(w, Math.ceil(x1)); x++) {
+          const cover = (Math.min(x + 1, x1) - Math.max(x, x0)) * (Math.min(y + 1, y1) - Math.max(y, y0));
+          if (cover <= 0) continue;
+          weights[grid[y][x]] = (weights[grid[y][x]] ?? 0) + cover;
+          total += cover;
+        }
+      const empty = weights['.'] ?? 0;
+      if (empty > total * 0.55) {
+        row.push('.');
+        continue;
+      }
+      let best = '.';
+      let bestW = -1;
+      for (const [letter, weight] of Object.entries(weights)) {
+        if (letter === '.') continue;
+        const value = weight * (letter === 'K' ? 1.0 : 1);
+        if (value > bestW) {
+          bestW = value;
+          best = letter;
+        }
+      }
+      row.push(best);
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+/** Aprieta la grilla en horizontal (para las vistas de perfil y diagonales). */
+function squeezeGrid(grid, factor) {
+  const w = grid[0].length;
+  const nw = Math.max(4, Math.round(w * factor));
+  return grid.map((row) => {
+    const out = [];
+    for (let x = 0; x < nw; x++) {
+      const a = Math.floor((x * w) / nw);
+      const b = Math.max(a + 1, Math.floor(((x + 1) * w) / nw));
+      const counts = {};
+      for (let i = a; i < b && i < w; i++) counts[row[i]] = (counts[row[i]] ?? 0) + 1;
+      const letters = Object.keys(counts).filter((l) => l !== '.');
+      if (letters.length === 0) out.push('.');
+      else out.push(letters.sort((l, m) => counts[m] * (m === 'K' ? 1 : 1) - counts[l] * (l === 'K' ? 1 : 1))[0]);
+    }
+    return out;
+  });
+}
+
+// fx, fy: hacia dónde mira. stride: -2..2 (piernas abiertas/cerradas). bob: 0/-1 (cuerpo arriba). pulse: 0..2 (largo de las llamas).
+function drawIronManRef({ fx, fy, stride = 0, bob = 0, pulse = 0 }) {
+  let g = refGrid();
+  const h = g.length;
+  const w = g[0].length;
+
+  // De espaldas: el casco y el pecho quedan lisos (sin careta ni reactor).
+  if (fy < 0) {
+    const toRed = { Y: 'R', O: 'r', o: 'd', B: 'R', W: 'R' };
+    for (let y = 0; y < 14; y++) for (let x = 0; x < w; x++) g[y][x] = toRed[g[y][x]] ?? g[y][x];
+    for (let y = 14; y < 24; y++) for (let x = 12; x < 24; x++) if (g[y][x] === 'B' || g[y][x] === 'W') g[y][x] = 'R';
+  }
+
+  // Largo de las llamas de los propulsores (pies abajo, manos a los costados).
+  const flame = [10, 7, 9][pulse] ?? 10;
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      if (g[y][x] !== 'B' && g[y][x] !== 'W') continue;
+      const foot = y > IM_FEET_ROW && y - IM_FEET_ROW > flame;
+      const hand = y >= 31 && (x <= 8 || x >= 25) && y - 31 > flame + 2;
+      if (foot || hand) g[y][x] = '.';
+    }
+
+  // Las piernas se abren y se cierran al caminar.
+  const sway = Math.round(stride / 2);
+  if (sway !== 0) {
+    const legs = g.map((row) => [...row]);
+    for (let y = 29; y < h; y++)
+      for (let x = 9; x < 26; x++) {
+        const c = g[y][x];
+        if (c === '.') continue;
+        legs[y][x] = legs[y][x] === c ? '.' : legs[y][x];
+      }
+    for (let y = 29; y < h; y++)
+      for (let x = 9; x < 26; x++) {
+        const c = g[y][x];
+        if (c === '.') continue;
+        const nx = x + (x < 17 ? -sway : sway);
+        if (nx >= 0 && nx < w) legs[y][nx] = c;
+      }
+    g = legs;
+  }
+
+  // Costados y diagonales: el mismo dibujo de frente (o de espaldas), espejado si mira a la izquierda.
+  if (fx < 0) g = g.map((row) => row.reverse());
+
+  const small = shrinkGrid(g, IM_SCALE);
+  const cv = new Canvas(IM_FRAME.w, IM_FRAME.h);
+  const ox = Math.round((IM_FRAME.w - small[0].length) / 2);
+  const oy = IM_FEET_Y - Math.round(IM_FEET_ROW * IM_SCALE) + bob;
+  small.forEach((row, y) =>
+    row.forEach((letter, x) => {
+      const color = REF_PALETTE[letter];
+      if (color) cv.set(ox + x, oy + y, color);
+    }),
+  );
+  return cv;
+}
+
+function buildIronManSheet(frames) {
+  const sheet = new Canvas(frames.length * IM_FRAME.w, DIRECTIONS.length * IM_FRAME.h);
+  DIRECTIONS.forEach(([fx, fy], row) => {
+    frames.forEach((f, col) => {
+      sheet.blit(drawIronManRef({ fx, fy, ...f }), col * IM_FRAME.w, row * IM_FRAME.h);
     });
   });
   return sheet;
@@ -307,6 +490,78 @@ const IDLE_FRAMES = [
 const WALK_STRIDE = [0, 2, 2, 0, -2, -2];
 const WALK_BOB = [-1, 0, 0, -1, 0, 0];
 const WALK_FRAMES = WALK_STRIDE.map((stride, i) => ({ stride, bob: WALK_BOB[i], pulse: i % 2 ? 1 : 0 }));
+
+// Iron Man flota: el cuerpo no se mueve, solo cambia el largo de las llamas de los propulsores.
+const IM_IDLE_FRAMES = [0, 1, 2, 1].map((pulse) => ({ pulse }));
+const IM_WALK_FRAMES = [0, 1, 2, 1, 2, 1].map((pulse) => ({ pulse }));
+
+
+// ---------------------------------------------------------------- héroes: un estilo por personaje
+// `pal` pisa colores del traje base. red* = traje, gold* = detalles, arc* = emblema del pecho.
+const HEROES = {
+  ironman: { pal: {} },
+  capitan: {
+    pal: {
+      red: hex('#2a50b8'), redLight: hex('#4a74e0'), redDark: hex('#1b3487'), redDeep: hex('#12235c'),
+      gold: hex('#f2f2f2'), goldLight: hex('#ffffff'), goldDark: hex('#b9c0cc'),
+      belt: hex('#c8202a'), beltLight: hex('#ea3b44'), beltDark: hex('#8c1119'),
+      leg: hex('#2a50b8'), legLight: hex('#4a74e0'), legDark: hex('#1b3487'), legDeep: hex('#12235c'), boot: hex('#8c1119'),
+      head: hex('#2a50b8'), headLight: hex('#4a74e0'), headDark: hex('#1b3487'),
+      face: hex('#f0c9a0'), faceLight: hex('#ffe3c4'), faceDark: hex('#c4966c'), eye: hex('#1b3487'),
+      arc: hex('#ffffff'), arcWhite: hex('#ffffff'), arcGlow: hex('#c8202a'), arcDim: hex('#8c1119'),
+    },
+    plainLegs: true,
+  },
+  spiderman: {
+    pal: {
+      red: hex('#d1202a'), redLight: hex('#f1473f'), redDark: hex('#8c1119'), redDeep: hex('#5a0911'),
+      gold: hex('#2a50b8'), goldLight: hex('#4a74e0'), goldDark: hex('#1b3487'),
+      belt: hex('#2a50b8'), beltLight: hex('#4a74e0'), beltDark: hex('#1b3487'),
+      leg: hex('#2a50b8'), legLight: hex('#4a74e0'), legDark: hex('#1b3487'), legDeep: hex('#12235c'), boot: hex('#d1202a'),
+      head: hex('#d1202a'), headLight: hex('#f1473f'), headDark: hex('#8c1119'),
+      face: hex('#d1202a'), faceLight: hex('#f1473f'), faceDark: hex('#8c1119'), eye: hex('#ffffff'),
+      arc: hex('#15151a'), arcWhite: hex('#15151a'), arcGlow: hex('#15151a'), arcDim: hex('#3a3a46'),
+    },
+    plainLegs: true,
+    noPack: true,
+  },
+  thor: {
+    pal: {
+      red: hex('#4a5568'), redLight: hex('#6b7a92'), redDark: hex('#2f3846'), redDeep: hex('#1d232d'),
+      gold: hex('#cfd6e0'), goldLight: hex('#ffffff'), goldDark: hex('#8a94a4'),
+      belt: hex('#8a5a2b'), beltLight: hex('#b8803f'), beltDark: hex('#5a3a1a'),
+      leg: hex('#2f3846'), legLight: hex('#4a5568'), legDark: hex('#1d232d'), legDeep: hex('#12161d'), boot: hex('#5a3a1a'),
+      head: hex('#f0d060'), headLight: hex('#fff0a0'), headDark: hex('#b8962b'),
+      face: hex('#f0c9a0'), faceLight: hex('#ffe3c4'), faceDark: hex('#c4966c'), eye: hex('#2a50b8'),
+      arc: hex('#cfd6e0'), arcWhite: hex('#ffffff'), arcGlow: hex('#8a94a4'), arcDim: hex('#6b7a92'),
+      cape: hex('#c4161c'), capeLight: hex('#ea3b30'), capeDark: hex('#8c0f18'),
+    },
+    plainLegs: true,
+  },
+  hulk: {
+    pal: {
+      red: hex('#3fae3a'), redLight: hex('#6fd35f'), redDark: hex('#25782a'), redDeep: hex('#164d1b'),
+      gold: hex('#3fae3a'), goldLight: hex('#6fd35f'), goldDark: hex('#25782a'),
+      belt: hex('#6a3fa8'), beltLight: hex('#8a5fd0'), beltDark: hex('#452a73'),
+      leg: hex('#6a3fa8'), legLight: hex('#8a5fd0'), legDark: hex('#452a73'), legDeep: hex('#2c1b4d'), boot: hex('#2c1b4d'),
+      head: hex('#25782a'), headLight: hex('#3fae3a'), headDark: hex('#164d1b'),
+      face: hex('#3fae3a'), faceLight: hex('#6fd35f'), faceDark: hex('#164d1b'), eye: hex('#ffffff'),
+      arc: hex('#3fae3a'), arcWhite: hex('#3fae3a'), arcGlow: hex('#3fae3a'), arcDim: hex('#3fae3a'),
+    },
+    plainLegs: true,
+    noPack: true,
+    wide: true,
+  },
+};
+
+function saveHero(id) {
+  const style = HEROES[id];
+  const idle = buildSheet(style, IDLE_FRAMES);
+  const walk = buildSheet(style, WALK_FRAMES);
+  save(idle, `characters/${id}/${id}-idle.png`);
+  save(walk, `characters/${id}/${id}-walk.png`);
+  return { idle, walk };
+}
 
 // ---------------------------------------------------------------- terreno y objetos
 
@@ -578,6 +833,51 @@ function makeBolt() {
   return cv;
 }
 
+
+// Escudo del Capitán (círculo con estrella), 10x10.
+function makeShield() {
+  const cv = new Canvas(10, 10);
+  fillEllipse(cv, 4.5, 4.5, 4.6, 4.6, () => hex('#c8202a'));
+  fillEllipse(cv, 4.5, 4.5, 3.4, 3.4, () => hex('#f2f2f2'));
+  fillEllipse(cv, 4.5, 4.5, 2.4, 2.4, () => hex('#2a50b8'));
+  cv.rect(4, 3, 2, 4, hex('#ffffff'));
+  cv.rect(3, 4, 4, 2, hex('#ffffff'));
+  return addOutline(cv, hex('#150909'));
+}
+
+// Telaraña de Spider-Man (estrella blanca), 8x8.
+function makeWeb() {
+  const cv = new Canvas(8, 8);
+  const w = hex('#f2f2f2');
+  const g = hex('#aab3c0');
+  cv.rect(3, 0, 2, 8, g);
+  cv.rect(0, 3, 8, 2, g);
+  for (let i = 1; i < 7; i++) {
+    cv.set(i, i, w);
+    cv.set(7 - i, i, w);
+  }
+  cv.rect(3, 3, 2, 2, w);
+  return cv;
+}
+
+// Rayo de Thor: zigzag vertical de 16x40 (la punta de abajo es donde pega).
+function makeThunder() {
+  const cv = new Canvas(16, 40);
+  const pts = [[8, 0], [5, 8], [10, 14], [6, 22], [11, 28], [8, 39]];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i];
+    const [x1, y1] = pts[i + 1];
+    const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let t = 0; t <= steps; t++) {
+      const x = Math.round(x0 + ((x1 - x0) * t) / steps);
+      const y = Math.round(y0 + ((y1 - y0) * t) / steps);
+      cv.rect(x - 1, y, 3, 1, hex('#6fd8ff'));
+      cv.rect(x, y, 1, 1, hex('#ffffff'));
+    }
+  }
+  return cv;
+}
+
 // ---------------------------------------------------------------- vista previa (solo desarrollo)
 
 function previewOf(cv, scale, bg = hex('#5f8f58')) {
@@ -593,10 +893,14 @@ function previewOf(cv, scale, bg = hex('#5f8f58')) {
 // ---------------------------------------------------------------- main
 
 console.log('Generando recursos provisionales...');
-const idle = buildSheet(IDLE_FRAMES);
-const walk = buildSheet(WALK_FRAMES);
-save(idle, 'characters/ironman/ironman-idle.png');
-save(walk, 'characters/ironman/ironman-walk.png');
+const ironIdle = buildIronManSheet(IM_IDLE_FRAMES);
+const ironWalk = buildIronManSheet(IM_WALK_FRAMES);
+save(ironIdle, 'characters/ironman/ironman-idle.png');
+save(ironWalk, 'characters/ironman/ironman-walk.png');
+const idle = ironIdle;
+const walk = ironWalk;
+const heroSheets = {};
+for (const id of Object.keys(HEROES)) if (id !== 'ironman') heroSheets[id] = saveHero(id);
 save(makeGround(), 'tiles/ground.png');
 save(makeTree(), 'props/tree.png');
 save(makeRock(), 'props/rock.png');
@@ -610,6 +914,9 @@ const brute = makeBrute();
 save(scout, 'enemies/scout.png');
 save(brute, 'enemies/brute.png');
 save(makeBolt(), 'projectiles/repulsor.png');
+save(makeShield(), 'projectiles/shield.png');
+save(makeWeb(), 'projectiles/web.png');
+save(makeThunder(), 'effects/thunder.png');
 const missile = makeMissile();
 save(missile, 'projectiles/missile.png');
 const fire = makeFire();
@@ -621,6 +928,10 @@ if (previewIdx !== -1) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'idle.png'), encodePng(previewOf(idle, 4)));
   writeFileSync(join(dir, 'walk.png'), encodePng(previewOf(walk, 4)));
+  for (const [id, sheets] of Object.entries(heroSheets)) {
+    writeFileSync(join(dir, `${id}-idle.png`), encodePng(previewOf(sheets.idle, 4)));
+    writeFileSync(join(dir, `${id}-walk.png`), encodePng(previewOf(sheets.walk, 4)));
+  }
   writeFileSync(join(dir, 'drone.png'), encodePng(previewOf(drone, 8)));
   writeFileSync(join(dir, 'overlord.png'), encodePng(previewOf(overlord, 6)));
   writeFileSync(join(dir, 'scout.png'), encodePng(previewOf(scout, 8)));

@@ -4,4 +4,6 @@ export const SCENE_KEYS = {
   game: 'GameScene',
   hud: 'HudScene',
   shop: 'ShopScene',
+  characters: 'CharacterScene',
+  gacha: 'GachaScene',
 } as const;

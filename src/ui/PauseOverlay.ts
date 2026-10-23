@@ -4,19 +4,22 @@ import { textStyle } from './uiLayout';
 
 const DEPTH = 30;
 
-/** Botón de pausa (esquina superior derecha, o tecla ESC) y pantalla de pausa con botón para seguir. */
+/** Botón de pausa (esquina superior derecha, o tecla ESC) y pantalla de pausa con botones para seguir o volver al menú principal. */
 export class PauseOverlay {
   private readonly pauseButton: UiButton;
   private readonly dim: Phaser.GameObjects.Rectangle;
   private readonly title: Phaser.GameObjects.Text;
   private readonly resumeButton: UiButton;
+  private readonly menuButton: UiButton;
   private paused = false;
 
-  constructor(scene: Phaser.Scene, onToggle: () => void) {
+  constructor(scene: Phaser.Scene, onToggle: () => void, onMenu: () => void) {
     this.pauseButton = new UiButton(scene, 'PAUSA [ESC]', 14, onToggle).setDepth(DEPTH + 5);
     this.dim = scene.add.rectangle(0, 0, 10, 10, 0x05080c, 0.7).setOrigin(0).setDepth(DEPTH).setVisible(false);
     this.title = scene.add.text(0, 0, 'PAUSA', textStyle(40)).setOrigin(0.5).setDepth(DEPTH + 1).setVisible(false);
     this.resumeButton = new UiButton(scene, 'SEGUIR [ESC]', 18, onToggle).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
+
+    this.menuButton = new UiButton(scene, 'MENÚ PRINCIPAL', 14, onMenu).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 
     const keyboard = scene.input.keyboard;
     if (keyboard) keyboard.addKey('ESC').on('down', onToggle);
@@ -31,6 +34,7 @@ export class PauseOverlay {
     this.dim.setVisible(paused);
     this.title.setVisible(paused);
     this.resumeButton.setVisible(paused).setEnabled(paused);
+    this.menuButton.setVisible(paused).setEnabled(paused);
     this.pauseButton.setVisible(!paused);
   }
 
@@ -43,6 +47,7 @@ export class PauseOverlay {
     this.dim.setSize(width, height);
     this.title.setFontSize(Math.max(28, Math.round(12 * ui))).setPosition(width / 2, height * 0.38);
     this.resumeButton.setFontSize(Math.max(16, Math.round(5 * ui))).setPosition(width / 2, height * 0.58);
+    this.menuButton.setFontSize(Math.max(13, Math.round(4 * ui))).setPosition(width / 2, height * 0.58 + this.resumeButton.height + Math.round(3 * ui) + 6);
     this.pauseButton.setFontSize(Math.max(11, Math.round(3.2 * ui)));
     // Debajo del contador de derrotados, en la esquina superior derecha.
     this.pauseButton.setPosition(width - margin - this.pauseButton.width / 2, margin + Math.max(12, Math.round(3.5 * ui)) + this.pauseButton.height / 2 + 10);

@@ -22,6 +22,9 @@ export class BootScene extends Phaser.Scene {
 
     this.load.image(TEXTURES.repulsor, ASSET_PATHS.repulsor);
     this.load.image(TEXTURES.missile, ASSET_PATHS.missile);
+    this.load.image(TEXTURES.shield, ASSET_PATHS.shield);
+    this.load.image(TEXTURES.web, ASSET_PATHS.web);
+    this.load.image(TEXTURES.thunder, ASSET_PATHS.thunder);
     this.load.spritesheet(TEXTURES.fire, ASSET_PATHS.fire, { frameWidth: 32, frameHeight: 32 });
     loadEnemyAssets(this);
 

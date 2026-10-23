@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
-import { IRON_MAN_ID } from '../characters/ironman/ironManDefinition';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { GOLD, PROGRESSION, REVIVAL, ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
@@ -18,6 +17,7 @@ import { ProgressionSystem, type ProgressState } from '../progression/Progressio
 import { passiveTypesTaken, passivesTaken, pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
+import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import { MissileWeapon } from '../systems/MissileWeapon';
 import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
@@ -49,6 +49,7 @@ export class GameScene extends Phaser.Scene {
   private progression = new ProgressionSystem();
   /** Veces que se eligió cada mejora en esta ronda (algunas tienen requisitos, como la evolución). */
   private taken: Record<string, number> = {};
+  private heroWeapon: HeroWeapon | null = null;
   /** Mejoras desterradas en esta ronda (no vuelven a salir). */
   private banished = new Set<string>();
   /** Usos de repetir, saltear y desterrar con los que empezó la ronda. */
@@ -80,7 +81,7 @@ export class GameScene extends Phaser.Scene {
     map.build();
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
-    this.player = createCharacter(this, IRON_MAN_ID, map.spawn.x, map.spawn.y);
+    this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
     this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.toolTotals = { reroll: this.stats.rerolls, skip: this.stats.skips, banish: this.stats.banishes };
@@ -98,6 +99,15 @@ export class GameScene extends Phaser.Scene {
       () => map.breakables,
     );
 
+    this.heroWeapon =
+      HERO_WEAPONS[this.player.definition.id]?.create({
+        scene: this,
+        owner: this.player,
+        enemies: this.enemies,
+        stats: this.stats,
+        props: () => map.breakables,
+      }) ?? null;
+
     this.missiles = new MissileWeapon(
       this,
       this.player,
@@ -112,6 +122,7 @@ export class GameScene extends Phaser.Scene {
       this.player,
       { width: map.widthPx, height: map.heightPx },
     );
+
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
       this.dropLoot(e);
       this.round.onEnemyKilled(e);
@@ -129,6 +140,7 @@ export class GameScene extends Phaser.Scene {
       const enemy = e as Enemy;
       if (enemy.dying || !projectile.canHit(enemy)) return;
       enemy.takeDamage(projectile.damage);
+      if (projectile.slow && !enemy.dying) enemy.applySlow(projectile.slow.ms, projectile.slow.factor);
       if (projectile.registerHit(enemy)) projectile.destroy();
     });
 
@@ -218,7 +230,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private upgradeContext(): UpgradeContext {
-    return { stats: this.stats, player: this.player, missiles: this.missiles, taken: this.taken };
+    return {
+      stats: this.stats,
+      player: this.player,
+      missiles: this.missiles,
+      taken: this.taken,
+      basicKind: this.player.definition.stats.attack.kind,
+      heroId: this.player.definition.id,
+      heroWeapon: this.heroWeapon,
+    };
   }
 
   /** Sortea las opciones y las muestra; repetir y desterrar vuelven acá con otras opciones. */
@@ -291,6 +311,7 @@ export class GameScene extends Phaser.Scene {
     this.player.step(this.moveInput.getVector());
     this.attack.update(now);
     this.missiles.update(now, delta);
+    this.heroWeapon?.update(now, delta);
     this.updatePickups(delta);
     if (this.stats.regenPerSecond > 0) this.player.heal((this.stats.regenPerSecond * delta) / 1000);
     const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);

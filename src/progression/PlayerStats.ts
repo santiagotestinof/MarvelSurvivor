@@ -48,4 +48,10 @@ export class PlayerStats {
   /** Probabilidad (0..1) de que un disparo haga daño crítico. */
   critChance = 0;
   critMult = 2;
+
+  // Ataque básico de Hulk (abanico)
+  /** Multiplica el ángulo del abanico. */
+  fanAngleMult = 1;
+  /** Multiplica el alcance del abanico. */
+  fanReachMult = 1;
 }

@@ -2,6 +2,8 @@ import type Phaser from 'phaser';
 import type { CharacterAction, CharacterDefinition } from '../characters/CharacterDefinition';
 import { ALL_DIRECTIONS, DIRECTION_NAMES, type Direction } from '../core/direction';
 
+declare const __BUILD_ID__: string;
+
 export function animationKey(characterId: string, action: CharacterAction, direction: Direction): string {
   return `${characterId}:${action}:${DIRECTION_NAMES[direction]}`;
 }
@@ -9,7 +11,7 @@ export function animationKey(characterId: string, action: CharacterAction, direc
 /** Encola la carga de todos los spritesheets de un personaje (llamar desde preload). */
 export function loadCharacterAssets(scene: Phaser.Scene, definition: CharacterDefinition): void {
   for (const sheet of Object.values(definition.sheets)) {
-    scene.load.spritesheet(sheet.textureKey, sheet.path, {
+    scene.load.spritesheet(sheet.textureKey, `${sheet.path}?v=${__BUILD_ID__}`, {
       frameWidth: definition.frame.width,
       frameHeight: definition.frame.height,
     });
