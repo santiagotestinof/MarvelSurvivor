@@ -16,6 +16,33 @@ export const META_ICON_ALIAS: Record<string, string> = {
   magnet: 'magnet',
 };
 
+/** Color del marco de cada mejora en la tienda (inspirado en el objeto de Marvel que la representa). */
+export const META_COLORS: Record<string, number> = {
+  might: 0xa855f7,
+  armor: 0x94a3b8,
+  'max-health': 0x38bdf8,
+  recovery: 0xf472b6,
+  cooldown: 0x22d3ee,
+  area: 0x3b82f6,
+  'projectile-speed': 0xf97316,
+  duration: 0x4ade80,
+  amount: 0xef4444,
+  'move-speed': 0xfb7185,
+  magnet: 0xc026d3,
+  luck: 0x2dd4bf,
+  growth: 0x84cc16,
+  greed: 0xfbbf24,
+  curse: 0x6d28d9,
+  revival: 0xfb923c,
+  omni: 0xfde047,
+  charm: 0x34d399,
+  defang: 0x64748b,
+  reroll: 0x9ca3af,
+  skip: 0xa78bfa,
+  banish: 0xdc2626,
+  preserve: 0x60a5fa,
+};
+
 export const META_ICONS: Record<string, string[]> = {
   armor: [
     '.SSSSSSSS.',
