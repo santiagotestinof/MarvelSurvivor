@@ -73,6 +73,8 @@ export class GameScene extends Phaser.Scene {
   private ironManBaseScaleX = 1;
   private ironManBaseScaleY = 1;
   private nextIronManCloudAt = 0;
+  private environmentObstacles!: Phaser.Physics.Arcade.StaticGroup;
+  private playerObstacleCollider!: Phaser.Physics.Arcade.Collider;
 
   constructor() {
     super(SCENE_KEYS.game);
@@ -97,11 +99,12 @@ export class GameScene extends Phaser.Scene {
     this.goldPayout = null;
     const map = new TestMap(this);
     map.build();
+    this.environmentObstacles = map.obstacles;
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
     this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
-    this.physics.add.collider(this.player, map.obstacles);
+    this.playerObstacleCollider = this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.ironManBaseMoveSpeed = this.player.moveSpeed;
     this.ironManBaseScaleX = this.player.scaleX;
@@ -215,6 +218,7 @@ export class GameScene extends Phaser.Scene {
     if (this.player.definition.id !== 'ironman' || this.round.ended || this.frozen || this.player.isDead) return;
     if (this.clock < this.ironManFlyingUntil || this.clock < this.ultimateReadyAt) return;
     this.ironManFlyingUntil = this.clock + 5000;
+    this.playerObstacleCollider.active = false;
     this.nextUltimateShotAt = this.clock + 500;
     this.nextIronManCloudAt = this.clock + 180;
     this.player.setFlightHeight(9);
@@ -250,6 +254,8 @@ export class GameScene extends Phaser.Scene {
         this.ironManFlyingUntil = 0;
         this.ultimateReadyAt = now + 40_000;
         this.player.setFlightHeight(0);
+        this.moveIronManToNearestFreeSpot();
+        this.playerObstacleCollider.active = true;
         this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
         this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
         this.player.clearTint();
@@ -272,6 +278,55 @@ export class GameScene extends Phaser.Scene {
       // Cada misil hace 1,5 veces el daño anterior: 12 -> 18.
       this.spawnIronManUltimateMissile(impactX, impactY, 25);
       this.nextUltimateShotAt += 500;
+    }
+  }
+
+  /**
+   * Al aterrizar, busca el punto libre más cercano para evitar que Iron Man quede
+   * incrustado en un árbol, una roca, una caja o una estructura del escenario.
+   */
+  private moveIronManToNearestFreeSpot(): void {
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+    const obstacles = this.environmentObstacles.getChildren() as Phaser.GameObjects.Rectangle[];
+    const blockedRects = obstacles
+      .map((object) => object.body as Phaser.Physics.Arcade.StaticBody)
+      .filter((obstacleBody) => obstacleBody && obstacleBody.enable)
+      .map((obstacleBody) => new Phaser.Geom.Rectangle(
+        obstacleBody.x, obstacleBody.y, obstacleBody.width, obstacleBody.height,
+      ));
+    const currentX = body.x;
+    const currentY = body.y;
+    const bounds = this.physics.world.bounds;
+    const isFree = (x: number, y: number): boolean => {
+      const candidate = new Phaser.Geom.Rectangle(x, y, body.width, body.height);
+      if (x < bounds.left || y < bounds.top || x + body.width > bounds.right || y + body.height > bounds.bottom) return false;
+      return !blockedRects.some((obstacle) => Phaser.Geom.Intersects.RectangleToRectangle(candidate, obstacle));
+    };
+
+    if (isFree(currentX, currentY)) return;
+
+    // Búsqueda en anillos: el primer punto libre es el más cercano en la cuadrícula de 8 px.
+    const step = 8;
+    const maxRadius = Math.max(bounds.width, bounds.height);
+    for (let radius = step; radius <= maxRadius; radius += step) {
+      for (let dx = -radius; dx <= radius; dx += step) {
+        for (const dy of [-radius, radius]) {
+          if (isFree(currentX + dx, currentY + dy)) {
+            this.player.setPosition(this.player.x + dx, this.player.y + dy);
+            body.updateFromGameObject();
+            return;
+          }
+        }
+      }
+      for (let dy = -radius + step; dy < radius; dy += step) {
+        for (const dx of [-radius, radius]) {
+          if (isFree(currentX + dx, currentY + dy)) {
+            this.player.setPosition(this.player.x + dx, this.player.y + dy);
+            body.updateFromGameObject();
+            return;
+          }
+        }
+      }
     }
   }
 
@@ -472,6 +527,8 @@ export class GameScene extends Phaser.Scene {
         this.ironManFlightEffect = null;
         this.ironManFlyingUntil = 0;
         this.player.setFlightHeight(0);
+        this.moveIronManToNearestFreeSpot();
+        this.playerObstacleCollider.active = true;
         this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
         this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
         this.player.clearTint();

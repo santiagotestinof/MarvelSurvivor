@@ -175,7 +175,7 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
         .setFlip(this.flipX, this.flipY)
         .setAlpha(this.alpha)
         .setTint(0xb9f4ff)
-        .setDepth(groundY + 0.1);
+        .setDepth(999_990);
     }
   }
 }
