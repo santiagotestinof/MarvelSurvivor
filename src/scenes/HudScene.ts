@@ -95,7 +95,6 @@ export class HudScene extends Phaser.Scene {
 
     const state = this.gameScene.getHudState();
     const ultimate = this.gameScene.getUltimateState();
-    const isIronMan = this.gameScene.getHudState().phase !== 'won' && this.gameScene.getHudState().phase !== 'lost';
     const playerIsIronMan = this.gameScene.isIronManSelected();
     this.ultimateButton.setVisible(playerIsIronMan);
     this.ultimateText.setVisible(playerIsIronMan);
