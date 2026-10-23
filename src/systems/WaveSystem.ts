@@ -3,6 +3,7 @@ import { WAVES } from '../config/gameplayConfig';
 import { pickWaveEnemy, type EnemyKind } from '../enemies/enemyKinds';
 import type { Character } from '../entities/Character';
 import { Enemy, type EnemyScaling } from '../entities/Enemy';
+import type { PlayerStats } from '../progression/PlayerStats';
 
 /** Genera enemigos fuera de la pantalla, cada vez más seguido a medida que avanza la ronda. */
 export class WaveSystem {
@@ -15,24 +16,28 @@ export class WaveSystem {
     private readonly player: Character,
     private readonly world: { width: number; height: number },
     private readonly onEnemyDied: (enemy: Enemy) => void,
+    private readonly stats: PlayerStats,
   ) {}
 
   /** `progress` va de 0 (inicio de la ronda) a 1 (aparece el jefe). */
   update(now: number, progress: number): void {
     if (this.stopped || now < this.nextSpawnAt) return;
 
-    const interval = Phaser.Math.Linear(WAVES.startIntervalMs, WAVES.endIntervalMs, progress);
+    // Maldición y Encanto: más enemigos, y más seguido.
+    const crowd = this.stats.curseMult * this.stats.spawnMult;
+    const interval = Phaser.Math.Linear(WAVES.startIntervalMs, WAVES.endIntervalMs, progress) / crowd;
     this.nextSpawnAt = now + interval;
-    if (this.aliveCount() >= WAVES.maxAlive) return;
+    const maxAlive = Math.round(WAVES.maxAlive * Math.max(1, crowd));
+    if (this.aliveCount() >= maxAlive) return;
 
     // Entre 1 y N enemigos por aparición; N crece de 1 a WAVES.maxBatch durante la ronda.
     const maxBatch = Math.max(1, Math.round(Phaser.Math.Linear(1, WAVES.maxBatch, progress)));
-    const batch = Phaser.Math.Between(1, maxBatch);
+    const batch = Math.max(1, Math.round(Phaser.Math.Between(1, maxBatch) * crowd));
     const scaling: EnemyScaling = {
-      health: 1 + progress * WAVES.healthGrowth,
-      speed: 1 + progress * WAVES.speedGrowth,
+      health: (1 + progress * WAVES.healthGrowth) * this.stats.curseMult,
+      speed: (1 + progress * WAVES.speedGrowth) * this.stats.curseMult,
     };
-    for (let i = 0; i < batch && this.aliveCount() < WAVES.maxAlive; i++) {
+    for (let i = 0; i < batch && this.aliveCount() < maxAlive; i++) {
       this.spawnEnemy(pickWaveEnemy(progress), scaling);
     }
   }
@@ -40,6 +45,7 @@ export class WaveSystem {
   spawnEnemy(kind: EnemyKind, scaling: EnemyScaling): Enemy {
     const { x, y } = this.pickSpawnPoint();
     const enemy = new Enemy(this.scene, x, y, kind, scaling);
+    if (kind.spawn && Math.random() < this.stats.defangChance) enemy.defang();
     this.enemies.add(enemy);
     enemy.once('died', this.onEnemyDied);
     return enemy;

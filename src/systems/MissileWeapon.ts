@@ -59,7 +59,7 @@ export class MissileWeapon {
 
   // Valores actuales del fuego: cada nivel de mejora suma un porcentaje sobre la base.
   get fireDurationMs(): number {
-    return FIRE.durationMs * (1 + 0.3 * this.fireLevels.duration);
+    return FIRE.durationMs * (1 + 0.3 * this.fireLevels.duration) * this.stats.durationMult;
   }
 
   get fireDamage(): number {
@@ -71,7 +71,7 @@ export class MissileWeapon {
   }
 
   get fireRadius(): number {
-    return FIRE.radius * (1 + 0.2 * this.fireLevels.size);
+    return FIRE.radius * (1 + 0.2 * this.fireLevels.size) * this.stats.areaMult;
   }
 
   update(now: number, deltaMs: number): void {
@@ -87,16 +87,18 @@ export class MissileWeapon {
     }
 
     if (this.level === 0 || now - this.lastFiredAt < MISSILES.cooldownMs * this.stats.cooldownMult) return;
-    const targets = this.nearestEnemies(this.owner.x, this.owner.y, this.level);
+    // Cantidad: el nivel del arma más los misiles extra de la mejora permanente.
+    const count = this.level + this.stats.amountBonus;
+    const targets = this.nearestEnemies(this.owner.x, this.owner.y, count);
     if (targets.length === 0) return;
 
     this.lastFiredAt = now;
     const originX = this.owner.x;
     const originY = this.owner.y - 14;
-    for (let i = 0; i < this.level; i++) {
+    for (let i = 0; i < count; i++) {
       const target = targets[i % targets.length];
       // Salen abiertos en abanico hacia arriba y después giran hacia su objetivo.
-      const spread = this.level === 1 ? 0 : (i / (this.level - 1) - 0.5) * 1.6;
+      const spread = count === 1 ? 0 : (i / (count - 1) - 0.5) * 1.6;
       const heading = -Math.PI / 2 + spread;
       const missile = new HomingMissile(
         this.scene,
@@ -104,9 +106,9 @@ export class MissileWeapon {
         originY,
         heading,
         target,
-        MISSILES.speed,
+        MISSILES.speed * this.stats.projectileSpeedMult,
         Phaser.Math.DegToRad(MISSILES.turnRateDeg),
-        now + MISSILES.lifetimeMs,
+        now + MISSILES.lifetimeMs * this.stats.durationMult,
       );
       this.missiles.add(missile);
       // `group.add` reinicia la velocidad del cuerpo: se vuelve a aplicar con el rumbo inicial.
@@ -133,20 +135,21 @@ export class MissileWeapon {
     missile.destroy();
 
     const damage = MISSILES.damage * this.stats.damageMult;
-    const splashSq = MISSILES.splashRadius ** 2;
+    const splashRadius = MISSILES.splashRadius * this.stats.areaMult;
+    const splashSq = splashRadius ** 2;
     hit?.takeDamage(damage);
     for (const enemy of this.enemies.getChildren() as Enemy[]) {
       if (enemy === hit || !enemy.active || enemy.dying) continue;
       if ((enemy.x - x) ** 2 + (enemy.y - 6 - y) ** 2 <= splashSq) enemy.takeDamage(damage * MISSILES.splashDamageRatio);
     }
 
-    this.splashProps(x, y, MISSILES.splashRadius, damage);
+    this.splashProps(x, y, splashRadius, damage);
 
     if (this.evolved) {
       this.fires.push(new FireZone(this.scene, x, y + 6, this.fireRadius, this.now + this.fireDurationMs, this.now));
     }
 
-    const blast = this.scene.add.circle(x, y, MISSILES.splashRadius, 0xffa53a, 0.55).setDepth(999_999).setScale(0.3);
+    const blast = this.scene.add.circle(x, y, splashRadius, 0xffa53a, 0.55).setDepth(999_999).setScale(0.3);
     this.scene.tweens.add({ targets: blast, scale: 1, alpha: 0, duration: 220, onComplete: () => blast.destroy() });
   }
 }

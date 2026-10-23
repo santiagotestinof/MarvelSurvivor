@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { IRON_MAN_ID } from '../characters/ironman/ironManDefinition';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { GOLD, PROGRESSION, ROUND } from '../config/gameplayConfig';
+import { GOLD, PROGRESSION, REVIVAL, ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -15,7 +15,7 @@ import { applyMetaUpgrades } from '../meta/metaUpgrades';
 import { saveData } from '../meta/saveData';
 import { PlayerStats } from '../progression/PlayerStats';
 import { ProgressionSystem, type ProgressState } from '../progression/ProgressionSystem';
-import { pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
+import { passiveTypesTaken, pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { MissileWeapon } from '../systems/MissileWeapon';
@@ -47,6 +47,10 @@ export class GameScene extends Phaser.Scene {
   private progression = new ProgressionSystem();
   /** Veces que se eligió cada mejora en esta ronda (algunas tienen requisitos, como la evolución). */
   private taken: Record<string, number> = {};
+  /** Mejoras desterradas en esta ronda (no vuelven a salir). */
+  private banished = new Set<string>();
+  /** Usos de repetir, saltear y desterrar con los que empezó la ronda. */
+  private toolTotals = { reroll: 0, skip: 0, banish: 0 };
   private pickups: Pickup[] = [];
   private gold = 0;
   /** Oro que se guardó al terminar la ronda (null mientras se juega). */
@@ -67,6 +71,7 @@ export class GameScene extends Phaser.Scene {
     this.progression = new ProgressionSystem();
     this.taken = {};
     this.pickups = [];
+    this.banished = new Set();
     this.gold = 0;
     this.goldPayout = null;
     const map = new TestMap(this);
@@ -76,6 +81,7 @@ export class GameScene extends Phaser.Scene {
     this.player = createCharacter(this, IRON_MAN_ID, map.spawn.x, map.spawn.y);
     this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
+    this.toolTotals = { reroll: this.stats.rerolls, skip: this.stats.skips, banish: this.stats.banishes };
     map.onPropBroken = (prop) => this.dropPropGold(prop);
 
     this.enemies = this.physics.add.group();
@@ -88,13 +94,13 @@ export class GameScene extends Phaser.Scene {
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
       this.dropLoot(e);
       this.round.onEnemyKilled(e);
-    });
+    }, this.stats);
     this.round = new RoundController(0, this.player, this.waves, this.enemies);
 
     // Enemigos que tocan al jugador le hacen daño (con invulnerabilidad corta).
     this.physics.add.overlap(this.player, this.enemies, (_p, e) => {
       const enemy = e as Enemy;
-      if (!enemy.dying) this.player.takeDamage(enemy.contactDamage);
+      if (!enemy.dying && !enemy.harmless) this.player.takeDamage(enemy.contactDamage);
     });
     // Proyectiles que tocan enemigos.
     this.physics.add.overlap(this.attack.projectiles, this.enemies, (p, e) => {
@@ -185,14 +191,66 @@ export class GameScene extends Phaser.Scene {
   /** Pausa la ronda y ofrece mejoras al HUD; al elegir, se aplica y se sigue. */
   private openLevelUp(): void {
     this.progression.pendingLevelUps--;
-    const ctx: UpgradeContext = { stats: this.stats, player: this.player, missiles: this.missiles, taken: this.taken };
-    const choices = pickUpgradeChoices(PROGRESSION.upgradeChoices, ctx);
     this.scene.pause();
-    this.hud.showUpgrades(this.progression.level, choices, (choice: UpgradeDefinition) => {
-      choice.apply(ctx);
-      this.taken[choice.id] = (this.taken[choice.id] ?? 0) + 1;
-      this.scene.resume();
+    this.offerUpgrades();
+  }
+
+  private upgradeContext(): UpgradeContext {
+    return { stats: this.stats, player: this.player, missiles: this.missiles, taken: this.taken };
+  }
+
+  /** Sortea las opciones y las muestra; repetir y desterrar vuelven acá con otras opciones. */
+  private offerUpgrades(): void {
+    const ctx = this.upgradeContext();
+    const stats = this.stats;
+    this.hud.showUpgrades({
+      level: this.progression.level,
+      choices: pickUpgradeChoices(PROGRESSION.upgradeChoices, ctx, this.banished),
+      note: `Mejoras pasivas: ${passiveTypesTaken(this.taken)}/${PROGRESSION.maxPassiveTypes} tipos`,
+      tools: {
+        reroll: { left: stats.rerolls, total: this.toolTotals.reroll },
+        skip: { left: stats.skips, total: this.toolTotals.skip },
+        banish: { left: stats.banishes, total: this.toolTotals.banish },
+      },
+      onPick: (choice: UpgradeDefinition) => {
+        choice.apply(ctx);
+        this.taken[choice.id] = (this.taken[choice.id] ?? 0) + 1;
+        this.scene.resume();
+      },
+      onReroll: () => {
+        this.spendTool('rerolls');
+        this.offerUpgrades();
+      },
+      onSkip: () => {
+        this.spendTool('skips');
+        this.progression.addXp(this.progression.xpToNext * PROGRESSION.skipXpRatio);
+        this.scene.resume();
+      },
+      onBanish: (choice: UpgradeDefinition) => {
+        this.spendTool('banishes');
+        this.banished.add(choice.id);
+        this.offerUpgrades();
+      },
     });
+  }
+
+  /** Gasta un uso de repetir, saltear o desterrar (la mejora permanente Conservar puede evitarlo). */
+  private spendTool(tool: 'rerolls' | 'skips' | 'banishes'): void {
+    if (Math.random() >= this.stats.preserveChance) this.stats[tool]--;
+  }
+
+  /** Si hay una resurrección disponible, vuelve a la vida y aleja a los enemigos de alrededor. */
+  private tryRevive(): boolean {
+    if (!this.player.isDead || this.stats.revivals <= 0) return false;
+    this.stats.revivals--;
+    this.player.revive(REVIVAL.healthRatio, REVIVAL.protectedMs);
+    for (const enemy of this.enemies.getChildren() as Enemy[]) {
+      if (!enemy.active || enemy.dying || enemy.kind.id === 'overlord') continue;
+      if (Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y) <= REVIVAL.blastRadius) enemy.takeDamage(REVIVAL.blastDamage);
+    }
+    const blast = this.add.circle(this.player.x, this.player.y, REVIVAL.blastRadius, 0xffffff, 0.6).setDepth(999_999).setScale(0.2);
+    this.tweens.add({ targets: blast, scale: 1, alpha: 0, duration: 400, onComplete: () => blast.destroy() });
+    return true;
   }
 
   update(_time: number, delta: number): void {
@@ -212,6 +270,7 @@ export class GameScene extends Phaser.Scene {
     this.attack.update(now);
     this.missiles.update(now, delta);
     this.updatePickups(delta);
+    if (this.stats.regenPerSecond > 0) this.player.heal((this.stats.regenPerSecond * delta) / 1000);
     const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);
     for (const enemy of activeEnemies) {
       let separationX = 0;
@@ -242,6 +301,7 @@ export class GameScene extends Phaser.Scene {
       }
       enemy.chase(this.player.x, this.player.y - 6, separationX, separationY);
     }
+    this.tryRevive();
     this.round.update(now);
 
     if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();

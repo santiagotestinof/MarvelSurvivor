@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { UpgradeDefinition } from '../progression/upgrades';
+import { UiButton } from './UiButton';
 import { UpgradeCard } from './UpgradeCard';
 import { textStyle } from './uiLayout';
 
@@ -7,6 +8,29 @@ const DEPTH = 20;
 /** Tiempo durante el cual se ignoran toques, para no elegir sin querer al aparecer el menú. */
 const INPUT_DELAY_MS = 350;
 const CARD_KEYS = ['ONE', 'TWO', 'THREE'];
+
+/** Herramientas de la subida de nivel (mejoras permanentes): cambiar las opciones, saltear o desterrar una. */
+export type LevelUpTool = 'reroll' | 'skip' | 'banish';
+
+const TOOL_LABELS: Record<LevelUpTool, { label: string; key: string }> = {
+  reroll: { label: 'REPETIR', key: 'R' },
+  skip: { label: 'SALTEAR', key: 'S' },
+  banish: { label: 'DESTERRAR', key: 'B' },
+};
+
+/** Todo lo que el menú necesita para una subida de nivel. */
+export interface UpgradePrompt {
+  level: number;
+  choices: UpgradeDefinition[];
+  /** Texto chico bajo las tarjetas (por ejemplo, cuántas pasivas lleva el jugador). */
+  note: string;
+  /** Usos de cada herramienta: `total` de la ronda (si es 0 el botón no se muestra) y los que `left` quedan. */
+  tools: Record<LevelUpTool, { left: number; total: number }>;
+  onPick: (choice: UpgradeDefinition) => void;
+  onReroll: () => void;
+  onSkip: () => void;
+  onBanish: (choice: UpgradeDefinition) => void;
+}
 
 /** Menú de subida de nivel: título y tarjetas con las mejoras para elegir (click, toque o teclas 1/2/3). */
 export class UpgradeMenu {
@@ -16,7 +40,10 @@ export class UpgradeMenu {
   private readonly hint: Phaser.GameObjects.Text;
   private cards: UpgradeCard[] = [];
   private choices: UpgradeDefinition[] = [];
-  private onPick: ((choice: UpgradeDefinition) => void) | null = null;
+  private prompt: UpgradePrompt | null = null;
+  private banishMode = false;
+  private readonly toolButtons: Record<LevelUpTool, UiButton>;
+  private readonly noteText: Phaser.GameObjects.Text;
   private openedAt = 0;
   private ui = 2;
 
@@ -30,22 +57,35 @@ export class UpgradeMenu {
       .text(0, 0, touch ? 'Tocá una tarjeta' : 'Click o teclas 1 · 2 · 3', textStyle(12, '#9fb3bf'))
       .setOrigin(0.5)
       .setDepth(DEPTH + 1);
+    this.noteText = scene.add.text(0, 0, '', textStyle(11, '#9fb3bf')).setOrigin(0.5).setDepth(DEPTH + 1);
+
+    const makeTool = (tool: LevelUpTool): UiButton =>
+      new UiButton(scene, TOOL_LABELS[tool].label, 14, () => this.useTool(tool), []).setDepth(DEPTH + 1);
+    this.toolButtons = { reroll: makeTool('reroll'), skip: makeTool('skip'), banish: makeTool('banish') };
     this.setVisible(false);
 
     const keyboard = scene.input.keyboard;
-    if (keyboard) CARD_KEYS.forEach((name, index) => keyboard.addKey(name).on('down', () => this.pick(index)));
+    if (keyboard) {
+      CARD_KEYS.forEach((name, index) => keyboard.addKey(name).on('down', () => this.pick(index)));
+      (Object.keys(TOOL_LABELS) as LevelUpTool[]).forEach((tool) =>
+        keyboard.addKey(TOOL_LABELS[tool].key).on('down', () => this.useTool(tool)),
+      );
+    }
   }
 
   get isOpen(): boolean {
-    return this.onPick !== null;
+    return this.prompt !== null;
   }
 
-  show(level: number, choices: UpgradeDefinition[], onPick: (choice: UpgradeDefinition) => void): void {
+  show(prompt: UpgradePrompt): void {
+    const { level, choices } = prompt;
+    this.prompt = prompt;
+    this.banishMode = false;
     this.choices = choices;
-    this.onPick = onPick;
     this.openedAt = this.scene.time.now;
     this.title.setText(`¡NIVEL ${level}!`);
     this.setVisible(true);
+    this.refreshTools();
 
     this.destroyCards();
     this.cards = choices.map((choice, index) =>
@@ -67,6 +107,8 @@ export class UpgradeMenu {
     this.title.setFontSize(Math.max(26, Math.round(11 * ui))).setPosition(width / 2, height * (portrait ? 0.12 : 0.15));
     this.subtitle.setFontSize(Math.max(14, Math.round(4.2 * ui))).setPosition(width / 2, this.title.y + this.title.height * 0.75);
     this.hint.setFontSize(Math.max(11, Math.round(3 * ui))).setPosition(width / 2, height * 0.92);
+    this.noteText.setFontSize(Math.max(10, Math.round(2.8 * ui))).setPosition(width / 2, height * 0.955);
+    this.layoutTools(width, height, ui);
 
     if (portrait) {
       const cardW = Math.min(width * 0.9, 520);
@@ -91,6 +133,51 @@ export class UpgradeMenu {
     }
   }
 
+  private layoutTools(width: number, height: number, ui: number): void {
+    const visible = (Object.keys(this.toolButtons) as LevelUpTool[]).filter((tool) => (this.prompt?.tools[tool].total ?? 0) > 0);
+    const size = Math.max(11, Math.round(3.4 * ui));
+    const gap = Math.round(size * 0.8);
+    const buttons = visible.map((tool) => this.toolButtons[tool].setFontSize(size));
+    const total = buttons.reduce((sum, button) => sum + button.width, 0) + gap * Math.max(0, buttons.length - 1);
+    let x = width / 2 - total / 2;
+    for (const button of buttons) {
+      button.setPosition(x + button.width / 2, height * 0.84);
+      x += button.width + gap;
+    }
+  }
+
+  /** Muestra u oculta cada botón según los usos que quedan y actualiza sus textos. */
+  private refreshTools(): void {
+    const prompt = this.prompt;
+    if (!prompt) return;
+    for (const tool of Object.keys(TOOL_LABELS) as LevelUpTool[]) {
+      const { left, total } = prompt.tools[tool];
+      const button = this.toolButtons[tool];
+      const active = tool === 'banish' && this.banishMode;
+      button.setLabel(active ? 'ELEGÍ UNA TARJETA' : `${TOOL_LABELS[tool].label} ${left}/${total} [${TOOL_LABELS[tool].key}]`);
+      button.setVisible(total > 0);
+      button.setEnabled(total > 0 && (left > 0 || active));
+      button.setAlpha(left > 0 || active ? 1 : 0.45);
+    }
+    this.noteText.setText(prompt.note);
+    this.layoutTools(this.scene.scale.width, this.scene.scale.height, this.ui);
+  }
+
+  private useTool(tool: LevelUpTool): void {
+    const prompt = this.prompt;
+    if (!prompt || this.scene.time.now - this.openedAt < INPUT_DELAY_MS) return;
+    if (tool === 'banish') {
+      if (prompt.tools.banish.left <= 0 && !this.banishMode) return;
+      this.banishMode = !this.banishMode;
+      this.refreshTools();
+      return;
+    }
+    if (prompt.tools[tool].left <= 0) return;
+    this.close();
+    if (tool === 'reroll') prompt.onReroll();
+    else prompt.onSkip();
+  }
+
   /** Entrada: el título "salta" y las tarjetas aparecen una tras otra. */
   private playEntrance(): void {
     const { tweens } = this.scene;
@@ -106,19 +193,27 @@ export class UpgradeMenu {
 
   private pick(index: number): void {
     const choice = this.choices[index];
-    const callback = this.onPick;
-    if (!choice || !callback) return;
+    const prompt = this.prompt;
+    if (!choice || !prompt) return;
     if (this.scene.time.now - this.openedAt < INPUT_DELAY_MS) return;
 
-    this.onPick = null;
+    const banishing = this.banishMode;
+    this.close();
+    if (banishing) prompt.onBanish(choice);
+    else prompt.onPick(choice);
+  }
+
+  private close(): void {
+    this.prompt = null;
+    this.banishMode = false;
     this.choices = [];
     this.destroyCards();
     this.setVisible(false);
-    callback(choice);
   }
 
   private setVisible(visible: boolean): void {
-    for (const item of [this.dim, this.title, this.subtitle, this.hint]) item.setVisible(visible);
+    for (const item of [this.dim, this.title, this.subtitle, this.hint, this.noteText]) item.setVisible(visible);
+    if (!visible) for (const button of Object.values(this.toolButtons)) button.setVisible(false);
   }
 
   private destroyCards(): void {

@@ -1,10 +1,9 @@
 import Phaser from 'phaser';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { VirtualJoystick } from '../input/VirtualJoystick';
-import type { UpgradeDefinition } from '../progression/upgrades';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { ResultOverlay } from '../ui/ResultOverlay';
-import { UpgradeMenu } from '../ui/UpgradeMenu';
+import { UpgradeMenu, type UpgradePrompt } from '../ui/UpgradeMenu';
 import { formatTime, textStyle, uiScale } from '../ui/uiLayout';
 import type { GameScene, HudSnapshot } from './GameScene';
 
@@ -156,12 +155,19 @@ export class HudScene extends Phaser.Scene {
     }
   }
 
-  /** Pausa el joystick y muestra las mejoras; `onPick` recibe la elegida. */
-  showUpgrades(level: number, choices: UpgradeDefinition[], onPick: (choice: UpgradeDefinition) => void): void {
+  /** Pausa el joystick y muestra las mejoras; al elegir (o usar una herramienta) se vuelve a activar. */
+  showUpgrades(prompt: UpgradePrompt): void {
     this.setJoystickEnabled(false);
-    this.upgradeMenu.show(level, choices, (choice) => {
+    const done = <A extends unknown[]>(callback: (...args: A) => void) => (...args: A): void => {
       this.setJoystickEnabled(true);
-      onPick(choice);
+      callback(...args);
+    };
+    this.upgradeMenu.show({
+      ...prompt,
+      onPick: done(prompt.onPick),
+      onReroll: done(prompt.onReroll),
+      onSkip: done(prompt.onSkip),
+      onBanish: done(prompt.onBanish),
     });
   }
 

@@ -82,7 +82,7 @@ export class AutoAttackSystem {
     const originY = this.owner.y - 14; // a la altura del pecho
     const aim = Math.atan2(target.y - originY, target.x - originX);
     const speed = this.attack.projectileSpeed * stats.projectileSpeedMult;
-    const count = stats.projectileCount;
+    const count = stats.projectileCount + stats.amountBonus;
 
     for (let i = 0; i < count; i++) {
       const angle = aim + (i - (count - 1) / 2) * BASIC_ATTACK_LIMITS.spread;
@@ -99,6 +99,7 @@ export class AutoAttackSystem {
         Math.sin(angle) * speed,
         { pierce: stats.pierce, critical },
       );
+      projectile.setScale(projectile.scaleX * stats.areaMult);
       this.projectiles.add(projectile);
       // `group.add` reinicia la velocidad del cuerpo: se vuelve a aplicar.
       projectile.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);

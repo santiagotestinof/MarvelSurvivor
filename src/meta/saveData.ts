@@ -54,6 +54,13 @@ class SaveData {
     return true;
   }
 
+  /** Quita todas las mejoras compradas y suma `gold` al oro (reembolso). */
+  refund(gold: number): void {
+    this.data.upgrades = {};
+    this.data.gold += Math.max(0, Math.floor(gold));
+    this.persist();
+  }
+
   private load(): SaveShape {
     try {
       const text = window.localStorage.getItem(STORAGE_KEY);

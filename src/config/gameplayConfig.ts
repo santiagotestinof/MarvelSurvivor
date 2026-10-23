@@ -30,6 +30,10 @@ export const PROGRESSION = {
   xpPerLevel: 3,
   /** Opciones de mejora que se ofrecen al subir de nivel. */
   upgradeChoices: 3,
+  /** Tipos distintos de mejoras pasivas (no ligadas a un arma) que se pueden tener en una ronda. */
+  maxPassiveTypes: 4,
+  /** Al saltear una subida de nivel se recibe esta parte de la experiencia que pedía el nivel siguiente. */
+  skipXpRatio: 0.4,
 };
 
 export const WAVES = {
@@ -105,8 +109,14 @@ export const BREAKABLE_PROPS = {
 } as const;
 
 export const META = {
-  /** Niveles máximos de cada mejora permanente. */
-  maxLevel: 5,
   /** Cada nivel cuesta esta cantidad de veces más que el anterior. */
   costGrowth: 1.6,
+};
+
+/** Mejora permanente Resurrección: con cuánta vida vuelve, cuánto tiempo está protegido y la onda que empuja a los enemigos. */
+export const REVIVAL = {
+  healthRatio: 0.5,
+  protectedMs: 2000,
+  blastRadius: 90,
+  blastDamage: 40,
 };

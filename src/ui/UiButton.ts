@@ -62,6 +62,13 @@ export class UiButton extends Phaser.GameObjects.Container {
     return this;
   }
 
+  /** Cambia el texto del botón. */
+  setLabel(text: string): this {
+    this.label.setText(text);
+    this.redraw();
+    return this;
+  }
+
   /** Activa o desactiva el botón (mouse, toque y teclas). */
   setEnabled(enabled: boolean): this {
     this.enabled = enabled;
