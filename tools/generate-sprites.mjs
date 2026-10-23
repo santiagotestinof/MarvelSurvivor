@@ -692,6 +692,16 @@ function makeAuraOuter() {
   return cv;
 }
 /** Mandala interior: estrella de seis puntas dentro de un círculo con rayos finos. */
+/** Chispa mágica de los portales de Doctor Strange (8×8). */
+function makeSpark() {
+  const cv = new Canvas(8, 8);
+  const gold = hex('#ffb02e');
+  cv.rect(3, 0, 2, 8, gold);
+  cv.rect(0, 3, 8, 2, gold);
+  cv.rect(2, 2, 4, 4, hex('#ffd96b'));
+  cv.rect(3, 3, 2, 2, hex('#ffffff'));
+  return cv;
+}
 function makeAuraInner() {
   const S = 128;
   const cv = new Canvas(S, S);
@@ -2463,6 +2473,7 @@ save(makeWeb(), 'projectiles/web.png');
 save(makeThunder(), 'effects/thunder.png');
 save(makeAuraOuter(), 'effects/aura-outer.png');
 save(makeAuraInner(), 'effects/aura-inner.png');
+save(makeSpark(), 'effects/spark.png');
 {
   const strangeIdle = buildStrangeSheet(STRANGE_IDLE);
   const strangeWalk = buildStrangeSheet(STRANGE_WALK);

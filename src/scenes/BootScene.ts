@@ -30,6 +30,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image(TEXTURES.thunder, ASSET_PATHS.thunder);
     this.load.image(TEXTURES.auraOuter, `${ASSET_PATHS.auraOuter}?v=${__BUILD_ID__}`);
     this.load.image(TEXTURES.auraInner, `${ASSET_PATHS.auraInner}?v=${__BUILD_ID__}`);
+    this.load.image(TEXTURES.spark, `${ASSET_PATHS.spark}?v=${__BUILD_ID__}`);
     this.load.image(TEXTURES.strangeArms, `${ASSET_PATHS.strangeArms}?v=${__BUILD_ID__}`);
     this.load.spritesheet(TEXTURES.fire, ASSET_PATHS.fire, { frameWidth: 32, frameHeight: 32 });
     loadMetaItemIcons(this);

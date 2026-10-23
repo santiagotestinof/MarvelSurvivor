@@ -1,5 +1,17 @@
 /** Íconos de las mejoras exclusivas de cada héroe (pixel art desde texto, paleta de `upgradeIcons.ts`). */
 export const HERO_ICONS: Record<string, string[]> = {
+  portals: [
+    '...YYYY...',
+    '..Y....Y..',
+    '.Y..KK..Y.',
+    'Y..KKKK..Y',
+    'Y..KKKK..Y',
+    '.Y..KK..Y.',
+    '..Y....Y..',
+    '...YYYY...',
+    '.Y.Y..Y.Y.',
+    '..........',
+  ],
   'orbit-shields': [
     '..B.......',
     '.BBB..RR..',

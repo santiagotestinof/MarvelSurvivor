@@ -188,6 +188,160 @@ export class Shockwave extends LeveledWeapon {
   }
 }
 
+
+interface Portal {
+  g: Phaser.GameObjects.Container;
+  ring: Phaser.GameObjects.Image;
+  x: number;
+  y: number;
+  until: number;
+  nextShot: number;
+}
+
+interface Spark {
+  sprite: Phaser.GameObjects.Image;
+  vx: number;
+  vy: number;
+  left: number;
+  damage: number;
+  critical: boolean;
+  hits: number;
+  hitSet: Set<unknown>;
+}
+
+/**
+ * Doctor Strange: abre portales fijos en puntos al azar a su alrededor; cada uno dispara chispas al enemigo más cercano
+ * mientras dura. Usa las mejoras comunes: daño, enfriamiento, duración, área, cantidad, velocidad del disparo, perforación y crítico.
+ */
+export class Portals extends LeveledWeapon {
+  private readonly portals: Portal[] = [];
+  private readonly sparks: Spark[] = [];
+  private nextOpen = 0;
+
+  update(now: number, delta: number): void {
+    this.updateSparks(delta);
+    if (this.level === 0) return;
+    const { scene, owner, stats } = this.deps;
+
+    if (now >= this.nextOpen) {
+      this.nextOpen = now + (4600 - this.level * 330) * stats.cooldownMult;
+      const amount = 1 + Math.floor(this.level / 2) + stats.amountBonus;
+      for (let i = 0; i < amount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Phaser.Math.Between(40, 95) * stats.rangeMult;
+        this.open(owner.x + Math.cos(angle) * dist, owner.y - 6 + Math.sin(angle) * dist * 0.8, now);
+      }
+    }
+
+    for (let i = this.portals.length - 1; i >= 0; i--) {
+      const portal = this.portals[i];
+      portal.ring.rotation += delta * 0.003;
+      if (now >= portal.until) {
+        const g = portal.g;
+        scene.tweens.add({ targets: g, scale: 0, alpha: 0, duration: 220, onComplete: () => g.destroy() });
+        this.portals.splice(i, 1);
+        continue;
+      }
+      if (now < portal.nextShot) continue;
+      const target = this.nearestTarget(portal.x, portal.y);
+      if (!target) continue;
+      portal.nextShot = now + (560 - this.level * 55) * stats.cooldownMult;
+      this.shoot(portal.x, portal.y, target.x, target.y);
+    }
+  }
+
+  private open(x: number, y: number, now: number): void {
+    const { scene, stats } = this.deps;
+    const radius = 15 * Math.sqrt(stats.areaMult);
+    const hole = scene.add.ellipse(0, 0, radius * 2, radius * 2, 0x1a0a28, 0.85);
+    const ring = scene.add.image(0, 0, TEXTURES.auraInner).setBlendMode(Phaser.BlendModes.ADD).setScale((radius * 2) / 80);
+    const glow = scene.add.circle(0, 0, radius * 1.15, 0xff9a2e, 0.18).setBlendMode(Phaser.BlendModes.ADD);
+    const g = scene.add.container(x, y, [glow, hole, ring]).setDepth(y - 0.8).setScale(0.1);
+    scene.tweens.add({ targets: g, scale: 1, duration: 180, ease: 'Back.Out' });
+    this.portals.push({ g, ring, x, y, until: now + (3200 + this.level * 450) * stats.durationMult, nextShot: now + 250 });
+  }
+
+  private nearestTarget(x: number, y: number): { x: number; y: number } | null {
+    const { enemies, props } = this.deps;
+    let best: { x: number; y: number } | null = null;
+    let bestSq = 230 * 230;
+    for (const enemy of activeEnemies(enemies)) {
+      const d = (enemy.x - x) ** 2 + (enemy.y - 8 - y) ** 2;
+      if (d < bestSq) {
+        bestSq = d;
+        best = { x: enemy.x, y: enemy.y - 8 };
+      }
+    }
+    if (best) return best;
+    bestSq = 130 * 130;
+    for (const prop of props()) {
+      if (prop.isBroken) continue;
+      const d = (prop.x - x) ** 2 + (prop.y - y) ** 2;
+      if (d < bestSq) {
+        bestSq = d;
+        best = { x: prop.x, y: prop.y };
+      }
+    }
+    return best;
+  }
+
+  private shoot(x: number, y: number, tx: number, ty: number): void {
+    const { scene, stats } = this.deps;
+    const angle = Math.atan2(ty - y, tx - x) + Phaser.Math.FloatBetween(-0.06, 0.06);
+    const speed = (190 + this.level * 12) * stats.projectileSpeedMult;
+    const critical = Math.random() < stats.critChance;
+    const damage = (4 + this.level * 1.8) * stats.damageMult * (critical ? stats.critMult : 1);
+    const sprite = scene.add.image(x, y, TEXTURES.spark).setDepth(999_980).setRotation(angle).setScale(stats.areaMult ** 0.5);
+    this.sparks.push({
+      sprite,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      left: 280 * stats.rangeMult,
+      damage,
+      critical,
+      hits: 1 + stats.pierce,
+      hitSet: new Set(),
+    });
+  }
+
+  private updateSparks(delta: number): void {
+    const { enemies, props } = this.deps;
+    const list = activeEnemies(enemies);
+    const breakables = [...props()];
+    for (let i = this.sparks.length - 1; i >= 0; i--) {
+      const s = this.sparks[i];
+      const dx = (s.vx * delta) / 1000;
+      const dy = (s.vy * delta) / 1000;
+      s.sprite.x += dx;
+      s.sprite.y += dy;
+      s.left -= Math.hypot(dx, dy);
+      s.sprite.rotation += delta * 0.01;
+      let spent = s.left <= 0;
+      const reach = 11 * s.sprite.scaleX;
+      for (const enemy of list) {
+        if (spent) break;
+        if (enemy.dying || s.hitSet.has(enemy)) continue;
+        if ((enemy.x - s.sprite.x) ** 2 + (enemy.y - 8 - s.sprite.y) ** 2 > reach * reach) continue;
+        s.hitSet.add(enemy);
+        enemy.takeDamage(s.damage);
+        if (--s.hits <= 0) spent = true;
+      }
+      for (const prop of breakables) {
+        if (spent) break;
+        if (prop.isBroken || s.hitSet.has(prop)) continue;
+        if ((prop.x - s.sprite.x) ** 2 + (prop.y - s.sprite.y) ** 2 > (reach + 6) ** 2) continue;
+        s.hitSet.add(prop);
+        prop.takeDamage(s.damage);
+        if (--s.hits <= 0) spent = true;
+      }
+      if (spent) {
+        s.sprite.destroy();
+        this.sparks.splice(i, 1);
+      }
+    }
+  }
+}
+
 /** Qué arma secundaria exclusiva tiene cada héroe (por id de héroe). */
 export const HERO_WEAPONS: Record<
   string,
@@ -210,6 +364,12 @@ export const HERO_WEAPONS: Record<
     name: 'Tormenta',
     text: 'Una lluvia de rayos cae sobre los enemigos',
     create: (deps) => new ThunderStorm(deps),
+  },
+  strange: {
+    upgradeId: 'portals',
+    name: 'Portales',
+    text: 'Abre portales alrededor que disparan chispas',
+    create: (deps) => new Portals(deps),
   },
   hulk: {
     upgradeId: 'shockwave',

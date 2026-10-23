@@ -147,7 +147,9 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: 'El disparo atraviesa +1 enemigo',
     category: 'attack',
     describe: ({ stats }) => `El disparo atraviesa +1 enemigo (${stats.pierce} → ${stats.pierce + 1})`,
-    isAvailable: ({ stats, basicKind }) => (basicKind === 'bolt' || basicKind === 'web') && stats.pierce < BASIC_ATTACK_LIMITS.maxPierce,
+    isAvailable: ({ stats, basicKind, heroWeapon }) =>
+      (basicKind === 'bolt' || basicKind === 'web' || (basicKind === 'aura' && (heroWeapon?.level ?? 0) > 0)) &&
+      stats.pierce < BASIC_ATTACK_LIMITS.maxPierce,
     apply: ({ stats }) => stats.pierce++,
   },
   {
@@ -156,7 +158,10 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: '+25% de velocidad de los disparos',
     category: 'attack',
     isAvailable: (ctx) =>
-      (ctx.basicKind === 'bolt' || ctx.basicKind === 'web' || ctx.basicKind === 'shield') &&
+      (ctx.basicKind === 'bolt' ||
+        ctx.basicKind === 'web' ||
+        ctx.basicKind === 'shield' ||
+        (ctx.basicKind === 'aura' && (ctx.heroWeapon?.level ?? 0) > 0)) &&
       times(ctx, 'shot-speed') < BASIC_ATTACK_LIMITS.maxSpeedUpgrades,
     apply: ({ stats }) => (stats.projectileSpeedMult *= 1.25),
   },
