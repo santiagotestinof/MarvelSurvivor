@@ -393,12 +393,23 @@ export function buildMetaIconSheet() {
     const g = new Grid();
     const custom = CUSTOM_ICONS[id];
     if (custom) {
-      // Ícono hecho a mano: se copia tal cual, sin contorno extra.
+      // Ícono hecho a mano: se copia sin contorno extra y se centra en el cuadro según su centro de masa.
+      const cells = [];
       custom.forEach((row, y) =>
         row.split(' ').forEach((cell, x) => {
-          if (cell !== '-') g.set(x, y, hex(`#${cell}`));
+          if (cell !== '-') cells.push([x, y, cell]);
         }),
       );
+      const centerX = cells.reduce((sum, [x]) => sum + x, 0) / cells.length;
+      const centerY = cells.reduce((sum, [, y]) => sum + y, 0) / cells.length;
+      const minX = Math.min(...cells.map(([x]) => x));
+      const maxX = Math.max(...cells.map(([x]) => x));
+      const minY = Math.min(...cells.map(([, y]) => y));
+      const maxY = Math.max(...cells.map(([, y]) => y));
+      const shiftX = Math.max(-minX, Math.min(ICON_SIZE - 1 - maxX, Math.round((ICON_SIZE - 1) / 2 - centerX)));
+      const shiftY = Math.max(-minY, Math.min(ICON_SIZE - 1 - maxY, Math.round((ICON_SIZE - 1) / 2 - centerY)));
+      for (const [x, y, cell] of cells) g.set(x + shiftX, y + shiftY, hex(`#${cell}`));
+      console.log(`  ícono propio ${id}: corrido ${shiftX},${shiftY}`);
     } else {
       DRAW[id](g);
       g.outline(C.K);

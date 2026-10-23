@@ -1,4 +1,5 @@
-// Íconos de la tienda dibujados a mano por el equipo (se usan tal cual, en vez de los dibujados con código).
+// Íconos de la tienda dibujados a mano por el equipo (se usan tal cual, en vez de los dibujados con código;
+// el generador solo los centra en el cuadro de 16×16).
 // Cada fila tiene 16 colores en hexadecimal sin '#', o '-' si el píxel es transparente.
 // El PNG original de cada uno está en tools/meta-icons/<id>.png (para retocarlo y volver a pasarlo acá).
 export const CUSTOM_ICONS = {
@@ -20,5 +21,24 @@ export const CUSTOM_ICONS = {
     '- - 6f3198 b776e3 b776e3 b776e3 000000 000000 000000 b776e3 b776e3 b776e3 6f3198 - - -',
     '- - - 6f3198 b776e3 b776e3 000000 000000 000000 b776e3 b776e3 6f3198 - - - -',
     '- - - - 6f3198 6f3198 - - - 6f3198 6f3198 - - - - -'
+  ],
+  // Mjolnir (hecho por Santi).
+  reroll: [
+    '- - - - - - - - - - - - - - - -',
+    '- - - 303030 303030 303030 303030 303030 303030 303030 303030 303030 - - - -',
+    '- - 303030 464646 464646 464646 464646 464646 464646 464646 464646 464646 303030 - - -',
+    '- - 303030 464646 464646 464646 303030 303030 464646 303030 464646 464646 303030 - - -',
+    '- - 303030 464646 464646 303030 464646 303030 464646 303030 464646 464646 303030 - - -',
+    '- - 303030 464646 464646 464646 303030 303030 303030 464646 464646 464646 303030 - - -',
+    '- - 303030 464646 464646 464646 464646 464646 464646 464646 464646 464646 303030 - - -',
+    '- - - 303030 303030 303030 303030 303030 303030 303030 303030 303030 - - - -',
+    '- - - - - - b4b4b4 6e3922 b4b4b4 - - - - - - -',
+    '- - - - - - 6e3922 b4b4b4 6e3922 - - - - - - -',
+    '- - - - - - 6e3922 6e3922 6e3922 - - - - - - -',
+    '- - - - - - b4b4b4 6e3922 b4b4b4 - - - - - - -',
+    '- - 9c5a3c 9c5a3c 9c5a3c - 6e3922 b4b4b4 6e3922 - - - - - - -',
+    '- - 9c5a3c - 9c5a3c 9c5a3c 6e3922 6e3922 6e3922 - - - - - - -',
+    '- - 9c5a3c 9c5a3c - 9c5a3c b4b4b4 b4b4b4 b4b4b4 - - - - - - -',
+    '- - - 9c5a3c 9c5a3c 9c5a3c 9c5a3c b4b4b4 - - - - - - - -'
   ],
 };
