@@ -17,7 +17,7 @@ export class PauseOverlay {
     this.pauseButton = new UiButton(scene, 'PAUSA [ESC]', 14, onToggle).setDepth(DEPTH + 5);
     this.dim = scene.add.rectangle(0, 0, 10, 10, 0x05080c, 0.7).setOrigin(0).setDepth(DEPTH).setVisible(false);
     this.title = scene.add.text(0, 0, 'PAUSA', textStyle(40)).setOrigin(0.5).setDepth(DEPTH + 1).setVisible(false);
-    this.resumeButton = new UiButton(scene, 'SEGUIR [ESC]', 18, onToggle).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
+    this.resumeButton = new UiButton(scene, 'SEGUIR [ESC]', 18, onToggle, [], true).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 
     this.menuButton = new UiButton(scene, 'MENÚ PRINCIPAL', 14, onMenu).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 

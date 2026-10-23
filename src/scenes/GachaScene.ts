@@ -52,13 +52,13 @@ export class GachaScene extends Phaser.Scene {
     this.busy = false;
     this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
     this.shade = this.add.graphics();
-    this.title = this.add.text(0, 0, 'INVOCAR HÉROES', textStyle(28, '#f5c518')).setOrigin(0.5);
-    this.title.setShadow(0, 4, '#7a1d12', 0, true, true);
+    this.title = this.add.text(0, 0, 'INVOCAR HÉROES', textStyle(28, '#ffffff')).setOrigin(0.5);
+    this.title.setShadow(0, 4, '#1593b8', 0, true, true);
     this.goldText = this.add.text(0, 0, '', textStyle(16, GOLD_COLOR)).setOrigin(0.5);
     this.info = this.add.text(0, 0, '', { ...textStyle(11, '#9fb3bf'), align: 'center' }).setOrigin(0.5);
     this.emptyText = this.add.text(0, 0, '', { ...textStyle(14, '#d7e6ef'), align: 'center' }).setOrigin(0.5);
 
-    this.pullButton = new UiButton(this, 'INVOCAR', 16, () => this.doPull(1), ['ENTER', 'SPACE']);
+    this.pullButton = new UiButton(this, 'INVOCAR', 16, () => this.doPull(1), ['ENTER', 'SPACE'], true);
     this.multiButton = new UiButton(this, 'x10', 16, () => this.doPull(GACHA.multiPulls), ['X']);
     this.charactersButton = new UiButton(this, 'PERSONAJES [P]', 16, () => this.scene.start(SCENE_KEYS.characters), ['P']);
     this.backButton = new UiButton(this, 'VOLVER [ESC]', 16, () => this.scene.start(SCENE_KEYS.menu), ['ESC']);

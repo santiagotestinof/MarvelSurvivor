@@ -28,7 +28,7 @@ export function textStyle(size: number, color = '#ffffff'): Phaser.Types.GameObj
   };
 }
 
-/** Panel redondeado semitransparente con borde (fondo de tarjetas y recuadros de texto). */
+/** Panel de vidrio oscuro con borde celeste fino (fondo de tarjetas y recuadros de texto). */
 export function drawPanel(
   g: Phaser.GameObjects.Graphics,
   x: number,
@@ -37,8 +37,10 @@ export function drawPanel(
   h: number,
   options: { fill?: number; alpha?: number; border?: number; borderAlpha?: number; radius?: number; lineWidth?: number } = {},
 ): void {
-  const { fill = 0x0b1410, alpha = 0.82, border = 0xffffff, borderAlpha = 0.18, radius = 8, lineWidth = 2 } = options;
-  g.fillStyle(0x000000, 0.35).fillRoundedRect(x + 3, y + 4, w, h, radius);
+  const { fill = 0x0a1322, alpha = 0.88, border = 0x37d5ff, borderAlpha = 0.35, radius = 10, lineWidth = 2 } = options;
+  g.fillStyle(0x000000, 0.3).fillRoundedRect(x + 2, y + 5, w, h, radius);
   g.fillStyle(fill, alpha).fillRoundedRect(x, y, w, h, radius);
+  // Reflejo suave arriba, como un vidrio.
+  g.fillStyle(0xffffff, 0.04).fillRoundedRect(x + 2, y + 2, w - 4, Math.max(4, h * 0.35), { tl: radius, tr: radius, bl: 0, br: 0 });
   g.lineStyle(lineWidth, border, borderAlpha).strokeRoundedRect(x, y, w, h, radius);
 }

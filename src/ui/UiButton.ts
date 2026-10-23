@@ -1,14 +1,15 @@
 import Phaser from 'phaser';
 import { UI_FONT } from './uiLayout';
 
-const FACE = 0xf5c518;
-const FACE_HOVER = 0xffe272;
-const EDGE = 0x8a6400;
-const OUTLINE = 0x1a1205;
+const ACCENT = 0x37d5ff;
+const ACCENT_HOVER = 0x8defff;
+const BASE = 0x0d1a2b;
+const BASE_HOVER = 0x173250;
+const DISABLED_FACE = 0x151d29;
 
 /**
- * Botón con relieve: cara dorada, borde oscuro y "profundidad" que se hunde al apretarlo.
- * Responde a mouse, toque y teclado (si se pasan `hotkeys`). Se dispara al soltar sobre el botón.
+ * Botón plano de vidrio oscuro con borde celeste; el principal (`primary`) va relleno de celeste.
+ * Se ilumina al pasar el mouse y se hunde un poco al apretarlo. Responde a mouse, toque y teclado (si se pasan `hotkeys`). Se dispara al soltar sobre el botón.
  */
 export class UiButton extends Phaser.GameObjects.Container {
   private readonly bg: Phaser.GameObjects.Graphics;
@@ -18,12 +19,12 @@ export class UiButton extends Phaser.GameObjects.Container {
   private enabled = true;
   private fontPx = 20;
 
-  constructor(scene: Phaser.Scene, text: string, size: number, onClick: () => void, hotkeys: string[] = []) {
+  constructor(scene: Phaser.Scene, text: string, size: number, onClick: () => void, hotkeys: string[] = [], private readonly primary = false) {
     super(scene, 0, 0);
     scene.add.existing(this);
 
     this.bg = scene.add.graphics();
-    this.label = scene.add.text(0, 0, text, { fontFamily: UI_FONT, fontStyle: 'bold', color: '#1a1205' }).setOrigin(0.5);
+    this.label = scene.add.text(0, 0, text, { fontFamily: UI_FONT, fontStyle: 'bold', color: '#e8f6ff' }).setOrigin(0.5);
     this.add([this.bg, this.label]);
 
     this.on(Phaser.Input.Events.POINTER_OVER, () => this.setHover(true));
@@ -85,28 +86,37 @@ export class UiButton extends Phaser.GameObjects.Container {
   }
 
   private redraw(): void {
-    const padX = Math.round(this.fontPx * 1.3);
-    const padY = Math.round(this.fontPx * 0.55);
+    const padX = Math.round(this.fontPx * 1.4);
+    const padY = Math.round(this.fontPx * 0.6);
     const w = Math.round(this.label.width + padX * 2);
     const h = Math.round(this.label.height + padY * 2);
-    const depth = Math.max(3, Math.round(this.fontPx * 0.22));
-    const r = Math.max(4, Math.round(this.fontPx * 0.35));
-    const sink = this.pressed ? depth : 0;
+    const r = Math.max(5, Math.round(h * 0.3));
+    const sink = this.pressed ? Math.max(1, Math.round(this.fontPx * 0.08)) : 0;
     const left = -w / 2;
-    const top = -h / 2 - depth / 2;
+    const top = -h / 2 + sink;
+    const line = Math.max(2, Math.round(this.fontPx * 0.1));
+    const lit = this.hovered && this.enabled;
 
     const g = this.bg;
     g.clear();
-    // Sombra y canto inferior (lo que da el relieve).
-    g.fillStyle(0x000000, 0.35).fillRoundedRect(left + 2, top + depth + 4, w, h, r);
-    g.fillStyle(OUTLINE, 1).fillRoundedRect(left - 2, top + sink - 2, w + 4, h + depth - sink + 4, r + 2);
-    g.fillStyle(EDGE, 1).fillRoundedRect(left, top + sink, w, h + depth - sink, r);
-    // Cara del botón con un brillo arriba.
-    g.fillStyle(this.hovered ? FACE_HOVER : FACE, 1).fillRoundedRect(left, top + sink, w, h, r);
-    g.fillStyle(0xffffff, this.hovered ? 0.35 : 0.25).fillRoundedRect(left + r * 0.6, top + sink + 3, w - r * 1.2, h * 0.28, r * 0.6);
+    g.fillStyle(0x000000, 0.35).fillRoundedRect(left + 1, top + line + 2, w, h, r);
+    if (lit) g.fillStyle(ACCENT, 0.18).fillRoundedRect(left - line * 1.5, top - line * 1.5, w + line * 3, h + line * 3, r + line);
+    if (!this.enabled) {
+      g.fillStyle(DISABLED_FACE, 1).fillRoundedRect(left, top, w, h, r);
+      g.lineStyle(line, 0x4a5667, 0.7).strokeRoundedRect(left, top, w, h, r);
+      this.label.setColor('#7d8a9a');
+    } else if (this.primary) {
+      g.fillStyle(lit ? ACCENT_HOVER : ACCENT, 1).fillRoundedRect(left, top, w, h, r);
+      g.fillStyle(0xffffff, 0.22).fillRoundedRect(left + r * 0.5, top + line, w - r, h * 0.3, r * 0.6);
+      this.label.setColor('#06202b');
+    } else {
+      g.fillStyle(lit ? BASE_HOVER : BASE, 0.96).fillRoundedRect(left, top, w, h, r);
+      g.lineStyle(line, lit ? ACCENT_HOVER : ACCENT, lit ? 1 : 0.65).strokeRoundedRect(left, top, w, h, r);
+      this.label.setColor('#e8f6ff');
+    }
 
-    this.label.setPosition(0, top + sink + h / 2);
-    this.setSize(w + 4, h + depth + 4);
-    if (this.input) (this.input.hitArea as Phaser.Geom.Rectangle).setSize(w + 4, h + depth + 4);
+    this.label.setPosition(0, top + h / 2);
+    this.setSize(w + 4, h + 6);
+    if (this.input) (this.input.hitArea as Phaser.Geom.Rectangle).setSize(w + 4, h + 6);
   }
 }

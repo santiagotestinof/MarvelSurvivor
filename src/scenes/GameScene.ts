@@ -162,6 +162,8 @@ export class GameScene extends Phaser.Scene {
 
     new CameraRig(this, this.player, { width: map.widthPx, height: map.heightPx });
 
+    // Al volver del menú (CONTINUAR) la ronda sigue en pausa hasta que el jugador toque SEGUIR.
+    this.events.on(Phaser.Scenes.Events.WAKE, () => this.scene.pause());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop(SCENE_KEYS.hud));
   }
 

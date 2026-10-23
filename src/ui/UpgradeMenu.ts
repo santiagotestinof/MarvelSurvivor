@@ -49,8 +49,8 @@ export class UpgradeMenu {
 
   constructor(private readonly scene: Phaser.Scene) {
     this.dim = scene.add.rectangle(0, 0, 10, 10, 0x05080c, 0.78).setOrigin(0).setDepth(DEPTH);
-    this.title = scene.add.text(0, 0, '', textStyle(32, '#f5c518')).setOrigin(0.5).setDepth(DEPTH + 1);
-    this.title.setShadow(0, 4, '#7a1d12', 0, true, true);
+    this.title = scene.add.text(0, 0, '', textStyle(32, '#ffffff')).setOrigin(0.5).setDepth(DEPTH + 1);
+    this.title.setShadow(0, 4, '#1593b8', 0, true, true);
     this.subtitle = scene.add.text(0, 0, 'Elegí una mejora', textStyle(16, '#d7e6ef')).setOrigin(0.5).setDepth(DEPTH + 1);
     const touch = scene.sys.game.device.input.touch;
     this.hint = scene.add

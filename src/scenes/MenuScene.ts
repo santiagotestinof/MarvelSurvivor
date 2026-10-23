@@ -3,7 +3,7 @@ import { RARITY_INFO } from '../characters/rarity';
 import { CHARACTER_REGISTRY, STARTER_ID } from '../characters/registry';
 import { TEXTURES } from '../config/assetKeys';
 import { computeZoom } from '../config/cameraConfig';
-import { SCENE_KEYS } from '../config/sceneKeys';
+import { RUN_ACTIVE_KEY, SCENE_KEYS } from '../config/sceneKeys';
 import { ROUND } from '../config/gameplayConfig';
 import { Direction } from '../core/direction';
 import { DRONE, enemyAnimationKey } from '../enemies/enemyKinds';
@@ -32,6 +32,8 @@ export class MenuScene extends Phaser.Scene {
   private heroName!: Phaser.GameObjects.Text;
   private heroStats!: Phaser.GameObjects.Text;
   private playButton!: UiButton;
+  private abandonButton!: UiButton;
+  private runActive = false;
   private shopButton!: UiButton;
   private charactersButton!: UiButton;
   private gachaButton!: UiButton;
@@ -63,8 +65,8 @@ export class MenuScene extends Phaser.Scene {
     }
     this.shade = this.add.graphics();
 
-    this.title = this.add.text(0, 0, 'MARVEL SURVIVORS', textStyle(40, '#f5c518')).setOrigin(0.5);
-    this.title.setShadow(0, 6, '#7a1d12', 0, true, true);
+    this.title = this.add.text(0, 0, 'MARVEL SURVIVORS', textStyle(40, '#ffffff')).setOrigin(0.5);
+    this.title.setShadow(0, 4, '#1593b8', 0, true, true);
     this.tagline = this.add.text(0, 0, 'Resistí la invasión de drones', textStyle(14, '#d7e6ef')).setOrigin(0.5);
 
     this.platform = this.add.graphics();
@@ -82,7 +84,9 @@ export class MenuScene extends Phaser.Scene {
       .text(0, 0, `VIDA ${stats.maxHealth}   VELOCIDAD ${stats.moveSpeed}   DAÑO ${stats.attack.damage}`, textStyle(11, '#ffd27a'))
       .setOrigin(0.5);
 
-    this.playButton = new UiButton(this, 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE']);
+    this.runActive = this.registry.get(RUN_ACTIVE_KEY) === true;
+    this.playButton = new UiButton(this, this.runActive ? 'CONTINUAR' : 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE'], true);
+    this.abandonButton = new UiButton(this, 'ABANDONAR RONDA', 20, () => this.abandonRun()).setVisible(this.runActive).setEnabled(this.runActive);
     this.shopButton = new UiButton(this, 'MEJORAS', 20, () => this.scene.start(SCENE_KEYS.shop), ['M']);
     this.charactersButton = new UiButton(this, 'PERSONAJES', 20, () => this.scene.start(SCENE_KEYS.characters), ['P']);
     this.gachaButton = new UiButton(this, 'INVOCAR', 20, () => this.scene.start(SCENE_KEYS.gacha), ['G']);
@@ -167,7 +171,7 @@ export class MenuScene extends Phaser.Scene {
     const buttonSize = Math.max(16, Math.round(5.5 * ui));
     this.playButton.setFontSize(buttonSize);
     const small = Math.max(12, Math.round(buttonSize * 0.72));
-    const secondary = [this.charactersButton, this.gachaButton, this.shopButton];
+    const secondary = [this.charactersButton, this.gachaButton, this.shopButton, ...(this.runActive ? [this.abandonButton] : [])];
     for (const button of secondary) button.setFontSize(small);
     const gap = Math.round(small * 0.8);
     const rowWidth = secondary.reduce((sum, button) => sum + button.width, 0) + gap * (secondary.length - 1);
@@ -215,6 +219,20 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startGame(): void {
+    if (this.runActive) {
+      // La ronda quedó dormida en pausa: se despierta y el menú se cierra.
+      this.scene.wake(SCENE_KEYS.game);
+      this.scene.wake(SCENE_KEYS.hud);
+      this.scene.stop();
+      return;
+    }
     this.scene.start(SCENE_KEYS.game);
+  }
+
+  private abandonRun(): void {
+    this.registry.set(RUN_ACTIVE_KEY, false);
+    this.scene.stop(SCENE_KEYS.game);
+    this.scene.stop(SCENE_KEYS.hud);
+    this.scene.restart();
   }
 }

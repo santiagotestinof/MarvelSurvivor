@@ -26,8 +26,8 @@ export class CharacterScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#0e1a12');
     this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
     this.shade = this.add.graphics();
-    this.title = this.add.text(0, 0, 'PERSONAJES', textStyle(28, '#f5c518')).setOrigin(0.5);
-    this.title.setShadow(0, 4, '#7a1d12', 0, true, true);
+    this.title = this.add.text(0, 0, 'PERSONAJES', textStyle(28, '#ffffff')).setOrigin(0.5);
+    this.title.setShadow(0, 4, '#1593b8', 0, true, true);
     this.hint = this.add.text(0, 0, 'Tocá un héroe para elegirlo.', textStyle(11, '#9fb3bf')).setOrigin(0.5);
     this.backButton = new UiButton(this, 'VOLVER [ESC]', 16, () => this.scene.start(SCENE_KEYS.menu), ['ESC']);
     this.gachaButton = new UiButton(this, 'INVOCAR [G]', 16, () => this.scene.start(SCENE_KEYS.gacha), ['G']);

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { SCENE_KEYS } from '../config/sceneKeys';
+import { RUN_ACTIVE_KEY, SCENE_KEYS } from '../config/sceneKeys';
 import { VirtualJoystick } from '../input/VirtualJoystick';
 import { PROGRESSION } from '../config/gameplayConfig';
 import { PauseOverlay } from '../ui/PauseOverlay';
@@ -66,7 +66,7 @@ export class HudScene extends Phaser.Scene {
 
     this.upgradeMenu = new UpgradeMenu(this);
     this.result = new ResultOverlay(this, () => this.backToMenu());
-    this.pause = new PauseOverlay(this, () => this.togglePause(), () => this.backToMenu());
+    this.pause = new PauseOverlay(this, () => this.togglePause(), () => this.pauseToMenu());
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
@@ -230,7 +230,17 @@ export class HudScene extends Phaser.Scene {
     if (!enabled) this.joystick.release();
   }
 
+  /** Desde la pausa: el menú se abre y la ronda queda dormida, lista para CONTINUAR. */
+  private pauseToMenu(): void {
+    this.registry.set(RUN_ACTIVE_KEY, true);
+    // Una escena en pausa no se puede dormir: primero se reanuda.
+    this.scene.resume(SCENE_KEYS.game);
+    this.scene.sleep(SCENE_KEYS.game);
+    this.scene.switch(SCENE_KEYS.menu);
+  }
+
   private backToMenu(): void {
+    this.registry.set(RUN_ACTIVE_KEY, false);
     this.scene.stop(SCENE_KEYS.game);
     this.scene.start(SCENE_KEYS.menu);
   }

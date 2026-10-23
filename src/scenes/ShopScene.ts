@@ -48,8 +48,8 @@ export class ShopScene extends Phaser.Scene {
     this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
     this.shade = this.add.graphics();
 
-    this.title = this.add.text(0, 0, 'MEJORAS PERMANENTES', textStyle(28, '#f5c518')).setOrigin(0.5);
-    this.title.setShadow(0, 4, '#7a1d12', 0, true, true);
+    this.title = this.add.text(0, 0, 'MEJORAS PERMANENTES', textStyle(28, '#ffffff')).setOrigin(0.5);
+    this.title.setShadow(0, 4, '#1593b8', 0, true, true);
     this.goldText = this.add.text(0, 0, '', textStyle(16, GOLD_COLOR)).setOrigin(0.5);
     this.hint = this.add
       .text(0, 0, '', {
@@ -178,7 +178,7 @@ export class ShopScene extends Phaser.Scene {
     const panel = this.add.graphics();
     drawPanel(panel, x, y, w, h, {
       radius: 8,
-      border: selected ? 0xffffff : canBuy ? 0xf5c518 : 0xffffff,
+      border: selected ? 0xffffff : canBuy ? 0x37d5ff : 0x8aa0b8,
       borderAlpha: selected ? 0.95 : canBuy ? 0.7 : 0.18,
     });
     // Tocar la tarjeta muestra la descripción (el botón de comprar queda por encima y no la dispara).
