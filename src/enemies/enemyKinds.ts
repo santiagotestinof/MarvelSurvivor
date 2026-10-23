@@ -178,15 +178,17 @@ export const BRUTE: EnemyKind = {
   spawn: { fromProgress: 0.4, weight: 1.5 },
 };
 
+/** Cráneo Rojo (Red Skull): primer jefe grande, 8 direcciones con gabardina de HYDRA y 3 ataques principales. */
 export const OVERLORD: EnemyKind = {
   id: 'overlord',
   texture: 'enemy-overlord',
   path: 'assets/enemies/overlord.png',
   frame: { width: 48, height: 48 },
-  frameCount: 2,
-  frameRate: 3,
-  origin: { x: 0.5, y: 0.9 },
-  body: { width: 26, height: 20, offsetX: 11, offsetY: 22 },
+  frameCount: 4,
+  frameRate: 6,
+  directional: true,
+  origin: { x: 0.5, y: 0.92 },
+  body: { width: 22, height: 18, offsetX: 13, offsetY: 26 },
   health: 440,
   speed: 33,
   contactDamage: 20,

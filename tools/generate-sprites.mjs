@@ -1058,36 +1058,270 @@ function makeDrone() {
   return sheet;
 }
 
-// Jefe genérico: hoja de 2 cuadros de 48x48.
-function makeOverlord() {
-  const sheet = new Canvas(96, 48);
-  const purple = [hex('#7a5cc4'), hex('#4b3378'), hex('#2b1d45')];
-  const steel = [hex('#c9c1e8'), hex('#8b84a8'), hex('#5a5478')];
-  const red = hex('#ff3b3b');
-  for (let f = 0; f < 2; f++) {
-    const cv = new Canvas(48, 48);
-    const bob = f;
-    cv.rect(f ? 13 : 12, 41, 8, f ? 4 : 5, purple[2]); // patas
-    cv.rect(f ? 27 : 28, 41, 8, f ? 5 : 4, purple[2]);
-    cv.shaded(13, 6 - bob, 3, 9, steel[1], steel[0], steel[2]); // cuernos
-    cv.shaded(32, 6 - bob, 3, 9, steel[1], steel[0], steel[2]);
-    cv.shaded(2, 22 - bob, 8, 12, steel[1], steel[0], steel[2]); // cañones
-    cv.shaded(38, 22 - bob, 8, 12, steel[1], steel[0], steel[2]);
-    cv.rect(0, 26 - bob, 3, 4, steel[2]);
-    cv.rect(45, 26 - bob, 3, 4, steel[2]);
-    fillEllipse(cv, 24, 27 - bob, 17, 15, (dx, dy) => {
-      const t = dy + dx * 0.35;
-      return t > 0.5 ? purple[2] : t > -0.25 ? purple[1] : purple[0];
-    });
-    cv.rect(10, 20 - bob, 28, 7, hex('#161027')); // visor
-    cv.rect(13, 22 - bob, 6, 3, red);
-    cv.rect(29, 22 - bob, 6, 3, red);
-    cv.rect(13, 22 - bob, 6, 1, hex('#ff9a9a'));
-    cv.rect(29, 22 - bob, 6, 1, hex('#ff9a9a'));
-    cv.rect(21, 31 - bob, 6, 6, hex('#ff7a3d')); // núcleo
-    cv.rect(23, 33 - bob, 2, 2, hex('#ffd9a8'));
-    sheet.blit(addOutline(cv, hex('#0d0816')), f * 48, 0);
+// Cráneo Rojo / Red Skull (primer jefe grande, OVERLORD): 8 direcciones (orden DIRECTIONS) x 4 cuadros de 48x48.
+// Fiel a la imagen de referencia: cráneo carmesí con pómulos marcados, cuencas oscuras y pupilas claras,
+// gabardina militar oscura de HYDRA con solapas, botones dorados, hebilla plateada, brazalete/emblema rojo de HYDRA,
+// faldón largo acampanado con forro interior bordó y botas negras altas.
+function drawRedSkull(fx, fy, frameIdx) {
+  const cv = new Canvas(48, 48);
+  const outline = hex('#09080a');
+  // Cráneo carmesí
+  const skullLight = hex('#b83838');
+  const skullBase = hex('#8e2222');
+  const skullDark = hex('#5c1313');
+  const skullDeep = hex('#170808');
+  const eyeDot = hex('#f2e6d0');
+  // Gabardina militar oscura de HYDRA
+  const coatLight = hex('#343b32');
+  const coatBase = hex('#222720');
+  const coatDark = hex('#151814');
+  const coatLining = hex('#3d1717');
+  // Detalles del uniforme: rojo HYDRA, botones dorados, hebilla/insignias plateadas y cuero negro
+  const hydraRed = hex('#a82424');
+  const hydraBright = hex('#d63838');
+  const brass = hex('#d4b24c');
+  const silver = hex('#b8c0c8');
+  const silverDark = hex('#6e7680');
+  const leather = hex('#16181c');
+  const leatherLight = hex('#363b44');
+
+  const strides = [-2, -1, 2, 1];
+  const bobs = [0, -1, 0, -1];
+  const stride = strides[frameIdx] ?? 0;
+  const bob = bobs[frameIdx] ?? 0;
+
+  const cx = 24;
+  const straight = fx === 0;
+  const sideOnly = fx !== 0 && fy === 0;
+  const diag = fx !== 0 && fy !== 0;
+  const isFront = fy > 0;
+  const isBack = fy < 0;
+  const ty = 17 + bob;
+
+  // ---------------- 1) BOTAS MILITARES ALTAS Y FALDÓN DE LA GABARDINA (y = 26..44)
+  const coatTop = 26 + bob;
+  if (!sideOnly) {
+    // Forro interior bordó oscuro entre las piernas (debajo del faldón abierto)
+    if (isFront) {
+      cv.rect(cx - 3, coatTop + 2, 6, 9, coatLining);
+    }
+    for (const side of [-1, 1]) {
+      const step = side * stride;
+      const lift = step > 0 ? -1 : 0;
+      const sep = straight ? 5 : 4;
+      const lx = cx + side * sep - 2;
+
+      // Faldón acampanado de la gabardina a cada lado (y = 26..36)
+      const tailW = straight ? 7 : 6;
+      const tailX = side < 0 ? cx - (straight ? 9 : 7) : cx + 2;
+      cv.shaded(tailX, coatTop, tailW, 10, coatBase, coatLight, coatDark);
+      // Borde inferior acampanado hacia afuera como en la imagen
+      cv.rect(tailX + (side < 0 ? -1 : 1), coatTop + 6, tailW, 5, coatBase);
+      cv.rect(tailX + (side < 0 ? -1 : 1), coatTop + 10, tailW, 1, coatDark);
+
+      // Bota negra militar alta (caña + pie)
+      const bootY = 36 + bob + lift;
+      cv.shaded(lx, bootY, 4, 6, leather, leatherLight, outline);
+      cv.rect(lx + 1, bootY + 1, 1, 4, leatherLight); // brillo de la caña
+      const footX = side < 0 ? lx - 2 : lx;
+      cv.rect(footX, bootY + 6, 6, 3, leather);
+      cv.rect(footX + (side < 0 ? 1 : 2), bootY + 6, 3, 1, leatherLight);
+    }
+  } else {
+    // Perfil: faldón de la gabardina y botas en paso de marcha
+    for (const layer of [-1, 1]) {
+      const step = layer * stride * 2;
+      const lift = step * fx > 0 ? -1 : 0;
+      const bx = cx - 2 + step;
+      const bootY = 36 + bob + lift;
+      cv.shaded(bx, bootY, 4, 6, leather, leatherLight, outline);
+      const footX = fx > 0 ? bx : bx - 2;
+      cv.rect(footX, bootY + 6, 6, 3, leather);
+      cv.rect(footX + (fx > 0 ? 3 : 1), bootY + 6, 2, 1, leatherLight);
+    }
+    cv.shaded(cx - 5, coatTop, 10, 11, coatBase, coatLight, coatDark);
+    cv.rect(cx - 6, coatTop + 6, 12, 5, coatBase);
+    cv.rect(cx, coatTop + 2, 1, 9, coatDark);
   }
+
+  // ---------------- 2) TORSO: CHAQUETA DE OFICIAL DE HYDRA, SOLAPAS, BOTONES DORADOS Y CINTURÓN (y = 17..26)
+  if (!sideOnly) {
+    const chestW = straight ? 14 : 12;
+    const tx = cx - Math.floor(chestW / 2);
+    const midX = cx + (diag ? fx * 2 : 0);
+
+    cv.shaded(tx, ty, chestW, 9, coatBase, coatLight, coatDark);
+    // Hombreras / charreteras militares con borde dorado y rojo
+    cv.rect(tx - 1, ty, 4, 2, coatLight);
+    cv.rect(tx + chestW - 3, ty, 4, 2, coatLight);
+    cv.rect(tx, ty, 2, 1, brass);
+    cv.rect(tx + chestW - 2, ty, 2, 1, brass);
+    cv.set(tx - 1, ty + 1, hydraRed);
+    cv.set(tx + chestW, ty + 1, hydraRed);
+
+    // Cinturón de cuero negro con hebilla cuadrada plateada en el centro
+    cv.rect(tx, ty + 8, chestW, 2, leather);
+
+    if (isFront) {
+      cv.rect(midX - 2, ty + 7, 4, 4, silver);
+      cv.rect(midX - 1, ty + 8, 2, 2, silverDark);
+      // Cuello militar, corbata/cuello interior rojo oscuro e insignias plateadas en las solapas
+      cv.rect(midX - 2, ty, 4, 2, skullDark);
+      cv.set(midX - 4, ty + 1, silver);
+      cv.set(midX + 3, ty + 1, silver);
+      // Solapas cruzadas con vivos rojos sutiles
+      cv.rect(midX - 4, ty + 2, 8, 2, coatLight);
+      cv.set(midX - 4, ty + 3, hydraRed);
+      cv.set(midX + 3, ty + 3, hydraRed);
+      // Correa diagonal de cuero y doble hilera de botones dorados (idénticos a la imagen)
+      cv.set(midX - 4, ty + 2, leatherLight);
+      cv.set(midX - 3, ty + 4, leatherLight);
+      cv.set(midX - 2, ty + 6, leatherLight);
+      cv.set(midX - 2, ty + 5, brass);
+      cv.set(midX + 1, ty + 5, brass);
+      cv.set(midX - 2, ty + 7, brass);
+      cv.set(midX + 1, ty + 7, brass);
+      // Cartuchera/funda en la cadera izquierda del sprite
+      cv.rect(tx, ty + 9, 3, 4, leather);
+    } else if (isBack) {
+      const spineX = cx - (diag ? fx : 0);
+      cv.rect(spineX, ty + 1, 1, 7, coatDark);
+    }
+  } else {
+    const tx = cx - 5;
+    cv.shaded(tx, ty, 10, 9, coatBase, coatLight, coatDark);
+    cv.rect(tx + 3, ty, 4, 1, brass);
+    // Cinturón en perfil
+    cv.rect(tx, ty + 8, 10, 2, leather);
+    cv.rect(fx > 0 ? tx + 8 : tx, ty + 7, 2, 4, silver);
+  }
+
+  // ---------------- 3) BRAZOS CON PARCHE Y BRAZALETE ROJO DE HYDRA Y GUANTES NEGROS
+  if (sideOnly) {
+    const armX = cx - 2;
+    cv.shaded(armX, ty + 1, 4, 7, coatBase, coatLight, coatDark);
+    // Brazalete/emblema rojo de HYDRA en la manga
+    cv.rect(armX, ty + 3, 4, 2, hydraRed);
+    cv.set(armX + 1, ty + 3, hydraBright);
+    // Antebrazo levantado hacia fx con puño enguantado (como en la pose de la foto)
+    const foreX = armX + fx * 3;
+    cv.shaded(foreX, ty + 3, 4, 4, coatBase, coatLight, coatDark);
+    cv.rect(foreX, ty + 6, 4, 1, hydraRed);
+    const gloveX = foreX + fx * 2;
+    cv.shaded(gloveX, ty + 1, 4, 4, leather, leatherLight, outline);
+  } else {
+    for (const side of [-1, 1]) {
+      const swing = Math.round((side * stride) / 2);
+      const shX = straight
+        ? (side < 0 ? cx - 11 : cx + 7)
+        : (side < 0 ? cx - 9 : cx + 5);
+      const shY = ty + 1 + (swing > 0 ? 1 : 0);
+
+      // El brazo derecho de la imagen (side > 0 en frente) tiene el puño enguantado levantado y brazalete rojo;
+      // el otro brazo (side < 0 en frente) apoya en la cintura con el parche redondo de HYDRA en el hombro.
+      const raised = (isFront && side > 0) || (isBack && side < 0);
+      if (raised) {
+        cv.shaded(shX, shY, 4, 6, coatBase, coatLight, coatDark);
+        cv.rect(shX, shY + 3, 4, 2, hydraRed); // brazalete rojo de HYDRA
+        cv.set(shX + 1, shY + 5, hydraRed); // vivo rojo del puño
+        const fistX = shX + side * 3;
+        const fistY = shY - 1;
+        cv.shaded(fistX, fistY + 2, 4, 4, coatBase, coatLight, coatDark);
+        // Guante de cuero negro cerrado en puño amenazante (idéntico a la referencia)
+        cv.shaded(fistX, fistY - 1, 4, 4, leather, leatherLight, outline);
+      } else {
+        cv.shaded(shX, shY, 4, 7, coatBase, coatLight, coatDark);
+        // Parche redondo rojo de HYDRA en la manga superior
+        cv.rect(shX + 1, shY + 1, 2, 3, hydraRed);
+        cv.set(shX + 1, shY + 2, hydraBright);
+        // Vivo rojo en la bocamanga y guante negro en la cintura
+        cv.rect(shX, shY + 6, 4, 1, hydraRed);
+        cv.shaded(shX + (side < 0 ? 2 : -2), shY + 6, 4, 3, leather, leatherLight, outline);
+      }
+    }
+  }
+
+  // ---------------- 4) CABEZA: EL CRÁNEO ROJO (y = 3..16)
+  const hy = 3 + bob;
+  if (straight) {
+    // Bóveda craneal carmesí amplia y redondeada (12x8 arriba, pómulos salientes en y+6..8, mandíbula cuadrada 8x4 abajo)
+    cv.shaded(cx - 5, hy, 10, 2, skullBase, skullLight, skullDark);
+    cv.shaded(cx - 6, hy + 2, 12, 7, skullBase, skullLight, skullDark);
+    cv.shaded(cx - 4, hy + 9, 8, 5, skullBase, skullLight, skullDark);
+
+    if (isFront) {
+      // Brillo frontal del cráneo y arcos superciliares fruncidos
+      cv.rect(cx - 4, hy + 1, 5, 2, skullLight);
+      cv.rect(cx - 4, hy + 4, 3, 1, skullLight);
+      cv.rect(cx + 1, hy + 4, 3, 1, skullLight);
+      cv.set(cx - 1, hy + 4, skullDark);
+      cv.set(cx, hy + 4, skullDark);
+
+      // Cuencas oculares negras profundas con pupilas claras penetrantes (como en la imagen)
+      cv.rect(cx - 5, hy + 5, 4, 2, skullDeep);
+      cv.rect(cx + 1, hy + 5, 4, 2, skullDeep);
+      cv.set(cx - 3, hy + 6, eyeDot);
+      cv.set(cx + 2, hy + 6, eyeDot);
+
+      // Pómulos salientes a los lados y fosa nasal triangular negra
+      cv.rect(cx - 6, hy + 7, 2, 2, skullLight);
+      cv.rect(cx + 4, hy + 7, 2, 2, skullLight);
+      cv.rect(cx - 1, hy + 7, 2, 2, skullDeep);
+
+      // Surcos de las mejillas y boca esquelética severa
+      cv.set(cx - 4, hy + 9, skullDeep);
+      cv.set(cx + 3, hy + 9, skullDeep);
+      cv.rect(cx - 3, hy + 10, 6, 1, skullDeep);
+      cv.rect(cx - 2, hy + 11, 4, 2, skullLight); // mentón
+    } else {
+      // Cráneo visto de atrás con suturas óseas oscuras
+      cv.rect(cx - 3, hy + 1, 4, 3, skullLight);
+      cv.rect(cx, hy + 2, 1, 8, skullDark);
+      cv.rect(cx - 4, hy + 8, 8, 1, skullDark);
+    }
+  } else if (diag) {
+    // Cráneo en 3/4 (45°)
+    const hx = cx - 5;
+    cv.shaded(hx + 1, hy, 9, 2, skullBase, skullLight, skullDark);
+    cv.shaded(hx, hy + 2, 11, 7, skullBase, skullLight, skullDark);
+    cv.shaded(hx + 2, hy + 9, 7, 5, skullBase, skullLight, skullDark);
+
+    if (isFront) {
+      const faceX = fx > 0 ? cx - 2 : cx - 5;
+      cv.rect(faceX, hy + 5, 3, 2, skullDeep);
+      cv.rect(faceX + 4, hy + 5, 3, 2, skullDeep);
+      cv.set(faceX + 1, hy + 6, eyeDot);
+      cv.set(faceX + 5, hy + 6, eyeDot);
+      cv.rect(faceX + 3, hy + 7, 2, 2, skullDeep); // fosa nasal
+      cv.rect(faceX + 1, hy + 10, 5, 1, skullDeep); // boca
+    } else {
+      cv.rect(cx - fx, hy + 2, 1, 8, skullDark);
+    }
+  } else {
+    // Cráneo en perfil puro
+    const hx = cx - 5;
+    cv.shaded(hx + 1, hy, 8, 2, skullBase, skullLight, skullDark);
+    cv.shaded(hx, hy + 2, 10, 7, skullBase, skullLight, skullDark);
+    cv.shaded(hx + 2, hy + 9, 7, 5, skullBase, skullLight, skullDark);
+    const eyeX = fx > 0 ? hx + 7 : hx + 1;
+    cv.rect(eyeX, hy + 5, 3, 2, skullDeep);
+    cv.set(eyeX + 1, hy + 6, eyeDot);
+    const noseX = fx > 0 ? hx + 9 : hx;
+    cv.set(noseX, hy + 7, skullDeep);
+    cv.rect(fx > 0 ? hx + 6 : hx + 1, hy + 10, 4, 1, skullDeep);
+  }
+
+  return addOutline(cv, outline);
+}
+
+function makeOverlord() {
+  const framesPerDir = 4;
+  const sheet = new Canvas(48 * framesPerDir, 48 * DIRECTIONS.length);
+  DIRECTIONS.forEach(([fx, fy], row) => {
+    for (let col = 0; col < framesPerDir; col++) {
+      sheet.blit(drawRedSkull(fx, fy, col), col * 48, row * 48);
+    }
+  });
   return sheet;
 }
 

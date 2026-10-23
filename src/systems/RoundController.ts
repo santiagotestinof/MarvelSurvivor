@@ -47,6 +47,10 @@ export class RoundController {
     return this.phase === 'won' || this.phase === 'lost';
   }
 
+  get currentBoss(): Enemy | null {
+    return this.boss;
+  }
+
   update(now: number): void {
     this.lastNow = now;
     if (this.ended) return;

@@ -16,6 +16,7 @@ import { PlayerStats } from '../progression/PlayerStats';
 import { ProgressionSystem, type ProgressState } from '../progression/ProgressionSystem';
 import { passiveTypesTaken, passivesTaken, pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
+import { BossAttackSystem } from '../systems/BossAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import { MissileWeapon } from '../systems/MissileWeapon';
@@ -42,6 +43,7 @@ export class GameScene extends Phaser.Scene {
   private attack!: AutoAttackSystem;
   private missiles!: MissileWeapon;
   private rangedAttacks!: RangedAttackSystem;
+  private bossAttacks!: BossAttackSystem;
   private waves!: WaveSystem;
   private round!: RoundController;
   private frozen = false;
@@ -127,6 +129,12 @@ export class GameScene extends Phaser.Scene {
       this.dropLoot(e);
       this.round.onEnemyKilled(e);
     }, this.stats);
+    this.bossAttacks = new BossAttackSystem(
+      this,
+      this.player,
+      this.waves,
+      { width: map.widthPx, height: map.heightPx },
+    );
     this.round = new RoundController(0, this.player, this.waves, this.enemies);
 
     // Enemigos que tocan al jugador le hacen daño (con invulnerabilidad corta).
@@ -351,6 +359,7 @@ export class GameScene extends Phaser.Scene {
     this.tryRevive();
     this.rangedAttacks.update(now, delta, activeEnemies);
     this.round.update(now);
+    this.bossAttacks.update(now, delta, this.round.currentBoss);
 
 
     if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();

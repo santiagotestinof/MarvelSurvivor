@@ -89,6 +89,20 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.knockUntil = this.scene.time.now + ms;
   }
 
+  /** Embestida hacia (dx, dy) a velocidad `speed` durante `ms` mirando en esa dirección. */
+  lunge(dx: number, dy: number, speed: number, ms: number): void {
+    const length = Math.hypot(dx, dy) || 1;
+    this.aimLockUntil = 0;
+    if (this.anims.isPaused) this.anims.resume();
+    if (this.kind.directional) {
+      this.facingAngle = Math.atan2(dy, dx);
+      this.facingReady = true;
+      this.updateFacing(dx, dy);
+    }
+    this.setVelocity((dx / length) * speed, (dy / length) * speed);
+    this.knockUntil = this.scene.time.now + ms;
+  }
+
   get health(): number {
     return this.currentHealth;
   }

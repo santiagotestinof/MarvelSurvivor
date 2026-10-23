@@ -52,7 +52,7 @@ export class HudScene extends Phaser.Scene {
     this.healthText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
     this.timerText = this.add.text(0, 0, '', textStyle(24)).setOrigin(0.5, 0).setDepth(2);
     this.killsText = this.add.text(0, 0, '', textStyle(14)).setOrigin(1, 0).setDepth(2);
-    this.bossText = this.add.text(0, 0, 'JEFE', textStyle(12, '#ffd9d9')).setOrigin(0.5).setDepth(2).setVisible(false);
+    this.bossText = this.add.text(0, 0, 'CRÁNEO ROJO', textStyle(12, '#ffd9d9')).setOrigin(0.5).setDepth(2).setVisible(false);
 
     this.levelText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
     this.goldText = this.add.text(0, 0, '', textStyle(12, '#ffd24a')).setOrigin(0, 0).setDepth(2);
@@ -164,7 +164,7 @@ export class HudScene extends Phaser.Scene {
       const bossY = this.margin + this.timerText.height + 6;
       const bossRatio = Phaser.Math.Clamp(state.bossHealth / state.bossMaxHealth, 0, 1);
       g.fillStyle(0x000000, 0.6).fillRect(bossX - 2, bossY - 2, bossW + 4, barH + 4);
-      g.fillStyle(0xb44cff, 1).fillRect(bossX, bossY, bossW * bossRatio, barH);
+      g.fillStyle(0xc82828, 1).fillRect(bossX, bossY, bossW * bossRatio, barH);
       this.bossText.setPosition(width / 2, bossY + barH / 2);
     }
   }
