@@ -7,6 +7,7 @@ import type { Enemy } from '../entities/Enemy';
 import { Projectile } from '../entities/Projectile';
 import { activeEnemies, damageArea, drawThunder } from './areaDamage';
 import type { PlayerStats } from '../progression/PlayerStats';
+import { AuraVisual } from './AuraVisual';
 
 /** Punto al que se apunta un disparo. */
 interface AimPoint {
@@ -21,6 +22,8 @@ interface AimPoint {
 export class AutoAttackSystem {
   readonly projectiles: Phaser.Physics.Arcade.Group;
   private lastShotAt = -Infinity;
+  private lastUpdateAt = 0;
+  private readonly aura: AuraVisual | null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -31,15 +34,39 @@ export class AutoAttackSystem {
     private readonly props: () => Iterable<BreakableProp>,
   ) {
     this.projectiles = scene.physics.add.group({ allowGravity: false });
+    this.aura = attack.kind === 'aura' ? new AuraVisual(scene, owner) : null;
+    if (this.aura) scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.aura?.destroy());
+  }
+
+  /** Radio actual del aura: crece con Área y Alcance. */
+  private auraRadius(): number {
+    return (this.attack.radius ?? 60) * this.stats.areaMult * this.stats.rangeMult;
   }
 
   update(now: number): void {
     this.removeExpiredProjectiles();
+    const delta = Math.max(0, now - this.lastUpdateAt);
+    this.lastUpdateAt = now;
+    this.aura?.update(delta, this.auraRadius());
     if (now - this.lastShotAt < this.attack.cooldownMs * this.stats.cooldownMult) return;
 
     const fired =
-      this.attack.kind === 'thunder' ? this.strike() : this.attack.kind === 'fan' ? this.swipe() : this.fireNearest();
+      this.attack.kind === 'aura'
+        ? this.pulseAura()
+        : this.attack.kind === 'thunder'
+          ? this.strike()
+          : this.attack.kind === 'fan'
+            ? this.swipe()
+            : this.fireNearest();
     if (fired) this.lastShotAt = now;
+  }
+
+  /** Doctor Strange: daña a todo lo que esté dentro del círculo de runas. */
+  private pulseAura(): boolean {
+    const { damage } = this.rollDamage();
+    const hits = damageArea(this.enemies, this.props(), this.owner.x, this.owner.y - 4, this.auraRadius(), damage);
+    if (hits > 0) this.aura?.pulse();
+    return true;
   }
 
   private fireNearest(): boolean {

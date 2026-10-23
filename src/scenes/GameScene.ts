@@ -22,6 +22,7 @@ import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import { MissileWeapon } from '../systems/MissileWeapon';
 import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
+import { TIME_STOP, TimeStopUltimate } from '../systems/TimeStopUltimate';
 import { WaveSystem } from '../systems/WaveSystem';
 import { damageArea } from '../systems/areaDamage';
 import { TestMap } from '../world/TestMap';
@@ -66,6 +67,7 @@ export class GameScene extends Phaser.Scene {
   private clock = 0;
   private ultimateKey: Phaser.Input.Keyboard.Key | null = null;
   private ironManFlyingUntil = 0;
+  private timeStop: TimeStopUltimate | null = null;
   private nextUltimateShotAt = 0;
   private ultimateReadyAt = 0;
   private ironManFlightEffect: Phaser.GameObjects.Container | null = null;
@@ -85,6 +87,7 @@ export class GameScene extends Phaser.Scene {
     const testMode = new URLSearchParams(window.location.search).get('test') === '1';
     this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
     this.ironManFlyingUntil = 0;
+    this.timeStop = null;
     this.nextUltimateShotAt = 0;
     this.ultimateReadyAt = 0;
     this.ironManFlightEffect?.destroy();
@@ -104,6 +107,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
     this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
+    if (this.player.definition.id === 'strange') this.timeStop = new TimeStopUltimate(this, this.player);
     this.playerObstacleCollider = this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.ironManBaseMoveSpeed = this.player.moveSpeed;
@@ -164,7 +168,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.enemies, (_p, e) => {
       const enemy = e as Enemy;
       if (this.clock < this.ironManFlyingUntil) return;
-      if (!enemy.dying && !enemy.harmless) this.player.takeDamage(enemy.contactDamage);
+      if (!enemy.dying && !enemy.harmless && !enemy.frozen) this.player.takeDamage(enemy.contactDamage);
     });
     // Proyectiles que tocan enemigos.
     this.physics.add.overlap(this.attack.projectiles, this.enemies, (p, e) => {
@@ -203,18 +207,36 @@ export class GameScene extends Phaser.Scene {
     return this.player?.definition.id === 'ironman';
   }
 
+  /** ¿El héroe elegido tiene ultimate? (Iron Man: vuelo · Doctor Strange: tiempo detenido). */
+  hasUltimate(): boolean {
+    return this.isIronManSelected() || this.timeStop !== null;
+  }
+
   /** Estado de la ultimate para el control del HUD. */
-  getUltimateState(): { active: boolean; remainingMs: number; flightRemainingMs: number } {
-    const active = this.player?.definition.id === 'ironman' && this.clock < this.ironManFlyingUntil;
+  getUltimateState(): { active: boolean; remainingMs: number; activeRemainingMs: number; activeLabel: string } {
+    const stopActive = this.timeStop?.isActive(this.clock) ?? false;
+    const active = stopActive || (this.isIronManSelected() && this.clock < this.ironManFlyingUntil);
+    const activeRemainingMs = stopActive
+      ? (this.timeStop?.remainingMs(this.clock) ?? 0)
+      : active
+        ? Math.max(0, this.ironManFlyingUntil - this.clock)
+        : 0;
     return {
       active,
       remainingMs: active ? 0 : Math.max(0, this.ultimateReadyAt - this.clock),
-      flightRemainingMs: active ? Math.max(0, this.ironManFlyingUntil - this.clock) : 0,
+      activeRemainingMs,
+      activeLabel: stopActive ? 'TIEMPO' : 'VUELO',
     };
   }
 
   /** Activa el vuelo de Iron Man con E o desde el botón táctil del HUD. */
   activateUltimate(): void {
+    if (this.timeStop) {
+      if (this.round.ended || this.frozen || this.player.isDead) return;
+      if (this.timeStop.isActive(this.clock) || this.clock < this.ultimateReadyAt) return;
+      this.timeStop.start(this.clock);
+      return;
+    }
     if (this.player.definition.id !== 'ironman' || this.round.ended || this.frozen || this.player.isDead) return;
     if (this.clock < this.ironManFlyingUntil || this.clock < this.ultimateReadyAt) return;
     this.ironManFlyingUntil = this.clock + 5000;
@@ -249,6 +271,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateUltimate(now: number): void {
+    if (this.timeStop) {
+      if (this.timeStop.update(now, this.enemies.getChildren() as Enemy[])) this.ultimateReadyAt = now + TIME_STOP.cooldownMs;
+      return;
+    }
     if (this.player.definition.id !== 'ironman' || now >= this.ironManFlyingUntil) {
       if (this.ironManFlyingUntil > 0 && now >= this.ironManFlyingUntil) {
         this.ironManFlyingUntil = 0;
@@ -523,6 +549,7 @@ export class GameScene extends Phaser.Scene {
     if (this.round.ended) {
       if (!this.frozen) {
         this.frozen = true;
+        this.timeStop?.cancel(this.enemies.getChildren() as Enemy[]);
         this.ironManFlightEffect?.destroy();
         this.ironManFlightEffect = null;
         this.ironManFlyingUntil = 0;
@@ -583,9 +610,10 @@ export class GameScene extends Phaser.Scene {
       enemy.chase(this.player.x, this.player.y - 6, separationX, separationY);
     }
     this.tryRevive();
-    this.rangedAttacks.update(now, delta, activeEnemies);
+    const timeStopped = this.timeStop?.isActive(now) ?? false;
+    if (!timeStopped) this.rangedAttacks.update(now, delta, activeEnemies);
     this.round.update(now);
-    this.bossAttacks.update(now, delta, this.round.currentBoss);
+    if (!timeStopped) this.bossAttacks.update(now, delta, this.round.currentBoss);
 
 
     if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();

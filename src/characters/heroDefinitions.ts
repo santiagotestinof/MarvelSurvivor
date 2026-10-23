@@ -22,6 +22,7 @@ export const CAPITAN_ID = 'capitan';
 export const SPIDERMAN_ID = 'spiderman';
 export const THOR_ID = 'thor';
 export const HULK_ID = 'hulk';
+export const STRANGE_ID = 'strange';
 
 /** Capitán América: el escudo sale, atraviesa a todos y vuelve a su mano. */
 export const capitanDefinition: CharacterDefinition = {
@@ -125,4 +126,34 @@ export const hulkDefinition: CharacterDefinition = {
     },
   },
   sheets: sheets(HULK_ID),
+};
+
+/**
+ * Doctor Strange: flota (como Iron Man) y siempre se ve de frente, sin dibujo de espalda.
+ * Su ataque es un aura de runas que daña seguido a todo lo que se acerca; con Área / Alcance crece.
+ * Ulti: "Tiempo detenido" (ver `TimeStopUltimate`).
+ */
+export const strangeDefinition: CharacterDefinition = {
+  id: STRANGE_ID,
+  displayName: 'Doctor Strange',
+  rarity: 'epic',
+  weaponText: 'Aura de runas: daña seguido a todo lo que se acerca. Ulti: tiempo detenido',
+  frame: FRAME,
+  origin: ORIGIN,
+  body: BODY,
+  stats: {
+    moveSpeed: 80,
+    maxHealth: 95,
+    attack: {
+      kind: 'aura',
+      cooldownMs: 500,
+      damage: 8,
+      projectileTexture: TEXTURES.repulsor,
+      projectileSpeed: 0,
+      aimRange: 0,
+      maxDistance: 0,
+      radius: 64,
+    },
+  },
+  sheets: sheets(STRANGE_ID),
 };

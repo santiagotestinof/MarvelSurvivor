@@ -138,7 +138,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     category: 'attack',
     describe: ({ stats, basicKind }) =>
       `${basicKind === 'fan' ? '+1 zarpazo en otra dirección' : basicKind === 'thunder' ? '+1 rayo por ataque' : '+1 disparo en abanico'} (${stats.projectileCount} → ${stats.projectileCount + 1})`,
-    isAvailable: ({ stats }) => stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
+    isAvailable: ({ stats, basicKind }) => basicKind !== 'aura' && stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
     apply: ({ stats }) => stats.projectileCount++,
   },
   {

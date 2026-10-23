@@ -7,6 +7,7 @@
 // Orden de filas (debe coincidir con src/core/direction.ts):
 //   0 abajo, 1 abajo-izq, 2 izquierda, 3 arriba-izq, 4 arriba, 5 arriba-der, 6 derecha, 7 abajo-der
 
+import { STRANGE_REF } from './hero-trace-strange.mjs';
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -616,6 +617,128 @@ function buildDrawnSheet(id, frames) {
 }
 const DRAWN_IDLE = [0, -1, -1, 0].map((bob) => ({ bob }));
 const DRAWN_WALK = [0, 2, 2, 0, -2, -2].map((stride, i) => ({ stride, bob: i % 3 === 0 ? -1 : 0 }));
+
+
+// ---------------------------------------------------------------- Doctor Strange (flota, siempre de frente) y su aura
+/** Cuadro de 48×48: flota con los pies en la fila 37 (el suelo está en 41). Sin dibujo de espalda: las 8 filas son iguales. */
+function strangeFrame(ref, { bob = 0, sway = 0 }) {
+  const rows = ref.map((row) => row.split(' '));
+  const w = rows[0].length;
+  const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
+  const ox = Math.round((DRAWN_FRAME - w) / 2) + sway;
+  const oy = 38 - rows.length + bob;
+  rows.forEach((row, y) => row.forEach((c, x) => c !== '-' && cv.set(ox + x, oy + y, hex(`#${c}`))));
+  return cv;
+}
+function buildStrangeSheet(frames) {
+  const sheet = new Canvas(frames.length * DRAWN_FRAME, DIRECTIONS.length * DRAWN_FRAME);
+  DIRECTIONS.forEach((_, row) =>
+    frames.forEach((f, col) => sheet.blit(strangeFrame(STRANGE_REF, f), col * DRAWN_FRAME, row * DRAWN_FRAME)),
+  );
+  return sheet;
+}
+const STRANGE_IDLE = [0, 1, 1, 0].map((bob) => ({ bob }));
+const STRANGE_WALK = [0, 1, 1, 0, 1, 1].map((bob, i) => ({ bob, sway: [0, 1, 1, 0, -1, -1][i] }));
+
+
+/** Los 6 brazos de atrás (solo se ven en la ulti): tres por lado, con manga azul y mano. Se dibujan en código para que se lean bien a este tamaño. */
+function makeStrangeArms() {
+  const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
+  const sleeve = hex('#2c6a95');
+  const sleeveDark = hex('#173a57');
+  const skin = hex('#f0c29a');
+  const skinDark = hex('#b9835f');
+  const outline = hex('#101018');
+  const shoulderY = 19;
+  for (const side of [-1, 1]) {
+    for (const [deg, len] of [[14, 16], [42, 16], [70, 14]]) {
+      const a = (deg * Math.PI) / 180;
+      const sx = 24 + side * 3;
+      const ex = sx + side * Math.cos(a) * len;
+      const ey = shoulderY - Math.sin(a) * len;
+      drawLine(cv, sx, shoulderY + 1, ex, ey + 1, outline);
+      drawLine(cv, sx, shoulderY - 1, ex, ey - 1, outline);
+      drawLine(cv, sx, shoulderY, ex, ey, sleeve);
+      drawLine(cv, sx, shoulderY + 1, ex, ey + 1, sleeveDark);
+      // mano con dedos abiertos
+      const hx = Math.round(ex);
+      const hy = Math.round(ey);
+      cv.rect(hx - 2, hy - 2, 5, 5, outline);
+      cv.rect(hx - 1, hy - 1, 3, 3, skin);
+      cv.set(hx + 1, hy + 1, skinDark);
+      const dx = Math.round(Math.cos(a) * side * 3);
+      const dy = Math.round(-Math.sin(a) * 3);
+      cv.set(hx + dx, hy + dy, outline);
+      cv.set(hx + dx - dy * 0, hy + dy, outline);
+      cv.set(hx + Math.round(dx * 0.6), hy + Math.round(dy * 0.6), skin);
+    }
+  }
+  return cv;
+}
+
+function drawLine(cv, x0, y0, x1, y1, c) {
+  const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+  for (let t = 0; t <= steps; t++) cv.set(x0 + ((x1 - x0) * t) / steps, y0 + ((y1 - y0) * t) / steps, c);
+}
+function drawRing(cv, cx, cy, r, c, dash = 0) {
+  const n = Math.ceil(r * 8);
+  for (let i = 0; i < n; i++) {
+    if (dash && Math.floor((i / n) * dash * 2) % 2) continue;
+    const a = (i / n) * Math.PI * 2;
+    cv.set(cx + Math.cos(a) * r, cy + Math.sin(a) * r, c);
+  }
+}
+const AURA_GOLD = hex('#ffc24a');
+const AURA_LIGHT = hex('#fff0b8');
+const AURA_DIM = hex('#d9741a');
+/** Anillo exterior: dos círculos con runas pseudo-mágicas entre medio (como el hechizo de la película). */
+function makeAuraOuter() {
+  const S = 128;
+  const cv = new Canvas(S, S);
+  const c = S / 2 - 0.5;
+  drawRing(cv, c, c, 62, AURA_GOLD);
+  drawRing(cv, c, c, 61, AURA_DIM);
+  drawRing(cv, c, c, 49, AURA_GOLD);
+  drawRing(cv, c, c, 48, AURA_DIM);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  const runes = 16;
+  for (let k = 0; k < runes; k++) {
+    const a = (k / runes) * Math.PI * 2;
+    const ux = Math.cos(a);
+    const uy = Math.sin(a);
+    const tx = -uy;
+    const ty = ux;
+    const rc = 55.5;
+    const pts = [];
+    const n = 3 + Math.floor(rnd() * 2);
+    for (let i = 0; i < n; i++) pts.push([(rnd() - 0.5) * 7, (rnd() - 0.5) * 8]);
+    const at = ([lx, ly]) => [c + ux * (rc + ly) + tx * lx, c + uy * (rc + ly) + ty * lx];
+    drawLine(cv, ...at([0, -4]), ...at([0, 4]), AURA_GOLD);
+    for (let i = 0; i < pts.length - 1; i++) drawLine(cv, ...at(pts[i]), ...at(pts[i + 1]), AURA_LIGHT);
+    const b = (k + 0.5) / runes * Math.PI * 2;
+    cv.rect(Math.round(c + Math.cos(b) * 55.5), Math.round(c + Math.sin(b) * 55.5), 1, 1, AURA_LIGHT);
+  }
+  return cv;
+}
+/** Mandala interior: estrella de seis puntas dentro de un círculo con rayos finos. */
+function makeAuraInner() {
+  const S = 128;
+  const cv = new Canvas(S, S);
+  const c = S / 2 - 0.5;
+  drawRing(cv, c, c, 40, AURA_GOLD);
+  drawRing(cv, c, c, 28, AURA_DIM, 24);
+  for (const rot of [-Math.PI / 2, -Math.PI / 2 + Math.PI / 3]) {
+    const p = [0, 1, 2].map((i) => [c + Math.cos(rot + (i * Math.PI * 2) / 3) * 40, c + Math.sin(rot + (i * Math.PI * 2) / 3) * 40]);
+    for (let i = 0; i < 3; i++) drawLine(cv, ...p[i], ...p[(i + 1) % 3], AURA_GOLD);
+  }
+  for (let k = 0; k < 12; k++) {
+    const a = (k / 12) * Math.PI * 2;
+    drawLine(cv, c + Math.cos(a) * 14, c + Math.sin(a) * 14, c + Math.cos(a) * 24, c + Math.sin(a) * 24, AURA_DIM);
+  }
+  drawRing(cv, c, c, 12, AURA_LIGHT);
+  return cv;
+}
 
 // ---------------------------------------------------------------- terreno y objetos
 
@@ -2368,6 +2491,16 @@ save(makeBolt(), 'projectiles/repulsor.png');
 save(makeShield(), 'projectiles/shield.png');
 save(makeWeb(), 'projectiles/web.png');
 save(makeThunder(), 'effects/thunder.png');
+save(makeAuraOuter(), 'effects/aura-outer.png');
+save(makeAuraInner(), 'effects/aura-inner.png');
+{
+  const strangeIdle = buildStrangeSheet(STRANGE_IDLE);
+  const strangeWalk = buildStrangeSheet(STRANGE_WALK);
+  save(strangeIdle, 'characters/strange/strange-idle.png');
+  save(strangeWalk, 'characters/strange/strange-walk.png');
+  heroSheets.strange = { idle: strangeIdle, walk: strangeWalk };
+  save(makeStrangeArms(), 'characters/strange/strange-arms.png');
+}
 const missile = makeMissile();
 save(missile, 'projectiles/missile.png');
 const fire = makeFire();

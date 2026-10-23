@@ -95,12 +95,12 @@ export class HudScene extends Phaser.Scene {
 
     const state = this.gameScene.getHudState();
     const ultimate = this.gameScene.getUltimateState();
-    const playerIsIronMan = this.gameScene.isIronManSelected();
-    this.ultimateButton.setVisible(playerIsIronMan);
-    this.ultimateText.setVisible(playerIsIronMan);
-    if (playerIsIronMan) {
+    const playerHasUltimate = this.gameScene.hasUltimate();
+    this.ultimateButton.setVisible(playerHasUltimate);
+    this.ultimateText.setVisible(playerHasUltimate);
+    if (playerHasUltimate) {
       const label = ultimate.active
-        ? `VUELO ${Math.ceil(ultimate.flightRemainingMs / 1000)}s`
+        ? `${ultimate.activeLabel} ${Math.ceil(ultimate.activeRemainingMs / 1000)}s`
         : ultimate.remainingMs > 0
           ? `ULT ${Math.ceil(ultimate.remainingMs / 1000)}s`
           : 'ULT E';

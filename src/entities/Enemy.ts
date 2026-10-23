@@ -22,8 +22,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   dying = false;
   /** Enemigo sin colmillos: está en el mapa pero no hace daño al tocar. */
   harmless = false;
+  /** Tiempo detenido: no se mueve y el daño que recibe se acumula hasta que se descongela. */
+  frozen = false;
 
   private currentHealth: number;
+  private frozenDamage = 0;
   private slowUntil = 0;
   private slowFactor = 1;
   private knockUntil = 0;
@@ -104,11 +107,38 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.knockUntil = this.scene.time.now + ms;
   }
 
+  /** Lo congela en el tiempo (ulti de Doctor Strange). */
+  freeze(): void {
+    if (this.frozen || this.dying) return;
+    this.frozen = true;
+    this.frozenDamage = 0;
+    this.setVelocity(0, 0);
+    if (this.anims.isPlaying) this.anims.pause();
+    this.setTint(0x8fe6ff);
+  }
+
+  /** Lo descongela y le aplica de golpe todo el daño acumulado. */
+  thaw(): void {
+    if (!this.frozen) return;
+    this.frozen = false;
+    if (this.anims.isPaused) this.anims.resume();
+    if (this.harmless) this.setTint(0xb7c4d6);
+    else this.clearTint();
+    const damage = this.frozenDamage;
+    this.frozenDamage = 0;
+    if (damage > 0) this.takeDamage(damage);
+  }
+
   get health(): number {
     return this.currentHealth;
   }
 
   chase(targetX: number, targetY: number, separationX = 0, separationY = 0): void {
+    if (this.frozen) {
+      this.setVelocity(0, 0);
+      this.setDepth(this.y);
+      return;
+    }
     const now = this.scene.time.now;
     if (now < this.knockUntil) {
       this.setDepth(this.y);
@@ -191,6 +221,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Devuelve true si el golpe se aplicó. */
   takeDamage(amount: number): boolean {
     if (this.dying) return false;
+    if (this.frozen) {
+      this.frozenDamage += amount;
+      return true;
+    }
     this.currentHealth -= amount;
 
     if (this.currentHealth <= 0) {
