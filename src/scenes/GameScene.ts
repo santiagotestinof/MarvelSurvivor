@@ -22,6 +22,7 @@ import { MissileWeapon } from '../systems/MissileWeapon';
 import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
 import { WaveSystem } from '../systems/WaveSystem';
+import { damageArea } from '../systems/areaDamage';
 import { TestMap } from '../world/TestMap';
 import type { HudScene } from './HudScene';
 
@@ -61,6 +62,11 @@ export class GameScene extends Phaser.Scene {
   private hud!: HudScene;
   /** Reloj de la ronda: no avanza mientras se elige una mejora. */
   private clock = 0;
+  private ultimateKey: Phaser.Input.Keyboard.Key | null = null;
+  private ironManFlyingUntil = 0;
+  private nextUltimateShotAt = 0;
+  private ultimateReadyAt = 0;
+  private ironManFlightEffect: Phaser.GameObjects.Ellipse | null = null;
 
   constructor() {
     super(SCENE_KEYS.game);
@@ -82,6 +88,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
+    this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
     this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.toolTotals = { reroll: this.stats.rerolls, skip: this.stats.skips, banish: this.stats.banishes };
@@ -132,6 +139,7 @@ export class GameScene extends Phaser.Scene {
     // Enemigos que tocan al jugador le hacen daño (con invulnerabilidad corta).
     this.physics.add.overlap(this.player, this.enemies, (_p, e) => {
       const enemy = e as Enemy;
+      if (this.clock < this.ironManFlyingUntil) return;
       if (!enemy.dying && !enemy.harmless) this.player.takeDamage(enemy.contactDamage);
     });
     // Proyectiles que tocan enemigos.
@@ -165,6 +173,49 @@ export class GameScene extends Phaser.Scene {
     // Al volver del menú (CONTINUAR) la ronda sigue en pausa hasta que el jugador toque SEGUIR.
     this.events.on(Phaser.Scenes.Events.WAKE, () => this.scene.pause());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop(SCENE_KEYS.hud));
+  }
+
+  /** Estado de la ultimate para el control del HUD. */
+  getUltimateState(): { active: boolean; remainingMs: number; flightRemainingMs: number } {
+    const active = this.player?.definition.id === 'ironman' && this.clock < this.ironManFlyingUntil;
+    return {
+      active,
+      remainingMs: active ? 0 : Math.max(0, this.ultimateReadyAt - this.clock),
+      flightRemainingMs: active ? Math.max(0, this.ironManFlyingUntil - this.clock) : 0,
+    };
+  }
+
+  /** Activa el vuelo de Iron Man con E o desde el botón táctil del HUD. */
+  activateUltimate(): void {
+    if (this.player.definition.id !== 'ironman' || this.round.ended || this.frozen || this.player.isDead) return;
+    if (this.clock < this.ironManFlyingUntil || this.clock < this.ultimateReadyAt) return;
+    this.ironManFlyingUntil = this.clock + 5000;
+    this.nextUltimateShotAt = this.clock + 500;
+    this.ironManFlightEffect?.destroy();
+    this.ironManFlightEffect = this.add.ellipse(this.player.x, this.player.y - 5, 28, 10, 0x75e6ff, 0.65)
+      .setDepth(this.player.y - 1);
+  }
+
+  private updateUltimate(now: number): void {
+    if (this.player.definition.id !== 'ironman' || now >= this.ironManFlyingUntil) {
+      if (this.ironManFlyingUntil > 0 && now >= this.ironManFlyingUntil) {
+        this.ironManFlyingUntil = 0;
+        this.ultimateReadyAt = now + 40_000;
+        this.ironManFlightEffect?.destroy();
+        this.ironManFlightEffect = null;
+      }
+      return;
+    }
+
+    this.ironManFlightEffect?.setPosition(this.player.x, this.player.y - 5).setDepth(this.player.y - 1);
+    while (now >= this.nextUltimateShotAt && this.nextUltimateShotAt < this.ironManFlyingUntil) {
+      const impactX = this.player.x;
+      const impactY = this.player.y - 8;
+      damageArea(this.enemies, [], impactX, impactY, 30, 12);
+      const impact = this.add.circle(impactX, impactY, 30, 0x75e6ff, 0.3).setDepth(999_998);
+      this.tweens.add({ targets: impact, alpha: 0, scale: 1.25, duration: 180, onComplete: () => impact.destroy() });
+      this.nextUltimateShotAt += 500;
+    }
   }
 
   getHudState(): HudSnapshot {
@@ -310,6 +361,8 @@ export class GameScene extends Phaser.Scene {
 
     this.clock += delta;
     const now = this.clock;
+    if (this.ultimateKey && Phaser.Input.Keyboard.JustDown(this.ultimateKey)) this.activateUltimate();
+    this.updateUltimate(now);
     this.player.step(this.moveInput.getVector());
     this.attack.update(now);
     this.missiles.update(now, delta);
