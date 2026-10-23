@@ -1,28 +1,19 @@
 import type Phaser from 'phaser';
 
-/** Datos de un tipo de enemigo. Para sumar uno nuevo: spritesheet + una entrada acá. */
 export interface EnemyKind {
   id: string;
   texture: string;
-  /** Ruta relativa a /public. */
   path: string;
   frame: { width: number; height: number };
   frameCount: number;
   frameRate: number;
   origin: { x: number; y: number };
-  /** Caja de colisión en píxeles desde la esquina superior izquierda del cuadro. */
   body: { width: number; height: number; offsetX: number; offsetY: number };
   health: number;
   speed: number;
   contactDamage: number;
-  /** Experiencia que suelta al morir (0 = nada). */
   xpValue: number;
-  /** Parámetros de ataque a distancia, si corresponde. */
   rangedAttack?: { range: number; cooldownMs: number; damage: number; projectileSpeed: number };
-  /**
-   * Cómo aparece en las oleadas: desde qué punto de la ronda (0 = inicio, 1 = jefe) y con qué peso
-   * relativo frente a los demás disponibles. Sin `spawn` no sale en oleadas (por ejemplo, el jefe).
-   */
   spawn?: { fromProgress: number; weight: number };
 }
 
@@ -42,10 +33,9 @@ export const DRONE: EnemyKind = {
   spawn: { fromProgress: 0, weight: 6 },
 };
 
-/** Enemigo de apoyo: dispara desde lejos y tiene poca presión por contacto. */
 export const SENTINEL: EnemyKind = {
   id: 'sentinel',
-  texture: 'enemy-drone',
+  texture: 'enemy-sentinel',
   path: 'assets/enemies/drone.png',
   frame: { width: 24, height: 24 },
   frameCount: 2,
@@ -60,7 +50,6 @@ export const SENTINEL: EnemyKind = {
   spawn: { fromProgress: 0.3, weight: 1.4 },
 };
 
-/** Rápido y frágil: obliga a moverse aunque muera de un par de disparos. */
 export const SCOUT: EnemyKind = {
   id: 'scout',
   texture: 'enemy-scout',
@@ -77,7 +66,6 @@ export const SCOUT: EnemyKind = {
   spawn: { fromProgress: 0.15, weight: 3 },
 };
 
-/** Lento y resistente: pega fuerte y suelta más experiencia. */
 export const BRUTE: EnemyKind = {
   id: 'brute',
   texture: 'enemy-brute',
@@ -111,7 +99,6 @@ export const OVERLORD: EnemyKind = {
 
 export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, SENTINEL, SCOUT, BRUTE, OVERLORD];
 
-/** Elige al azar (por peso) uno de los enemigos de oleada disponibles en este punto de la ronda. */
 export function pickWaveEnemy(progress: number): EnemyKind {
   const available = ENEMY_KINDS.filter((kind) => kind.spawn && progress >= kind.spawn.fromProgress);
   const total = available.reduce((sum, kind) => sum + (kind.spawn?.weight ?? 0), 0);
@@ -127,7 +114,6 @@ export function enemyAnimationKey(kind: EnemyKind): string {
   return `${kind.id}:walk`;
 }
 
-/** Encola la carga de los spritesheets de enemigos (llamar desde preload). */
 export function loadEnemyAssets(scene: Phaser.Scene): void {
   for (const kind of ENEMY_KINDS) {
     scene.load.spritesheet(kind.texture, kind.path, {
