@@ -191,6 +191,14 @@ export function passiveTypesTaken(taken: Readonly<Record<string, number>>): numb
   return UPGRADES.filter((upgrade) => upgrade.passive && (taken[upgrade.id] ?? 0) > 0).length;
 }
 
+/** Las mejoras pasivas tomadas en la ronda y cuántas veces se eligió cada una (en orden de aparición en `UPGRADES`). */
+export function passivesTaken(taken: Readonly<Record<string, number>>): { id: string; count: number }[] {
+  return UPGRADES.filter((upgrade) => upgrade.passive && (taken[upgrade.id] ?? 0) > 0).map((upgrade) => ({
+    id: upgrade.id,
+    count: taken[upgrade.id],
+  }));
+}
+
 /** ¿Hay lugar para esta mejora? Las pasivas nuevas se bloquean al llegar al límite de tipos. */
 function hasSlot(upgrade: UpgradeDefinition, taken: Readonly<Record<string, number>>): boolean {
   if (!upgrade.passive || (taken[upgrade.id] ?? 0) > 0) return true;

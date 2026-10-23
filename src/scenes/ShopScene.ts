@@ -10,7 +10,9 @@ import {
   type MetaUpgradeDefinition,
 } from '../meta/metaUpgrades';
 import { saveData } from '../meta/saveData';
+import { metaIconId } from '../ui/metaIcons';
 import { UiButton } from '../ui/UiButton';
+import { UPGRADE_ICON_SIZE, upgradeIconKey } from '../ui/upgradeIcons';
 import { drawPanel, textStyle, uiScale } from '../ui/uiLayout';
 
 const GOLD_COLOR = '#ffd24a';
@@ -30,6 +32,8 @@ export class ShopScene extends Phaser.Scene {
   private nextButton!: UiButton;
   private refundButton!: UiButton;
   private page = 0;
+  /** Mejora tocada: su descripción se muestra arriba. */
+  private selectedId: string | null = null;
   /** El reembolso pide confirmar con un segundo toque. */
   private refundArmed = false;
   /** Tarjetas de las mejoras: se destruyen y se arman de nuevo al comprar o cambiar el tamaño. */
@@ -48,7 +52,7 @@ export class ShopScene extends Phaser.Scene {
     this.title.setShadow(0, 4, '#7a1d12', 0, true, true);
     this.goldText = this.add.text(0, 0, '', textStyle(16, GOLD_COLOR)).setOrigin(0.5);
     this.hint = this.add
-      .text(0, 0, 'Rompé cajas y rocas y vencé enemigos para juntar oro. Valen para todos los héroes.', {
+      .text(0, 0, '', {
         ...textStyle(11, '#9fb3bf'),
         align: 'center',
       })
@@ -58,6 +62,7 @@ export class ShopScene extends Phaser.Scene {
     this.nextButton = new UiButton(this, '>', 16, () => this.changePage(1), ['RIGHT']);
     this.refundButton = new UiButton(this, 'REEMBOLSAR', 16, () => this.refund(), []);
     this.page = 0;
+    this.selectedId = null;
     this.refundArmed = false;
 
     this.render();
@@ -82,7 +87,8 @@ export class ShopScene extends Phaser.Scene {
 
     this.title.setFontSize(Math.max(18, Math.round(portrait ? Math.min(width * 0.07, 34) : 8 * ui))).setPosition(cx, height * 0.07);
     this.goldText.setText(`ORO: ${saveData.gold}   ·   PÁGINA ${this.page + 1}/${PAGE_COUNT}`).setFontSize(Math.max(14, Math.round(4.6 * ui))).setPosition(cx, height * (portrait ? 0.125 : 0.15));
-    this.hint.setFontSize(Math.max(9, Math.round(2.8 * ui))).setWordWrapWidth(width * 0.92).setPosition(cx, height * (portrait ? 0.165 : 0.2));
+    this.updateHint(ui);
+    this.hint.setFontSize(Math.max(10, Math.round(3.4 * ui))).setWordWrapWidth(width * 0.92).setPosition(cx, height * (portrait ? 0.165 : 0.2));
     this.layoutBottomBar(width, height, ui);
 
     for (const object of this.cardObjects) object.destroy();
@@ -104,6 +110,19 @@ export class ShopScene extends Phaser.Scene {
       const row = Math.floor(index / columns);
       this.drawCard(def, areaX + column * (cardW + gap), areaY + row * (cardH + gap), cardW, cardH);
     });
+  }
+
+  /** Arriba: la descripción de la mejora tocada, o una ayuda si no hay ninguna. */
+  private updateHint(_ui: number): void {
+    const def = META_UPGRADES.find((upgrade) => upgrade.id === this.selectedId);
+    if (!def) {
+      this.hint.setColor('#9fb3bf').setText('Tocá una mejora para ver qué hace. Valen para todos los héroes.');
+      return;
+    }
+    const level = saveData.levelOf(def.id);
+    const next = level >= def.maxLevel ? `Máx: ${def.effect(level)}` : `Próx: ${def.effect(level + 1)}`;
+    const now = level > 0 ? `Ahora: ${def.effect(level)}  ·  ` : '';
+    this.hint.setColor('#ffffff').setText(`${def.name.toUpperCase()}\n${now}${next}`);
   }
 
   /** Fila de abajo: página anterior, reembolso, volver y página siguiente. */
@@ -151,13 +170,20 @@ export class ShopScene extends Phaser.Scene {
     const maxed = level >= def.maxLevel;
     const cost = costOfNextLevel(def, level);
     const canBuy = !maxed && saveData.gold >= cost;
+    const selected = this.selectedId === def.id;
 
     const nameSize = Phaser.Math.Clamp(Math.round(h * 0.24), 11, 20);
-    const smallSize = Math.max(9, Math.round(nameSize * 0.62));
     const pad = Math.round(nameSize * 0.6);
 
     const panel = this.add.graphics();
-    drawPanel(panel, x, y, w, h, { radius: 8, border: canBuy ? 0xf5c518 : 0xffffff, borderAlpha: canBuy ? 0.7 : 0.18 });
+    drawPanel(panel, x, y, w, h, {
+      radius: 8,
+      border: selected ? 0xffffff : canBuy ? 0xf5c518 : 0xffffff,
+      borderAlpha: selected ? 0.95 : canBuy ? 0.7 : 0.18,
+    });
+    // Tocar la tarjeta muestra la descripción (el botón de comprar queda por encima y no la dispara).
+    const zone = this.add.zone(x, y, w, h).setOrigin(0).setInteractive({ useHandCursor: true });
+    zone.on(Phaser.Input.Events.POINTER_UP, () => this.select(def.id));
 
     const buttonSize = Math.max(10, Math.round(nameSize * 0.72));
     const button = new UiButton(this, maxed ? 'MÁXIMO' : `COMPRAR ${cost}`, buttonSize, () => this.buy(def), []);
@@ -165,27 +191,35 @@ export class ShopScene extends Phaser.Scene {
     button.setAlpha(canBuy ? 1 : 0.5);
     button.setPosition(x + w - pad - button.width / 2, y + h / 2);
 
-    const textW = w - button.width - pad * 3;
-    const name = this.add.text(x + pad, y + pad * 0.7, def.name.toUpperCase(), textStyle(nameSize, '#ffffff')).setOrigin(0, 0);
+    // Ícono a la izquierda, escalado de a números enteros para que los píxeles queden nítidos.
+    const iconScale = Math.max(2, Math.floor((h * 0.62) / UPGRADE_ICON_SIZE));
+    const iconSize = UPGRADE_ICON_SIZE * iconScale;
+    const iconX = x + pad + iconSize / 2;
+    const badge = this.add.graphics();
+    badge.fillStyle(0x0b1620, 0.9).fillCircle(iconX, y + h / 2, iconSize * 0.72);
+    badge.lineStyle(2, maxed ? 0xf5c518 : 0xffffff, maxed ? 0.9 : 0.25).strokeCircle(iconX, y + h / 2, iconSize * 0.72);
+    const icon = this.add.image(iconX, y + h / 2, upgradeIconKey(metaIconId(def.id))).setScale(iconScale);
 
-    // Los círculos del nivel van a la derecha del nombre; el resto de la tarjeta queda para el efecto.
+    const textX = x + pad * 2 + iconSize * 1.45;
+    const name = this.add.text(textX, y + h / 2 - pad * 0.2, def.name.toUpperCase(), textStyle(nameSize, '#ffffff')).setOrigin(0, 1);
+    name.setWordWrapWidth(Math.max(40, button.x - button.width / 2 - pad - textX));
+
+    // Círculos del nivel debajo del nombre.
     const pips = this.add.graphics();
     const pipR = Math.max(3, Math.round(nameSize * 0.28));
-    const pipsX = x + pad + name.width + pad;
-    const pipsY = name.y + name.height / 2;
+    const pipsY = y + h / 2 + pad * 0.2 + pipR + 2;
     for (let i = 0; i < def.maxLevel; i++) {
-      const cx = pipsX + pipR + i * pipR * 2.6;
+      const cx = textX + pipR + i * pipR * 2.6;
       pips.fillStyle(i < level ? 0xf5c518 : 0x1c2b24, 1).fillCircle(cx, pipsY, pipR);
       pips.lineStyle(1, 0xf5c518, 0.6).strokeCircle(cx, pipsY, pipR);
     }
 
-    const effectText = maxed ? `Máx: ${def.effect(level)}` : `Próx: ${def.effect(level + 1)}`;
-    const effect = this.add
-      .text(x + pad, name.y + name.height + 2, effectText, textStyle(smallSize, maxed ? GOLD_COLOR : '#d7e6ef'))
-      .setOrigin(0, 0)
-      .setWordWrapWidth(textW);
+    this.cardObjects.push(panel, zone, button, badge, icon, name, pips);
+  }
 
-    this.cardObjects.push(panel, button, name, pips, effect);
+  private select(id: string): void {
+    this.selectedId = this.selectedId === id ? null : id;
+    this.render();
   }
 
   private buy(def: MetaUpgradeDefinition): void {

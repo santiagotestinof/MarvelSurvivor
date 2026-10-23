@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { META_ICONS } from './metaIcons';
 
 /**
  * Íconos provisionales de las mejoras, dibujados como pixel art desde texto (como los sprites
@@ -16,9 +17,12 @@ const PALETTE: Record<string, number> = {
   D: 0x1f8a4c,
   C: 0x37d5ff,
   B: 0x2f6fe0,
+  P: 0xb44cff,
+  M: 0xff7ac8,
 };
 
 const ICONS: Record<string, string[]> = {
+  ...Object.fromEntries(Object.entries(META_ICONS).map(([id, rows]) => [`meta-${id}`, rows])),
   damage: [
     '....O.....',
     '.O..O..O..',

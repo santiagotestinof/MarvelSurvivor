@@ -15,7 +15,7 @@ import { applyMetaUpgrades } from '../meta/metaUpgrades';
 import { saveData } from '../meta/saveData';
 import { PlayerStats } from '../progression/PlayerStats';
 import { ProgressionSystem, type ProgressState } from '../progression/ProgressionSystem';
-import { passiveTypesTaken, pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
+import { passiveTypesTaken, passivesTaken, pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { MissileWeapon } from '../systems/MissileWeapon';
@@ -31,7 +31,7 @@ export interface GoldState {
 }
 
 /** Estado que dibuja el HUD: ronda + experiencia + oro. */
-export type HudSnapshot = HudState & ProgressState & GoldState;
+export type HudSnapshot = HudState & ProgressState & GoldState & { passives: { id: string; count: number }[] };
 
 /** Una ronda: oleadas de enemigos, ataque automático, jefe final y resultado. */
 export class GameScene extends Phaser.Scene {
@@ -138,6 +138,7 @@ export class GameScene extends Phaser.Scene {
       ...this.progression.getState(),
       gold: Math.floor(this.gold),
       goldPayout: this.goldPayout,
+      passives: passivesTaken(this.taken),
     };
   }
 
