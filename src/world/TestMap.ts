@@ -4,6 +4,8 @@ import { createRandom } from '../core/random';
 import { BreakableProp, type BreakableKind } from '../entities/BreakableProp';
 import { buildParkDetails, createParkTrees, PARK_TREE, PARK_PINE } from './ParkDetails';
 import { nearParkPath, parkPaths } from './ParkPaths';
+import { buildParkVegetation, createParkGround, PARK_GROUND } from './ParkVegetation';
+import { drawCityPaving, drawCityCurbs } from './CityPaving';
 
 const TILE = 16;
 const WIDTH_TILES = 160;
@@ -11,9 +13,9 @@ const HEIGHT_TILES = 240;
 const PARK = { left: 640, right: 1920, top: 640, bottom: 3200 };
 const PATH_ROWS = [80, 120, 160];
 
-// Índices dentro de public/assets/tiles/ground.png
-const GRASS_TILES = [0, 1, 2, 3];
-const STONE_TILES = [4, 5];
+// Índices del césped generado para este escenario.
+const GRASS_TILES = Array.from({ length: 16 }, (_, index) => index);
+const STONE_TILES = [16, 17];
 
 type PropKind = 'tree' | 'rock' | 'crate';
 
@@ -34,6 +36,7 @@ export class TestMap {
   readonly spawn = { x: this.widthPx / 2, y: this.heightPx / 2 + 150 };
   private readonly paths = parkPaths(PARK, PATH_ROWS.map((row) => row * TILE), this.widthPx / 2);
   readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
+  private readonly propBounds: Phaser.Geom.Rectangle[] = [];
   /** Cajas y rocas que todavía no se rompieron. */
   readonly breakables = new Set<BreakableProp>();
   /** Se llama cuando se rompe un objeto (para soltar el oro). */
@@ -50,9 +53,13 @@ export class TestMap {
     buildParkDetails(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.spawn.x,
       (x, y, w, h) => this.addObstacle(x, y, w, h));
     this.scatterProps();
+    buildParkVegetation(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.spawn.x,
+      [...this.propBounds, ...this.obstacles.getChildren().map((object) =>
+        (object as Phaser.GameObjects.Rectangle).getBounds())]);
   }
 
   private buildGround(): void {
+    createParkGround(this.scene);
     const random = createRandom(2024);
 
     const data: number[][] = [];
@@ -69,7 +76,7 @@ export class TestMap {
     }
 
     const map = this.scene.make.tilemap({ data, tileWidth: TILE, tileHeight: TILE });
-    const tileset = map.addTilesetImage(TEXTURES.ground, TEXTURES.ground, TILE, TILE, 0, 0);
+    const tileset = map.addTilesetImage(PARK_GROUND, PARK_GROUND, TILE, TILE, 0, 0);
     if (!tileset) throw new Error('No se pudo crear el tileset del suelo.');
     const layer = map.createLayer(0, tileset, 0, 0);
     layer?.setDepth(-1000);
@@ -91,6 +98,7 @@ export class TestMap {
     // Una avenida continua rodea el parque; las esquinas quedan transitables.
     const roadXs = [PARK.left - 400, PARK.right + 112];
     const roadYs = [PARK.top - 400, PARK.bottom + 112];
+    drawCityPaving(ground, PARK, this.widthPx, this.heightPx, roadXs, roadYs);
     for (const x of roadXs) {
       ground.fillStyle(0xd5d5c4).fillRect(x - 4, 0, 296, this.heightPx);
       ground.fillStyle(0x424b55).fillRect(x, 0, 288, this.heightPx);
@@ -99,6 +107,7 @@ export class TestMap {
       ground.fillStyle(0xd5d5c4).fillRect(0, y - 4, this.widthPx, 296);
       ground.fillStyle(0x424b55).fillRect(0, y, this.widthPx, 288);
     }
+    drawCityCurbs(ground, this.widthPx, this.heightPx, roadXs, roadYs);
     for (const x of roadXs) {
       for (let y = 0; y < this.heightPx; y += 32) {
         if (roadYs.some((roadY) => y >= roadY - 24 && y <= roadY + 312) ||
@@ -194,6 +203,9 @@ export class TestMap {
             y > bounds.top - 30 && y < bounds.bottom + 64;
         })) continue;
         if (placed.some((p) => Phaser.Math.Distance.Between(x, y, p.x, p.y) < 50)) continue;
+        const footprint = kind === 'tree' ? new Phaser.Geom.Rectangle(x - 36, y - 84, 72, 88) :
+          new Phaser.Geom.Rectangle(x - 20, y - 28, 40, 32);
+        if (this.propBounds.some((bounds) => Phaser.Geom.Intersects.RectangleToRectangle(footprint, bounds))) continue;
 
         placed.push({ x, y });
         this.placeProp(kind, Math.round(x), Math.round(y));
@@ -206,6 +218,7 @@ export class TestMap {
   private placeProp(kind: PropKind, x: number, y: number): void {
     const texture = kind === 'tree' ? (Math.round(x) % 3 === 0 ? PARK_PINE : PARK_TREE) : TEXTURES[kind];
     const image = this.scene.add.image(x, y, texture).setOrigin(0.5, 1).setDepth(y);
+    this.propBounds.push(image.getBounds());
 
     const { width, height } = PROP_BODY[kind];
     const collider = this.addObstacle(x, y - height / 2, width, height);

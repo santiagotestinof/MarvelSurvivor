@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { createRandom } from '../core/random';
-import { nearParkPath, parkPaths, PARK_PATH_WIDTH } from './ParkPaths';
+import { nearParkPath, parkPaths, parkCrossPathOffset, PARK_PATH_WIDTH } from './ParkPaths';
 
 export const PARK_TREE = 'park-detailed-tree';
 export const PARK_PINE = 'park-detailed-pine';
@@ -73,20 +73,87 @@ export function buildParkDetails(
     }
   }
   // Todas las bases se dibujan antes de la tierra para unir las bifurcaciones.
-  for (const [width, color] of [[PARK_PATH_WIDTH + 12, 0x56695c], [PARK_PATH_WIDTH + 8, 0xa1afaa], [PARK_PATH_WIDTH, 0x895b40]]) {
-    g.lineStyle(width, color);
+  for (const [width, color] of [[PARK_PATH_WIDTH + 12, 0x4e505b], [PARK_PATH_WIDTH + 8, 0x94919d], [PARK_PATH_WIDTH, 0xbd9867]]) {
+    g.fillStyle(color);
     for (const path of paths) {
-      g.beginPath();
-      g.moveTo(path[0].x, path[0].y);
-      for (const point of path.slice(1)) g.lineTo(point.x, point.y);
-      g.strokePath();
+      // Limitar ambos bordes al parque evita que una curva invada la vereda.
+      const edge = (side: number) => path.map((point, index) => {
+        const before = path[Math.max(0, index - 1)];
+        const after = path[Math.min(path.length - 1, index + 1)];
+        const endpoint = index === 0 || index === path.length - 1;
+        const vertical = path[0].y === park.top;
+        // Una sección completa sobre el límite, sin desplazar una esquina hacia adentro.
+        const dx = endpoint ? (vertical ? 0 : 1) : after.x - before.x;
+        const dy = endpoint ? (vertical ? 1 : 0) : after.y - before.y;
+        const length = Math.hypot(dx, dy);
+        return {
+          x: Phaser.Math.Clamp(point.x - side * dy / length * width / 2, park.left, park.right),
+          y: Phaser.Math.Clamp(point.y + side * dx / length * width / 2, park.top, park.bottom),
+        };
+      });
+      g.fillPoints([...edge(1), ...edge(-1).reverse()], true);
+    }
+  }
+
+  // Bloques de piedra en ambos bordes: juntas transversales y bisel iluminado.
+  for (const path of paths) {
+    for (let index = 0; index < path.length - 2; index += 2) {
+      const a = path[index];
+      const b = path[index + 2];
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      // No dibujar bordillos internos atravesando las bifurcaciones.
+      if (paths.some((other) => other !== path && other.some((p) => Math.hypot(p.x - mid.x, p.y - mid.y) < 34))) continue;
+      const length = Math.hypot(b.x - a.x, b.y - a.y);
+      const nx = -(b.y - a.y) / length;
+      const ny = (b.x - a.x) / length;
+      const pointAt = (p: { x: number; y: number }, distance: number) => ({
+        x: Phaser.Math.Clamp(p.x + nx * distance, park.left, park.right),
+        y: Phaser.Math.Clamp(p.y + ny * distance, park.top, park.bottom),
+      });
+      for (const side of [-1, 1]) {
+        const innerA = pointAt(a, side * 22);
+        const outerA = pointAt(a, side * 26);
+        const innerB = pointAt(b, side * 22);
+        const outerB = pointAt(b, side * 26);
+        g.fillStyle([0x93909b, 0xa09ba5, 0x898894][(index / 2) % 3]);
+        g.fillPoints([innerA, outerA, outerB, innerB], true);
+        g.lineStyle(1, 0xc2bac3).lineBetween(innerA.x, innerA.y, innerB.x, innerB.y);
+        g.lineStyle(1, 0x5e5c69).lineBetween(innerA.x, innerA.y, outerA.x, outerA.y);
+      }
+    }
+  }
+
+  // Tierra ocre con granos, piedritas y manchas suaves; distribución fija al reiniciar.
+  const dirtRandom = createRandom(6021);
+  for (const path of paths) {
+    for (let index = 1; index < path.length - 1; index++) {
+      const point = path[index];
+      const before = path[index - 1];
+      const after = path[index + 1];
+      const dx = after.x - before.x;
+      const dy = after.y - before.y;
+      const length = Math.hypot(dx, dy);
+      const offset = (dirtRandom() - 0.5) * (PARK_PATH_WIDTH - 10);
+      const x = Math.floor((point.x - dy / length * offset) / 2) * 2;
+      const y = Math.floor((point.y + dx / length * offset) / 2) * 2;
+      if (x < park.left + 4 || x > park.right - 6 || y < park.top + 4 || y > park.bottom - 6) continue;
+      const variation = dirtRandom();
+      if (variation < 0.32) {
+        g.fillStyle(0xc5a273).fillRect(x, y, 4, 2);
+      } else if (variation < 0.56) {
+        g.fillStyle(0xaf895c).fillRect(x, y, 2, 2);
+      } else if (variation < 0.7) {
+        g.fillStyle(0x917756).fillRect(x, y, 3, 2);
+        g.fillStyle(0xab906b).fillRect(x, y, 2, 1);
+      } else if (variation < 0.8) {
+        g.fillStyle(0xdbb981).fillRect(x, y, 2, 2);
+      }
     }
   }
 
   for (const y of rows) {
     for (const x of [centerX - 224, centerX + 224]) {
-      const amplitude = rows.indexOf(y) === 1 ? 100 : 76;
-      const pathY = (px: number) => y + amplitude * Math.sin((px - park.left) / (park.right - park.left) * Math.PI * 2);
+      const pathY = (px: number) => y + parkCrossPathOffset((px - park.left) / (park.right - park.left), rows.indexOf(y));
       const benchY = pathY(x) + 86;
       const lampY = pathY(x + 44) - 80;
       const bench = scene.add.graphics().setPosition(x, benchY).setDepth(benchY);
@@ -97,9 +164,22 @@ export function buildParkDetails(
       bench.fillStyle(0xddd0a1).fillRect(-20, -22, 2, 2).fillRect(20, -22, 2, 2);
       obstacle(x, benchY - 4, 52, 12);
       const lamp = scene.add.graphics().setPosition(x + 44, lampY).setDepth(lampY);
-      lamp.fillStyle(0x333e3d).fillRect(-3, -52, 6, 52).fillRect(-8, -3, 16, 3);
-      lamp.fillRect(-9, -56, 18, 4).fillRect(-6, -70, 12, 4);
-      lamp.fillStyle(0xf6d37d).fillRect(-5, -65, 10, 9);
+      // Hierro oscuro, base moldurada y linterna de vidrio cálido.
+      lamp.fillStyle(0x292b36).fillRect(-9, -4, 18, 4).fillRect(-7, -8, 14, 6);
+      lamp.fillStyle(0x55515c).fillRect(-6, -7, 11, 3);
+      lamp.fillStyle(0x30313c).fillRect(-5, -20, 10, 13).fillRect(-3, -62, 6, 44);
+      lamp.fillStyle(0x77717b).fillRect(-4, -19, 2, 10).fillRect(-2, -61, 1, 42);
+      lamp.fillStyle(0x252833).fillRect(2, -60, 2, 40);
+      lamp.fillStyle(0x8b8083).fillRect(-5, -21, 10, 2).fillRect(-4, -58, 8, 2);
+      lamp.fillStyle(0x292b36).fillRect(-5, -66, 10, 5).fillRect(-7, -82, 14, 17);
+      lamp.fillStyle(0xa68b66).fillRect(-5, -80, 10, 13);
+      lamp.fillStyle(0xf0ca80).fillRect(-4, -79, 8, 11);
+      lamp.fillStyle(0xffe9b0).fillRect(-3, -79, 3, 9);
+      lamp.fillStyle(0x58505a).fillRect(0, -81, 2, 15).fillRect(-6, -68, 12, 2);
+      lamp.fillStyle(0x252833).fillRect(-9, -85, 18, 4).fillRect(-7, -89, 14, 4);
+      lamp.fillStyle(0x514b5b).fillRect(-6, -88, 12, 3).fillRect(-4, -92, 8, 3);
+      lamp.fillStyle(0x94818b).fillRect(-6, -85, 11, 1).fillRect(-3, -91, 3, 2);
+      lamp.fillStyle(0x30303c).fillRect(-2, -96, 4, 4);
       obstacle(x + 44, lampY - 2, 10, 6);
       const bin = scene.add.graphics().setPosition(x - 46, benchY).setDepth(benchY);
       bin.fillStyle(0x243d38).fillRect(-9, -22, 18, 22);
@@ -133,9 +213,27 @@ export function buildParkDetails(
   // Plaza central transitable, con una fuente monumental de dos niveles.
   const fx = centerX;
   const fy = (park.top + park.bottom) / 2;
-  g.fillStyle(0x92998c).fillEllipse(fx, fy, 416, 332);
-  g.fillStyle(0xc6bea7).fillEllipse(fx, fy, 400, 316);
-  g.lineStyle(2, 0xada58f).strokeEllipse(fx, fy, 358, 274);
+  pixelOval(g, fx, fy, 416, 332, 0x555965);
+  pixelOval(g, fx, fy - 2, 408, 324, 0xa6a0aa);
+  pixelOval(g, fx, fy, 396, 312, 0x7a7580);
+  // Baldosas escalonadas recortadas contra la plaza, con juntas y biseles.
+  const pavingRandom = createRandom(197);
+  for (let ty = -156; ty < 156; ty += 20) {
+    const shift = Math.floor((ty + 156) / 20) % 2 === 0 ? 0 : 16;
+    for (let tx = -224 + shift; tx < 200; tx += 32) {
+      const color = [0xb8ada9, 0xaca5a7, 0xc3b6ad, 0xb2aaad][Math.floor(pavingRandom() * 4)];
+      for (let dy = 1; dy < 19 && ty + dy < 156; dy++) {
+        const half = Math.floor(196 * Math.sqrt(Math.max(0, 1 - ((ty + dy) / 156) ** 2)));
+        const left = Math.max(tx + 1, -half);
+        const right = Math.min(tx + 31, half);
+        if (right <= left) continue;
+        g.fillStyle(dy === 1 ? 0xd4c9c0 : dy === 18 ? 0x90868e : color);
+        g.fillRect(fx + left, fy + ty + dy, right - left, 1);
+      }
+    }
+  }
+  g.lineStyle(2, 0x726e7c).strokeEllipse(fx, fy, 368, 284);
+  g.lineStyle(1, 0xd4c9c0).strokeEllipse(fx, fy - 2, 364, 280);
   // Contorno de la pileta y colisiones comparten las mismas franjas.
   for (let dy = -64; dy < 64; dy += 8) {
     const halfWidth = Math.floor(112 * Math.sqrt(1 - ((dy + 4) / 64) ** 2) / 4) * 4;

@@ -2,6 +2,12 @@ export type ParkBounds = { left: number; right: number; top: number; bottom: num
 export type ParkPoint = { x: number; y: number };
 export const PARK_PATH_WIDTH = 44;
 
+export function parkCrossPathOffset(t: number, index: number): number {
+  // Transición suave a un tramo perpendicular a la vereda en ambos extremos.
+  const bend = Math.sin(t * Math.PI * 2) * Math.sin(t * Math.PI);
+  return (index === 1 ? 100 : 76) * bend;
+}
+
 /** Una única geometría para dibujar senderos y reservar sus márgenes. */
 export function parkPaths(park: ParkBounds, rows: number[], cx: number): ParkPoint[][] {
   const vertical: ParkPoint[] = [];
@@ -13,7 +19,7 @@ export function parkPaths(park: ParkBounds, rows: number[], cx: number): ParkPoi
     const points: ParkPoint[] = [];
     for (let x = park.left; x <= park.right; x += 8) {
       const t = (x - park.left) / (park.right - park.left);
-      points.push({ x, y: row + (index === 1 ? 100 : 76) * Math.sin(t * Math.PI * 2) });
+      points.push({ x, y: row + parkCrossPathOffset(t, index) });
     }
     return points;
   })];
