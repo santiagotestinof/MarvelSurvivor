@@ -1,7 +1,7 @@
 // Íconos de la tienda dibujados directamente en 32×32 (se usan tal cual, solo se centran y se les suma el contorno).
 // Cada fila tiene 32 colores en hexadecimal sin '#', o '-' si el píxel es transparente.
 /** Íconos que ya traen su propio contorno oscuro (no se les agrega otro). */
-export const CUSTOM_32_WITH_OUTLINE = ['magnet', 'omni', 'amount'];
+export const CUSTOM_32_WITH_OUTLINE = ['magnet', 'omni', 'amount', 'luck'];
 
 export const CUSTOM_ICONS_32 = {
   // Cetro de Loki (imagen de Santi, achicada y sin fondo; su original está en tools/meta-icons/charm-original.png).
@@ -247,6 +247,41 @@ export const CUSTOM_ICONS_32 = {
     '- 999999 aaaaaa aaaaaa aaaaaa aaaaaa 222222 4d251a 862d2d 862d2d 862d2d 4d251a 4d251a 4d251a 4d251a 4d251a 862d2d 4d1a2b 999999 999999 999999 999999 aaaaaa 666666 - - - - - - - -',
     '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -',
     '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -',
+    '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -'
+  ],
+  // As de corazones (dibujado desde cero, 32×32; ya trae su contorno).
+  luck: [
+    '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -',
+    '- - - - - - 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 - - - - - -',
+    '- - - - - 181822 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc 181822 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 181822 f4f4f8 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 181822 181822 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 181822 f4f4f8 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 181822 f4f4f8 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 e23440 e23440 e23440 f4f4f8 f4f4f8 f4f4f8 e23440 e23440 e23440 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ff969c ff969c e23440 e23440 f4f4f8 e23440 e23440 e23440 e23440 e23440 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 e23440 e23440 ff969c e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 a01c2c f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 a01c2c a01c2c f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 e23440 a01c2c a01c2c f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 e23440 e23440 e23440 a01c2c a01c2c a01c2c a01c2c a01c2c a01c2c f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 e23440 e23440 a01c2c a01c2c a01c2c a01c2c a01c2c f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 e23440 a01c2c a01c2c a01c2c a01c2c f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 a01c2c a01c2c a01c2c f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 a01c2c f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 f4f4f8 ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc 181822 - - - - -',
+    '- - - - - 181822 181822 ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc ccd0dc 181822 181822 - - - - -',
+    '- - - - - - 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 181822 - - - - - -',
     '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -'
   ],
 };
