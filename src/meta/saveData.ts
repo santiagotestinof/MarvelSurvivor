@@ -41,6 +41,19 @@ function sanitize(raw: unknown): SaveShape {
   return save;
 }
 
+/** Atajos para probar: `?todos` desbloquea todos los héroes y `?oro=5000` suma oro (se guardan junto con el progreso). */
+function applyTestParams(data: SaveShape): SaveShape {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('todos')) for (const id of Object.keys(CHARACTER_REGISTRY)) if (!data.unlocked.includes(id)) data.unlocked.push(id);
+    const gold = Number(params.get('oro'));
+    if (Number.isFinite(gold) && gold > 0) data.gold += Math.floor(gold);
+  } catch {
+    // Sin ventana o sin parámetros: se usa el progreso tal cual.
+  }
+  return data;
+}
+
 class SaveData {
   private data: SaveShape = this.load();
 
@@ -114,12 +127,14 @@ class SaveData {
   }
 
   private load(): SaveShape {
+    let data: SaveShape;
     try {
       const text = window.localStorage.getItem(STORAGE_KEY);
-      return text ? sanitize(JSON.parse(text)) : emptySave();
+      data = text ? sanitize(JSON.parse(text)) : emptySave();
     } catch {
-      return emptySave();
+      data = emptySave();
     }
+    return applyTestParams(data);
   }
 
   private persist(): void {
