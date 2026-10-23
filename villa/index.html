@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Marvel Survivors</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0e1a12;
+        font-family: Montserrat, system-ui, sans-serif;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
+      #game {
+        position: fixed;
+        inset: 0;
+      }
+      #game canvas {
+        display: block;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+      #hint {
+        position: fixed;
+        left: 12px;
+        bottom: 10px;
+        color: #fff;
+        font-size: 13px;
+        opacity: 0.75;
+        text-shadow: 0 1px 2px #000;
+        pointer-events: none;
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-C_wVGHuD.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/phaser-Czz4FBZH.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-CiI1rIVG.css">
+  </head>
+  <body>
+    <div id="game"></div>
+    
+  </body>
+</html>
