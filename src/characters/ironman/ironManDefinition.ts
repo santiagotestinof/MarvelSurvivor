@@ -17,7 +17,7 @@ export const ironManDefinition: CharacterDefinition = {
   origin: { x: 0.5, y: 41 / 48 },
   body: { width: 10, height: 8, offsetX: 19, offsetY: 37 },
   stats: {
-    moveSpeed: 95,
+    moveSpeed: 85.5,
     maxHealth: 100,
     // Repulsores: disparo automático al enemigo más cercano.
     attack: {
