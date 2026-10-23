@@ -108,7 +108,7 @@ export const OVERLORD: EnemyKind = {
   frameRate: 3,
   origin: { x: 0.5, y: 0.9 },
   body: { width: 26, height: 20, offsetX: 11, offsetY: 22 },
-  health: 500,
+  health: 440,
   speed: 33,
   contactDamage: 20,
   xpValue: 0,
