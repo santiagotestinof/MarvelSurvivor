@@ -454,11 +454,8 @@ function drawIronManRef({ fx, fy, stride = 0, bob = 0, pulse = 0 }) {
     g = legs;
   }
 
-  // Perfil y diagonales: se aprieta en horizontal y se espeja si mira a la izquierda.
-  if (fx !== 0) {
-    g = squeezeGrid(g, fy === 0 ? 0.62 : 0.84);
-    if (fx < 0) g = g.map((row) => row.reverse());
-  }
+  // Costados y diagonales: el mismo dibujo de frente (o de espaldas), espejado si mira a la izquierda.
+  if (fx < 0) g = g.map((row) => row.reverse());
 
   const small = shrinkGrid(g, IM_SCALE);
   const cv = new Canvas(IM_FRAME.w, IM_FRAME.h);
