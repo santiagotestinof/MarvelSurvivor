@@ -70,6 +70,7 @@ export class GameScene extends Phaser.Scene {
   private ironManBaseMoveSpeed = 0;
   private ironManBaseScaleX = 1;
   private ironManBaseScaleY = 1;
+  private nextIronManCloudAt = 0;
 
   constructor() {
     super(SCENE_KEYS.game);
@@ -84,6 +85,7 @@ export class GameScene extends Phaser.Scene {
     this.ultimateReadyAt = 0;
     this.ironManFlightEffect?.destroy();
     this.ironManFlightEffect = null;
+    this.nextIronManCloudAt = 0;
     this.stats = new PlayerStats();
     this.progression = new ProgressionSystem();
     this.taken = {};
@@ -206,24 +208,28 @@ export class GameScene extends Phaser.Scene {
     if (this.clock < this.ironManFlyingUntil || this.clock < this.ultimateReadyAt) return;
     this.ironManFlyingUntil = this.clock + 5000;
     this.nextUltimateShotAt = this.clock + 500;
+    this.nextIronManCloudAt = this.clock + 180;
+    this.player.setFlightHeight(9);
     this.player.setMoveSpeed(this.ironManBaseMoveSpeed * 1.25);
     this.player.setScale(this.ironManBaseScaleX * 1.08, this.ironManBaseScaleY * 1.08);
     this.player.setTint(0xb9f4ff);
     this.ironManFlightEffect?.destroy();
 
     // Propulsores y resplandor bajo los pies para que el vuelo se distinga del movimiento normal.
-    const flightShadow = this.add.ellipse(0, 8, 30, 11, 0x43dfff, 0.32);
-    const leftThruster = this.add.ellipse(-5, 5, 5, 13, 0xffa640, 0.95);
-    const rightThruster = this.add.ellipse(5, 5, 5, 13, 0xffa640, 0.95);
-    const leftCore = this.add.ellipse(-5, 5, 2.5, 8, 0x9df6ff, 1);
-    const rightCore = this.add.ellipse(5, 5, 2.5, 8, 0x9df6ff, 1);
+    const flightShadow = this.add.ellipse(0, 13, 30, 10, 0x43dfff, 0.25);
+    const leftGlow = this.add.ellipse(-7, 5, 11, 23, 0x47cfff, 0.32);
+    const rightGlow = this.add.ellipse(7, 5, 11, 23, 0x47cfff, 0.32);
+    const leftThruster = this.add.ellipse(-7, 5, 7, 22, 0xffa640, 0.98);
+    const rightThruster = this.add.ellipse(7, 5, 7, 22, 0xffa640, 0.98);
+    const leftCore = this.add.ellipse(-7, 5, 3.5, 15, 0xd7fbff, 1);
+    const rightCore = this.add.ellipse(7, 5, 3.5, 15, 0xd7fbff, 1);
     this.ironManFlightEffect = this.add.container(this.player.x, this.player.y + 7, [
-      flightShadow, leftThruster, rightThruster, leftCore, rightCore,
+      flightShadow, leftGlow, rightGlow, leftThruster, rightThruster, leftCore, rightCore,
     ]).setDepth(this.player.y - 1);
     this.tweens.add({
-      targets: [leftThruster, rightThruster, leftCore, rightCore],
-      scaleY: { from: 0.75, to: 1.25 },
-      alpha: { from: 0.65, to: 1 },
+      targets: [leftGlow, rightGlow, leftThruster, rightThruster, leftCore, rightCore],
+      scaleY: { from: 0.7, to: 1.3 },
+      alpha: { from: 0.55, to: 1 },
       duration: 100,
       yoyo: true,
       repeat: -1,
@@ -235,6 +241,7 @@ export class GameScene extends Phaser.Scene {
       if (this.ironManFlyingUntil > 0 && now >= this.ironManFlyingUntil) {
         this.ironManFlyingUntil = 0;
         this.ultimateReadyAt = now + 40_000;
+        this.player.setFlightHeight(0);
         this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
         this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
         this.player.clearTint();
@@ -245,6 +252,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.ironManFlightEffect?.setPosition(this.player.x, this.player.y + 7).setDepth(this.player.y - 1);
+    if (now >= this.nextIronManCloudAt) {
+      this.spawnIronManCloud();
+      this.nextIronManCloudAt = now + Phaser.Math.Between(260, 420);
+    }
     while (now >= this.nextUltimateShotAt && this.nextUltimateShotAt < this.ironManFlyingUntil) {
       const impactX = this.player.x;
       const impactY = this.player.y - 8;
@@ -253,6 +264,31 @@ export class GameScene extends Phaser.Scene {
       this.tweens.add({ targets: impact, alpha: 0, scale: 1.25, duration: 180, onComplete: () => impact.destroy() });
       this.nextUltimateShotAt += 500;
     }
+  }
+
+  /** Pequeñas nubes de estela: aparecen de forma espaciada y se desvanecen rápido. */
+  private spawnIronManCloud(): void {
+    const x = this.player.x + Phaser.Math.Between(-9, 9);
+    const y = this.player.y + Phaser.Math.Between(7, 17);
+    const puff = this.add.container(x, y);
+    const shade = Phaser.Math.Between(0, 1) ? 0xe5f8ff : 0xc9eefa;
+    const parts = [
+      this.add.ellipse(-4, 1, 11, 7, shade, 0.22),
+      this.add.ellipse(2, -1, 13, 9, shade, 0.25),
+      this.add.ellipse(7, 2, 9, 6, 0xffffff, 0.2),
+    ];
+    puff.add(parts);
+    puff.setDepth(this.player.y - 2);
+    this.tweens.add({
+      targets: puff,
+      x: x + Phaser.Math.Between(-12, 12),
+      y: y + Phaser.Math.Between(12, 20),
+      alpha: 0,
+      scaleX: 1.45,
+      scaleY: 1.3,
+      duration: 520,
+      onComplete: () => puff.destroy(),
+    });
   }
 
   getHudState(): HudSnapshot {
@@ -392,6 +428,7 @@ export class GameScene extends Phaser.Scene {
         this.ironManFlightEffect?.destroy();
         this.ironManFlightEffect = null;
         this.ironManFlyingUntil = 0;
+        this.player.setFlightHeight(0);
         this.player.setMoveSpeed(this.ironManBaseMoveSpeed);
         this.player.setScale(this.ironManBaseScaleX, this.ironManBaseScaleY);
         this.player.clearTint();
