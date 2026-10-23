@@ -19,6 +19,7 @@ import { passiveTypesTaken, passivesTaken, pickUpgradeChoices, type UpgradeConte
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { MissileWeapon } from '../systems/MissileWeapon';
+import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
 import { WaveSystem } from '../systems/WaveSystem';
 import { TestMap } from '../world/TestMap';
@@ -40,6 +41,7 @@ export class GameScene extends Phaser.Scene {
   private enemies!: Phaser.Physics.Arcade.Group;
   private attack!: AutoAttackSystem;
   private missiles!: MissileWeapon;
+  private rangedAttacks!: RangedAttackSystem;
   private waves!: WaveSystem;
   private round!: RoundController;
   private frozen = false;
@@ -87,9 +89,28 @@ export class GameScene extends Phaser.Scene {
     this.enemies = this.physics.add.group();
     this.physics.add.collider(this.enemies, map.obstacles);
     this.physics.add.collider(this.enemies, this.enemies);
-    this.attack = new AutoAttackSystem(this, this.player, this.player.definition.stats.attack, this.enemies, this.stats, () => map.breakables);
-    this.missiles = new MissileWeapon(this, this.player, this.enemies, this.stats, (x, y, radius, damage) =>
-      map.damagePropsInRadius(x, y, radius, damage),
+    this.attack = new AutoAttackSystem(
+      this,
+      this.player,
+      this.player.definition.stats.attack,
+      this.enemies,
+      this.stats,
+      () => map.breakables,
+    );
+
+    this.missiles = new MissileWeapon(
+      this,
+      this.player,
+      this.enemies,
+      this.stats,
+      (x, y, radius, damage) =>
+        map.damagePropsInRadius(x, y, radius, damage),
+    );
+
+    this.rangedAttacks = new RangedAttackSystem(
+      this,
+      this.player,
+      { width: map.widthPx, height: map.heightPx },
     );
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
       this.dropLoot(e);
@@ -303,6 +324,8 @@ export class GameScene extends Phaser.Scene {
       enemy.chase(this.player.x, this.player.y - 6, separationX, separationY);
     }
     this.tryRevive();
+    this.rangedAttacks.update(now, delta, activeEnemies);
+    this.round.update(now);
     this.round.update(now);
 
     if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();

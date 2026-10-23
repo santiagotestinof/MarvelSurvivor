@@ -19,6 +19,8 @@ export interface EnemyKind {
   xpValue: number;
   /** Probabilidad de soltar una moneda al morir y valor de esa moneda (sin `gold` no suelta nada). */
   gold?: { chance: number; value: number };
+  /** Parámetros de ataque a distancia, si corresponde. */
+  rangedAttack?: { range: number; cooldownMs: number; damage: number; projectileSpeed: number };
   /**
    * Cómo aparece en las oleadas: desde qué punto de la ronda (0 = inicio, 1 = jefe) y con qué peso
    * relativo frente a los demás disponibles. Sin `spawn` no sale en oleadas (por ejemplo, el jefe).
@@ -41,6 +43,24 @@ export const DRONE: EnemyKind = {
   xpValue: 1,
   gold: { chance: 0.05, value: 1 },
   spawn: { fromProgress: 0, weight: 6 },
+};
+
+/** Enemigo de apoyo: dispara desde lejos y tiene poca presión por contacto. */
+export const SENTINEL: EnemyKind = {
+  id: 'sentinel',
+  texture: 'enemy-sentinel',
+  path: 'assets/enemies/drone.png',
+  frame: { width: 24, height: 24 },
+  frameCount: 2,
+  frameRate: 5,
+  origin: { x: 0.5, y: 0.9 },
+  body: { width: 12, height: 10, offsetX: 6, offsetY: 10 },
+  health: 24,
+  speed: 22,
+  contactDamage: 4,
+  xpValue: 2,
+  rangedAttack: { range: 260, cooldownMs: 2200, damage: 5, projectileSpeed: 150 },
+  spawn: { fromProgress: 0.3, weight: 1.4 },
 };
 
 /** Rápido y frágil: obliga a moverse aunque muera de un par de disparos. */
@@ -94,7 +114,7 @@ export const OVERLORD: EnemyKind = {
   xpValue: 0,
 };
 
-export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, SCOUT, BRUTE, OVERLORD];
+export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, SENTINEL, SCOUT, BRUTE, OVERLORD];
 
 /** Elige al azar (por peso) uno de los enemigos de oleada disponibles en este punto de la ronda. */
 export function pickWaveEnemy(progress: number): EnemyKind {
