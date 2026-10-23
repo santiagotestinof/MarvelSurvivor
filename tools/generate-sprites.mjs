@@ -620,20 +620,25 @@ const DRAWN_WALK = [0, 2, 2, 0, -2, -2].map((stride, i) => ({ stride, bob: i % 3
 
 
 // ---------------------------------------------------------------- Doctor Strange (flota, siempre de frente) y su aura
-/** Cuadro de 48×48: flota con los pies en la fila 37 (el suelo está en 41). Sin dibujo de espalda: las 8 filas son iguales. */
+/**
+ * Strange usa el dibujo de Santi a tamaño original (sin achicar): cuadro de 48×56 (más alto que el resto por los brazos de la ulti).
+ * El cuerpo termina en la fila 48 y el suelo está en (24, 51): flota 3 px. Sin dibujo de espalda: las 8 filas son iguales.
+ */
+const STRANGE_W = 48;
+const STRANGE_H = 56;
 function strangeFrame(ref, { bob = 0, sway = 0 }) {
   const rows = ref.map((row) => row.split(' '));
   const w = rows[0].length;
-  const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
-  const ox = Math.round((DRAWN_FRAME - w) / 2) + sway;
-  const oy = 38 - rows.length + bob;
+  const cv = new Canvas(STRANGE_W, STRANGE_H);
+  const ox = Math.round((STRANGE_W - w) / 2) + sway;
+  const oy = 2 + bob;
   rows.forEach((row, y) => row.forEach((c, x) => c !== '-' && cv.set(ox + x, oy + y, hex(`#${c}`))));
   return cv;
 }
 function buildStrangeSheet(frames) {
-  const sheet = new Canvas(frames.length * DRAWN_FRAME, DIRECTIONS.length * DRAWN_FRAME);
+  const sheet = new Canvas(frames.length * STRANGE_W, DIRECTIONS.length * STRANGE_H);
   DIRECTIONS.forEach((_, row) =>
-    frames.forEach((f, col) => sheet.blit(strangeFrame(STRANGE_REF, f), col * DRAWN_FRAME, row * DRAWN_FRAME)),
+    frames.forEach((f, col) => sheet.blit(strangeFrame(STRANGE_REF, f), col * STRANGE_W, row * STRANGE_H)),
   );
   return sheet;
 }

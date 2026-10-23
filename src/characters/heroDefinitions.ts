@@ -137,10 +137,11 @@ export const strangeDefinition: CharacterDefinition = {
   id: STRANGE_ID,
   displayName: 'Doctor Strange',
   rarity: 'epic',
-  weaponText: 'Aura de runas: daña seguido a todo lo que se acerca. Ulti: tiempo detenido',
-  frame: FRAME,
-  origin: ORIGIN,
-  body: BODY,
+  weaponText: 'Aura de runas que daña a los cercanos. Ulti: tiempo detenido',
+  // Dibujo de Santi a tamaño original: cuadro de 48×56, suelo en (24, 51) y el cuerpo flota 3 px.
+  frame: { width: 48, height: 56 },
+  origin: { x: 0.5, y: 51 / 56 },
+  body: { width: 10, height: 8, offsetX: 19, offsetY: 47 },
   stats: {
     moveSpeed: 80,
     maxHealth: 95,
