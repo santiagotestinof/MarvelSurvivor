@@ -304,7 +304,7 @@ export class GameScene extends Phaser.Scene {
         for (const dy of [-radius, radius]) {
           if (isFree(currentX + dx, currentY + dy)) {
             this.player.setPosition(this.player.x + dx, this.player.y + dy);
-            body.reset(this.player.x, this.player.y);
+            body.updateFromGameObject();
             return;
           }
         }
@@ -313,7 +313,7 @@ export class GameScene extends Phaser.Scene {
         for (const dx of [-radius, radius]) {
           if (isFree(currentX + dx, currentY + dy)) {
             this.player.setPosition(this.player.x + dx, this.player.y + dy);
-            body.reset(this.player.x, this.player.y);
+            body.updateFromGameObject();
             return;
           }
         }
