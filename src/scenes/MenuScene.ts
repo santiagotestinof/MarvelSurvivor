@@ -6,7 +6,7 @@ import { computeZoom } from '../config/cameraConfig';
 import { RUN_ACTIVE_KEY, SCENE_KEYS } from '../config/sceneKeys';
 import { ROUND } from '../config/gameplayConfig';
 import { Direction } from '../core/direction';
-import { DRONE, enemyAnimationKey } from '../enemies/enemyKinds';
+import { DRONE, enemyAnimationKey, enemyDirectionFromVector } from '../enemies/enemyKinds';
 import { animationKey } from '../systems/AnimationSystem';
 import { UiButton } from '../ui/UiButton';
 import { saveData } from '../meta/saveData';
@@ -58,10 +58,13 @@ export class MenuScene extends Phaser.Scene {
     this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
     this.drones = [];
     for (let i = 0; i < DRONE_COUNT; i++) {
-      const sprite = this.add.sprite(0, 0, DRONE.texture, 0).setAlpha(0.45).play(enemyAnimationKey(DRONE));
-      sprite.anims.setProgress(Math.random());
       const angle = Math.random() * Math.PI * 2;
-      this.drones.push({ sprite, vx: Math.cos(angle) * 14, vy: Math.sin(angle) * 14 });
+      const vx = Math.cos(angle) * 14;
+      const vy = Math.sin(angle) * 14;
+      const dir = enemyDirectionFromVector(vx, vy);
+      const sprite = this.add.sprite(0, 0, DRONE.texture, 0).setAlpha(0.45).play(enemyAnimationKey(DRONE, dir));
+      sprite.anims.setProgress(Math.random());
+      this.drones.push({ sprite, vx, vy });
     }
     this.shade = this.add.graphics();
 

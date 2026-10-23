@@ -1,5 +1,18 @@
 import type Phaser from 'phaser';
 
+declare const __BUILD_ID__: string;
+
+/** Las 4 orientaciones de los enemigos con vista por lado (coincide con el orden de filas en su spritesheet). */
+export type EnemyDirection = 'down' | 'left' | 'right' | 'up';
+
+export const ENEMY_DIRECTIONS: readonly EnemyDirection[] = ['down', 'left', 'right', 'up'];
+
+/** Elige cuál de los 4 lados mostrar según hacia dónde camina el enemigo. */
+export function enemyDirectionFromVector(dx: number, dy: number): EnemyDirection {
+  if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? 'left' : 'right';
+  return dy < 0 ? 'up' : 'down';
+}
+
 /** Datos de un tipo de enemigo. Para sumar uno nuevo: spritesheet + una entrada acá. */
 export interface EnemyKind {
   id: string;
@@ -9,6 +22,8 @@ export interface EnemyKind {
   frame: { width: number; height: number };
   frameCount: number;
   frameRate: number;
+  /** Si tiene 4 filas (abajo, izquierda, derecha, arriba) para cambiar de vista según hacia dónde camina. */
+  directional?: boolean;
   origin: { x: number; y: number };
   /** Caja de colisión en píxeles desde la esquina superior izquierda del cuadro. */
   body: { width: number; height: number; offsetX: number; offsetY: number };
@@ -32,11 +47,12 @@ export const DRONE: EnemyKind = {
   id: 'drone',
   texture: 'enemy-drone',
   path: 'assets/enemies/drone.png',
-  frame: { width: 24, height: 24 },
-  frameCount: 2,
-  frameRate: 5,
-  origin: { x: 0.5, y: 0.9 },
-  body: { width: 12, height: 10, offsetX: 6, offsetY: 10 },
+  frame: { width: 32, height: 32 },
+  frameCount: 4,
+  frameRate: 7,
+  directional: true,
+  origin: { x: 0.5, y: 0.94 },
+  body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
   health: 30,
   speed: 41.8,
   contactDamage: 13,
@@ -50,11 +66,12 @@ export const SENTINEL: EnemyKind = {
   id: 'sentinel',
   texture: 'enemy-sentinel',
   path: 'assets/enemies/drone.png',
-  frame: { width: 24, height: 24 },
-  frameCount: 2,
-  frameRate: 5,
-  origin: { x: 0.5, y: 0.9 },
-  body: { width: 12, height: 10, offsetX: 6, offsetY: 10 },
+  frame: { width: 32, height: 32 },
+  frameCount: 4,
+  frameRate: 6,
+  directional: true,
+  origin: { x: 0.5, y: 0.94 },
+  body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
   health: 24,
   speed: 24.2,
   contactDamage: 4,
@@ -128,14 +145,14 @@ export function pickWaveEnemy(progress: number): EnemyKind {
   return available[available.length - 1] ?? DRONE;
 }
 
-export function enemyAnimationKey(kind: EnemyKind): string {
-  return `${kind.id}:walk`;
+export function enemyAnimationKey(kind: EnemyKind, dir: EnemyDirection = 'down'): string {
+  return kind.directional ? `${kind.id}:walk:${dir}` : `${kind.id}:walk`;
 }
 
 /** Encola la carga de los spritesheets de enemigos (llamar desde preload). */
 export function loadEnemyAssets(scene: Phaser.Scene): void {
   for (const kind of ENEMY_KINDS) {
-    scene.load.spritesheet(kind.texture, kind.path, {
+    scene.load.spritesheet(kind.texture, `${kind.path}?v=${__BUILD_ID__}`, {
       frameWidth: kind.frame.width,
       frameHeight: kind.frame.height,
     });
@@ -144,6 +161,20 @@ export function loadEnemyAssets(scene: Phaser.Scene): void {
 
 export function registerEnemyAnimations(scene: Phaser.Scene): void {
   for (const kind of ENEMY_KINDS) {
+    if (kind.directional) {
+      ENEMY_DIRECTIONS.forEach((dir, row) => {
+        const key = enemyAnimationKey(kind, dir);
+        if (scene.anims.exists(key)) return;
+        const start = row * kind.frameCount;
+        scene.anims.create({
+          key,
+          frames: scene.anims.generateFrameNumbers(kind.texture, { start, end: start + kind.frameCount - 1 }),
+          frameRate: kind.frameRate,
+          repeat: -1,
+        });
+      });
+      continue;
+    }
     const key = enemyAnimationKey(kind);
     if (scene.anims.exists(key)) continue;
     scene.anims.create({

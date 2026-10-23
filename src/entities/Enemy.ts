@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { enemyAnimationKey, type EnemyKind } from '../enemies/enemyKinds';
+import { enemyAnimationKey, enemyDirectionFromVector, type EnemyKind } from '../enemies/enemyKinds';
 
 export interface EnemyScaling {
   health: number;
@@ -95,32 +95,45 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.setVelocity(0, 0);
     }
+
+    if (this.kind.directional) {
+      const faceX = Math.abs(dx) > 0.5 ? dx : moveX;
+      const faceY = Math.abs(dy) > 0.5 ? dy : moveY;
+      const dir = enemyDirectionFromVector(faceX, faceY);
+      const nextKey = enemyAnimationKey(this.kind, dir);
+      if (this.anims.currentAnim?.key !== nextKey) {
+        const progress = this.anims.getProgress();
+        this.play(nextKey, true);
+        this.anims.setProgress(progress);
+      }
+    }
+
     this.setDepth(this.y);
   }
 
-/** Devuelve true si el golpe se aplicó. */
-takeDamage(amount: number): boolean {
-  if (this.dying) return false;
-  this.currentHealth -= amount;
+  /** Devuelve true si el golpe se aplicó. */
+  takeDamage(amount: number): boolean {
+    if (this.dying) return false;
+    this.currentHealth -= amount;
 
-  if (this.currentHealth <= 0) {
-    this.die();
-  } else {
-    this.setTintFill(0xffffff);
-    this.scene.time.delayedCall(60, () => {
-      if (!this.active) return;
+    if (this.currentHealth <= 0) {
+      this.die();
+    } else {
+      this.setTintFill(0xffffff);
+      this.scene.time.delayedCall(60, () => {
+        if (!this.active) return;
 
-      if (this.harmless) {
-        this.setTint(0xb7c4d6);
-      } else if (this.kind.id === 'sentinel') {
-        this.setTint(0xffb36b);
-      } else {
-        this.clearTint();
-      }
-    });
+        if (this.harmless) {
+          this.setTint(0xb7c4d6);
+        } else if (this.kind.id === 'sentinel') {
+          this.setTint(0xffb36b);
+        } else {
+          this.clearTint();
+        }
+      });
+    }
+    return true;
   }
-  return true;
-}
 
   private die(): void {
     this.dying = true;

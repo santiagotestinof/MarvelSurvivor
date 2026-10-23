@@ -6,6 +6,8 @@ import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds'
 import { loadCharacterAssets, registerCharacterAnimations } from '../systems/AnimationSystem';
 import { registerUpgradeIcons } from '../ui/upgradeIcons';
 
+declare const __BUILD_ID__: string;
+
 /** Carga todos los recursos, registra las animaciones y pasa a la escena de juego. */
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -15,10 +17,10 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     this.load.setPath(import.meta.env.BASE_URL);
 
-    this.load.image(TEXTURES.ground, ASSET_PATHS.ground);
-    this.load.image(TEXTURES.tree, ASSET_PATHS.tree);
-    this.load.image(TEXTURES.rock, ASSET_PATHS.rock);
-    this.load.image(TEXTURES.crate, ASSET_PATHS.crate);
+    this.load.image(TEXTURES.ground, `${ASSET_PATHS.ground}?v=${__BUILD_ID__}`);
+    this.load.image(TEXTURES.tree, `${ASSET_PATHS.tree}?v=${__BUILD_ID__}`);
+    this.load.spritesheet(TEXTURES.rock, `${ASSET_PATHS.rock}?v=${__BUILD_ID__}`, { frameWidth: 16, frameHeight: 12 });
+    this.load.spritesheet(TEXTURES.crate, `${ASSET_PATHS.crate}?v=${__BUILD_ID__}`, { frameWidth: 16, frameHeight: 16 });
 
     this.load.image(TEXTURES.repulsor, ASSET_PATHS.repulsor);
     this.load.image(TEXTURES.missile, ASSET_PATHS.missile);

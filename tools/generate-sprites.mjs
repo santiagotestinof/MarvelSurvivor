@@ -629,35 +629,125 @@ function makeTree() {
   return addOutline(cv, hex('#10260f'));
 }
 
+// Piedra rompible: hoja de 4 cuadros de 16x12 (intacta -> grietas leves -> grietas medias -> muy agrietada).
 function makeRock() {
-  const cv = new Canvas(16, 12);
-  for (let y = 0; y < 12; y++)
-    for (let x = 0; x < 16; x++) {
-      const d = Math.hypot((x - 7.5) / 7.2, (y - 6.5) / 4.6);
-      if (d > 1) continue;
-      const t = y / 12 + (x - 8) / 40;
-      cv.set(x, y, t > 0.62 ? hex('#6b6f78') : t > 0.35 ? hex('#8b909a') : hex('#aeb3bc'));
+  const sheet = new Canvas(16 * 4, 12);
+  const crackDark = hex('#1d1f24');
+  const crackMid = hex('#434750');
+  const clear = [0, 0, 0, 0];
+
+  const stage1Cracks = [
+    [7, 2], [7, 3], [8, 4], [7, 5], [6, 5],
+  ];
+  const stage2Cracks = [
+    ...stage1Cracks,
+    [8, 5], [9, 6], [10, 7], [6, 6], [5, 7], [4, 8], [11, 4], [12, 5],
+  ];
+  const stage3Cracks = [
+    ...stage2Cracks,
+    [7, 6], [7, 7], [8, 8], [8, 9], [3, 6], [4, 5], [11, 8], [12, 9], [5, 9], [10, 4],
+  ];
+
+  for (let stage = 0; stage < 4; stage++) {
+    const cv = new Canvas(16, 12);
+    for (let y = 0; y < 12; y++)
+      for (let x = 0; x < 16; x++) {
+        const d = Math.hypot((x - 7.5) / 7.2, (y - 6.5) / 4.6);
+        if (d > 1) continue;
+        const t = y / 12 + (x - 8) / 40;
+        cv.set(x, y, t > 0.62 ? hex('#6b6f78') : t > 0.35 ? hex('#8b909a') : hex('#aeb3bc'));
+      }
+
+    // En etapas avanzadas se desprenden pedacitos del borde superior/lateral.
+    if (stage >= 2) {
+      cv.set(6, 2, clear);
+      cv.set(12, 3, clear);
     }
-  return addOutline(cv, hex('#25272c'));
+    if (stage >= 3) {
+      cv.set(5, 2, clear);
+      cv.set(7, 2, clear);
+      cv.set(13, 4, clear);
+      cv.set(2, 5, clear);
+    }
+
+    addOutline(cv, hex('#25272c'));
+
+    const cracks = stage === 1 ? stage1Cracks : stage === 2 ? stage2Cracks : stage === 3 ? stage3Cracks : [];
+    for (const [cx, cy] of cracks) {
+      if (cv.opaque(cx, cy)) cv.set(cx, cy, crackDark);
+      if (stage >= 2 && cv.opaque(cx + 1, cy) && (cx + cy) % 2 === 0) cv.set(cx + 1, cy, crackMid);
+    }
+
+    sheet.blit(cv, stage * 16, 0);
+  }
+  return sheet;
 }
 
+// Caja rompible: hoja de 4 cuadros de 16x16 (intacta -> astillada -> agrietada -> a punto de romperse).
 function makeCrate() {
-  const cv = new Canvas(16, 16);
+  const sheet = new Canvas(16 * 4, 16);
+  const outline = hex('#2a1a09');
   const wood = hex('#b07a35');
   const woodLight = hex('#c8924a');
   const woodDark = hex('#6b4519');
-  cv.rect(0, 0, 16, 16, wood);
-  cv.rect(1, 1, 14, 1, woodLight);
-  for (let i = 0; i < 16; i++) {
-    cv.set(i, i, woodDark);
-    cv.set(15 - i, i, woodDark);
+  const crack = hex('#1f1105');
+  const splinter = hex('#4a2d0f');
+  const clear = [0, 0, 0, 0];
+
+  const stage1 = [
+    [7, 5], [8, 6], [8, 7], [7, 8], [9, 8],
+  ];
+  const stage2 = [
+    ...stage1,
+    [6, 4], [7, 9], [6, 10], [5, 11], [10, 9], [11, 10], [4, 7], [5, 7], [10, 5],
+  ];
+  const stage3 = [
+    ...stage2,
+    [8, 9], [8, 10], [9, 11], [9, 12], [4, 12], [3, 12], [12, 6], [11, 6], [6, 12], [7, 13],
+    [5, 4], [10, 12], [12, 10], [3, 5], [4, 5],
+  ];
+
+  for (let stage = 0; stage < 4; stage++) {
+    const cv = new Canvas(16, 16);
+    // Cuerpo de la caja en (1..14, 1..14) para dejar 1 px de contorno oscuro alrededor.
+    cv.rect(1, 1, 14, 14, wood);
+    for (let i = 2; i < 14; i++) {
+      cv.set(i, i, woodDark);
+      cv.set(15 - i, i, woodDark);
+    }
+    // Marco de madera
+    cv.rect(1, 1, 14, 2, woodDark);
+    cv.rect(1, 13, 14, 2, woodDark);
+    cv.rect(1, 1, 2, 14, woodDark);
+    cv.rect(13, 1, 2, 14, woodDark);
+    cv.rect(2, 2, 12, 1, woodLight);
+    cv.rect(3, 3, 10, 1, woodLight);
+
+    // En etapas avanzadas se desprenden astillas de las esquinas antes de trazar el contorno.
+    if (stage >= 2) {
+      cv.set(1, 1, clear);
+      cv.set(14, 14, clear);
+    }
+    if (stage >= 3) {
+      cv.set(2, 1, clear);
+      cv.set(1, 2, clear);
+      cv.set(14, 1, clear);
+      cv.set(1, 14, clear);
+      // Hueco central de tablas partidas
+      cv.rect(7, 7, 2, 2, crack);
+    }
+
+    addOutline(cv, outline);
+
+    const cracks = stage === 1 ? stage1 : stage === 2 ? stage2 : stage === 3 ? stage3 : [];
+    for (const [cx, cy] of cracks) {
+      if (cv.opaque(cx, cy)) cv.set(cx, cy, crack);
+      if (stage >= 2 && cv.opaque(cx - 1, cy) && (cx + cy) % 2 === 1) cv.set(cx - 1, cy, splinter);
+    }
+
+    sheet.blit(cv, stage * 16, 0);
   }
-  cv.rect(0, 0, 16, 2, woodDark);
-  cv.rect(0, 14, 16, 2, woodDark);
-  cv.rect(0, 0, 2, 16, woodDark);
-  cv.rect(14, 0, 2, 16, woodDark);
-  cv.rect(2, 2, 12, 1, woodLight);
-  return addOutline(cv, hex('#2a1a09'));
+  return sheet;
 }
 
 // ---------------------------------------------------------------- enemigos y proyectil (provisional)
@@ -672,29 +762,261 @@ function fillEllipse(cv, cx, cy, rx, ry, colorAt) {
     }
 }
 
-// Dron genérico: hoja de 2 cuadros de 24x24.
-function makeDrone() {
-  const sheet = new Canvas(48, 24);
-  const steel = [hex('#98a2b3'), hex('#667085'), hex('#4a5568')];
-  const eye = hex('#ff4444');
-  for (let f = 0; f < 2; f++) {
-    const cv = new Canvas(24, 24);
-    const bob = f;
-    cv.rect(f ? 8 : 7, 19, 3, f ? 2 : 3, steel[2]); // patas
-    cv.rect(f ? 13 : 14, 19, 3, f ? 3 : 2, steel[2]);
-    fillEllipse(cv, 12, 12 - bob, 8.5, 7.5, (dx, dy) => {
-      const t = dy + dx * 0.35;
-      return t > 0.5 ? steel[2] : t > -0.25 ? steel[1] : steel[0];
-    });
-    cv.rect(5, 9 - bob, 14, 4, hex('#161b29')); // visor
-    cv.rect(7, 10 - bob, 3, 2, eye);
-    cv.rect(14, 10 - bob, 3, 2, eye);
-    cv.rect(7, 10 - bob, 3, 1, hex('#ff9a9a'));
-    cv.rect(14, 10 - bob, 3, 1, hex('#ff9a9a'));
-    cv.rect(12, 3 - bob, 1, 3, steel[0]); // antena
-    cv.set(12, 2 - bob, eye);
-    sheet.blit(addOutline(cv, hex('#0d111b')), f * 24, 0);
+// Centinela tipo Ultron (enemigo principal): 4 direcciones (filas: abajo, izq, der, arriba) x 4 cuadros de 32x32.
+function drawUltronBot(dir, frameIdx) {
+  const cv = new Canvas(32, 32);
+  const outline = hex('#0e0f14');
+  const mLight = hex('#b8bcc6');
+  const mBase = hex('#888c96');
+  const mDark = hex('#5c606a');
+  const mDeep = hex('#2d3038');
+  const socket = hex('#17181d');
+  const scarRed = hex('#941919');
+  const redGlow = hex('#e8352b');
+  const redBright = hex('#ff6e62');
+
+  const strides = [-2, 0, 2, 0];
+  const bobs = [0, -1, 0, -1];
+  const stride = strides[frameIdx] ?? 0;
+  const bob = bobs[frameIdx] ?? 0;
+
+  const cx = 16;
+  const isFront = dir === 'down';
+  const isBack = dir === 'up';
+  const isSide = dir === 'left' || dir === 'right';
+  const fx = dir === 'right' ? 1 : dir === 'left' ? -1 : 0;
+
+  // ---------------- 1) PIERNAS (y = 20..30)
+  const hipY = 20 + bob;
+  if (!isSide) {
+    for (const side of [-1, 1]) {
+      const step = side * stride;
+      const lift = step > 0 ? -1 : 0;
+      const lx = cx + side * 3 - 1;
+      // Muslo segmentado con brillo diagonal como en la foto
+      cv.rect(lx, hipY, 3, 4, mBase);
+      cv.rect(lx, hipY, 1, 4, side < 0 ? mLight : mDark);
+      cv.rect(lx + 2, hipY, 1, 4, side > 0 ? mLight : mDark);
+      cv.set(lx + 1, hipY + 1, mLight);
+      // Articulación oscura de la rodilla
+      const kneeY = hipY + 4 + lift;
+      cv.rect(lx, kneeY, 3, 2, mDeep);
+      // Pantorrilla metálica
+      const shinX = lx + (side > 0 ? 1 : -1) * (step !== 0 ? 1 : 0);
+      cv.rect(shinX, kneeY + 2, 3, 3, mBase);
+      cv.rect(shinX + 1, kneeY + 2, 1, 3, mLight);
+      // Pie / bota robótica
+      const footY = Math.min(30, kneeY + 5);
+      cv.rect(shinX - (side < 0 ? 1 : 0), footY, 4, 2, mDark);
+      cv.rect(shinX, footY, 2, 1, mLight);
+    }
+  } else {
+    // Vista de perfil: dos piernas en tijera (lejana primero, cercana después)
+    for (const layer of [-1, 1]) {
+      const step = layer * stride;
+      const dark = layer < 0;
+      const baseC = dark ? mDark : mBase;
+      const lightC = dark ? mBase : mLight;
+      const thighX = cx - 1 + Math.round(step * 0.6);
+      const kneeX = cx - 1 + step;
+      const lift = step * fx > 0 ? -1 : 0;
+      // Muslo
+      cv.rect(thighX, hipY, 3, 4, baseC);
+      cv.rect(thighX + (fx > 0 ? 2 : 0), hipY, 1, 4, lightC);
+      // Rodilla
+      cv.rect(kneeX, hipY + 4 + lift, 3, 2, mDeep);
+      // Pantorrilla
+      cv.rect(kneeX, hipY + 6 + lift, 3, 3, baseC);
+      cv.rect(kneeX + (fx > 0 ? 2 : 0), hipY + 6 + lift, 1, 3, lightC);
+      // Bota orientada hacia fx
+      const footX = fx > 0 ? kneeX : kneeX - 1;
+      cv.rect(footX, Math.min(30, hipY + 9 + lift), 4, 2, mDark);
+      cv.set(footX + (fx > 0 ? 2 : 1), Math.min(30, hipY + 9 + lift), lightC);
+    }
   }
+
+  // ---------------- 2) BRAZO LEJANO (en perfil va detrás del torso)
+  const ty = 12 + bob;
+  const drawProfileArm = (swing, isFar) => {
+    const baseC = isFar ? mDark : mBase;
+    const lightC = isFar ? mBase : mLight;
+    const shX = cx - 1 + Math.round(swing * 0.4);
+    const shY = ty;
+    // Hombrera redondeada
+    cv.rect(shX, shY, 3, 3, baseC);
+    cv.set(shX + (fx > 0 ? 1 : 1), shY, lightC);
+    // Brazo superior y codo con punto rojo
+    const elbX = shX + Math.round(swing * 0.8);
+    const elbY = shY + 3;
+    cv.rect(elbX, elbY, 3, 3, baseC);
+    cv.set(elbX + 1, elbY + 1, redGlow);
+    // Antebrazo adelantado hacia fx y mano con garras
+    const foreX = elbX + fx * 2;
+    const foreY = elbY + 1;
+    cv.rect(foreX, foreY, 3, 3, baseC);
+    cv.set(foreX + 1, foreY + 1, redGlow);
+    const handX = foreX + fx * 2;
+    const handY = foreY - 1;
+    cv.rect(handX, handY, 2, 3, baseC);
+    cv.set(handX, handY - 1, mDeep);
+    cv.set(handX + 1, handY - 1, mDeep);
+  };
+
+  if (isSide) {
+    drawProfileArm(-stride, true);
+  }
+
+  // ---------------- 3) TORSO (y = 12..19)
+  if (!isSide) {
+    // Pecho ancho arriba (10 px) y cintura angosta abajo (6 px), como en la imagen de referencia
+    cv.shaded(cx - 5, ty, 10, 5, mBase, mLight, mDark);
+    cv.shaded(cx - 4, ty + 5, 8, 2, mBase, mLight, mDark);
+    cv.shaded(cx - 3, ty + 7, 6, 2, mDark, mBase, mDeep); // pelvis / cinturón
+
+    if (isFront) {
+      // Brillo central del esternón y ranuras pectorales
+      cv.rect(cx - 1, ty + 1, 2, 3, mLight);
+      cv.set(cx - 3, ty + 2, mDeep);
+      cv.set(cx + 2, ty + 2, mDeep);
+      // Los 4 nodos de energía rojos en V del pecho/costillas (idénticos a la foto)
+      cv.set(cx - 3, ty + 4, redGlow);
+      cv.set(cx + 2, ty + 4, redGlow);
+      cv.set(cx - 2, ty + 5, redBright);
+      cv.set(cx + 1, ty + 5, redBright);
+      // Placa abdominal segmentada
+      cv.rect(cx - 3, ty + 6, 6, 1, mDeep);
+    } else if (isBack) {
+      // Columna vertebral cibernética y placas dorsales
+      cv.rect(cx - 1, ty, 2, 8, mDeep);
+      for (let y = ty + 1; y <= ty + 6; y += 2) cv.rect(cx - 1, y, 2, 1, mLight);
+      // Dos respiraderos rojos en los omóplatos
+      cv.set(cx - 3, ty + 2, scarRed);
+      cv.set(cx + 2, ty + 2, scarRed);
+      cv.set(cx - 2, ty + 4, redGlow);
+      cv.set(cx + 1, ty + 4, redGlow);
+    }
+  } else {
+    // Torso de perfil
+    const tx = cx - 3;
+    cv.shaded(tx, ty, 6, 5, mBase, mLight, mDark);
+    cv.shaded(tx + 1, ty + 5, 5, 3, mDark, mBase, mDeep);
+    // Pecho saliente hacia fx con nodos rojos laterales
+    const frontX = fx > 0 ? tx + 5 : tx;
+    cv.rect(frontX, ty + 1, 1, 4, mLight);
+    cv.set(frontX - fx, ty + 3, redGlow);
+    cv.set(frontX - fx * 2, ty + 4, redBright);
+    // Espalda vertebral del lado opuesto
+    const backX = fx > 0 ? tx : tx + 5;
+    cv.rect(backX, ty + 1, 1, 5, mDeep);
+  }
+
+  // ---------------- 4) BRAZOS (frente, espalda y brazo cercano en perfil)
+  if (isSide) {
+    drawProfileArm(stride, false);
+  } else {
+    // En frente y espalda: hombreras redondeadas, brazos segmentados con puntos rojos y una mano con garras levantada
+    for (const side of [-1, 1]) {
+      const swing = Math.round((side * stride) / 2);
+      const shX = side < 0 ? cx - 8 : cx + 5;
+      const shY = ty + (swing > 0 ? 1 : 0);
+      // Hombrera (3x3)
+      cv.shaded(shX, shY, 3, 3, mBase, mLight, mDark);
+      // Brazo y antebrazo: el brazo derecho del sprite (side > 0 en frente, side < 0 en espalda) se flexiona amenazante como en la foto
+      const raised = (isFront && side > 0) || (isBack && side < 0);
+      if (raised) {
+        const armX = shX + side;
+        cv.rect(armX, shY + 3, 3, 3, mBase);
+        cv.set(armX + 1, shY + 4, redGlow); // nodo rojo del codo
+        // Mano levantada con 3 garras oscuras arriba
+        const clawX = armX + side;
+        const clawY = shY;
+        cv.shaded(clawX, clawY + 1, 3, 3, mBase, mLight, mDark);
+        cv.set(clawX, clawY - 1, mDeep);
+        cv.set(clawX + 2, clawY - 1, mDeep);
+      } else {
+        const armX = shX - (side < 0 ? 1 : 0);
+        cv.shaded(armX, shY + 3, 3, 3, mBase, mLight, mDark);
+        cv.set(armX + 1, shY + 4, redGlow); // nodo rojo bíceps/codo
+        cv.shaded(armX, shY + 6, 3, 3, mBase, mLight, mDark);
+        cv.set(armX + 1, shY + 7, redGlow); // nodo rojo antebrazo
+        cv.rect(armX, shY + 9, 3, 2, mDark); // puño cerrado
+      }
+    }
+  }
+
+  // ---------------- 5) CABEZA (y = 2..11)
+  const hy = 2 + bob;
+  if (!isSide) {
+    // Cráneo metálico redondeado (más angosto arriba y en la mandíbula, ancho en las sienes)
+    cv.shaded(cx - 4, hy, 8, 2, mBase, mLight, mDark);
+    cv.shaded(cx - 5, hy + 2, 10, 5, mBase, mLight, mDark);
+    cv.shaded(cx - 4, hy + 7, 8, 3, mDark, mBase, mDeep);
+    // Orejas / sensores laterales
+    cv.rect(cx - 6, hy + 4, 1, 3, mBase);
+    cv.rect(cx + 5, hy + 4, 1, 3, mBase);
+
+    if (isFront) {
+      // Brillo superior izquierdo del cráneo
+      cv.rect(cx - 3, hy + 1, 2, 2, mLight);
+      // Dos marcas rojas verticales en la frente (idénticas a la foto de Ultron)
+      cv.rect(cx - 2, hy + 2, 1, 3, scarRed);
+      cv.rect(cx + 2, hy + 2, 1, 3, scarRed);
+      cv.set(cx - 3, hy + 1, scarRed);
+      // Cuencas oscuras y ojos rojos brillantes
+      cv.rect(cx - 4, hy + 5, 3, 2, socket);
+      cv.rect(cx + 1, hy + 5, 3, 2, socket);
+      cv.rect(cx - 3, hy + 5, 2, 1, redBright);
+      cv.rect(cx + 2, hy + 5, 2, 1, redBright);
+      cv.set(cx - 2, hy + 6, redGlow);
+      cv.set(cx + 2, hy + 6, redGlow);
+      // Mandíbula / rejilla bucal oscura con barrotes grises verticales
+      cv.rect(cx - 4, hy + 7, 8, 2, socket);
+      cv.set(cx - 2, hy + 8, mBase);
+      cv.set(cx, hy + 8, mBase);
+      cv.set(cx + 2, hy + 8, mBase);
+    } else {
+      // De espaldas: nuca metálica con costura central y nodo neural rojo
+      cv.rect(cx - 3, hy + 1, 3, 2, mLight);
+      cv.rect(cx, hy + 1, 1, 7, mDeep);
+      cv.rect(cx - 3, hy + 6, 6, 1, mDeep);
+      cv.rect(cx - 1, hy + 4, 2, 2, scarRed);
+      cv.set(cx, hy + 4, redGlow);
+    }
+  } else {
+    // Cabeza de perfil (mirando a la izquierda o a la derecha)
+    const hx = cx - 4;
+    cv.shaded(hx + 1, hy, 7, 2, mBase, mLight, mDark);
+    cv.shaded(hx, hy + 2, 9, 5, mBase, mLight, mDark);
+    cv.shaded(hx + 1, hy + 7, 7, 3, mDark, mBase, mDeep);
+
+    // Disco auditivo en la sien (centro de la cabeza)
+    cv.rect(cx - 1, hy + 4, 2, 3, mDeep);
+    cv.set(cx - 1, hy + 5, mBase);
+
+    // Frente, marca roja, cuenca ocular y boca hacia el lado que mira (fx)
+    const faceX = fx > 0 ? hx + 6 : hx;
+    const scarX = fx > 0 ? hx + 6 : hx + 2;
+    cv.rect(scarX, hy + 2, 1, 3, scarRed);
+    cv.rect(faceX, hy + 5, 3, 2, socket);
+    cv.rect(fx > 0 ? faceX + 1 : faceX, hy + 5, 2, 1, redBright);
+    cv.set(fx > 0 ? faceX + 1 : faceX + 1, hy + 6, redGlow);
+    // Mandíbula oscura en perfil
+    cv.rect(faceX, hy + 7, 3, 2, socket);
+    cv.set(faceX + 1, hy + 8, mBase);
+  }
+
+  return addOutline(cv, outline);
+}
+
+function makeDrone() {
+  const dirs = ['down', 'left', 'right', 'up'];
+  const framesPerDir = 4;
+  const sheet = new Canvas(32 * framesPerDir, 32 * dirs.length);
+  dirs.forEach((dir, row) => {
+    for (let col = 0; col < framesPerDir; col++) {
+      sheet.blit(drawUltronBot(dir, col), col * 32, row * 32);
+    }
+  });
   return sheet;
 }
 
@@ -903,8 +1225,10 @@ const heroSheets = {};
 for (const id of Object.keys(HEROES)) if (id !== 'ironman') heroSheets[id] = saveHero(id);
 save(makeGround(), 'tiles/ground.png');
 save(makeTree(), 'props/tree.png');
-save(makeRock(), 'props/rock.png');
-save(makeCrate(), 'props/crate.png');
+const rock = makeRock();
+const crate = makeCrate();
+save(rock, 'props/rock.png');
+save(crate, 'props/crate.png');
 const drone = makeDrone();
 const overlord = makeOverlord();
 save(drone, 'enemies/drone.png');
@@ -932,7 +1256,9 @@ if (previewIdx !== -1) {
     writeFileSync(join(dir, `${id}-idle.png`), encodePng(previewOf(sheets.idle, 4)));
     writeFileSync(join(dir, `${id}-walk.png`), encodePng(previewOf(sheets.walk, 4)));
   }
-  writeFileSync(join(dir, 'drone.png'), encodePng(previewOf(drone, 8)));
+  writeFileSync(join(dir, 'drone.png'), encodePng(previewOf(drone, 6)));
+  writeFileSync(join(dir, 'rock.png'), encodePng(previewOf(rock, 8)));
+  writeFileSync(join(dir, 'crate.png'), encodePng(previewOf(crate, 8)));
   writeFileSync(join(dir, 'overlord.png'), encodePng(previewOf(overlord, 6)));
   writeFileSync(join(dir, 'scout.png'), encodePng(previewOf(scout, 8)));
   writeFileSync(join(dir, 'brute.png'), encodePng(previewOf(brute, 8)));

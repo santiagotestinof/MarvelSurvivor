@@ -104,8 +104,8 @@ export const GOLD = {
 
 /** Props que se rompen con los disparos: vida y oro (mínimo y máximo) que sueltan. */
 export const BREAKABLE_PROPS = {
-  crate: { health: 15, gold: { min: 3, max: 6 } },
-  rock: { health: 30, gold: { min: 2, max: 5 } },
+  crate: { health: 40, gold: { min: 3, max: 6 } },
+  rock: { health: 60, gold: { min: 2, max: 5 } },
 } as const;
 
 export const META = {
