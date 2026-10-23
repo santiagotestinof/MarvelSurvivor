@@ -38,4 +38,6 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 - Oro y progreso permanente: `src/meta/` (guardado, mejoras permanentes) · balance del oro en `GOLD`, `BREAKABLE_PROPS` y `META` de `gameplayConfig.ts`
 - Interfaz: `src/ui/` (`UiButton`, `UpgradeCard`, `drawPanel` y escalas en `uiLayout.ts`)
 - Héroes: `src/characters/` (registro en `registry.ts`, rarezas en `rarity.ts`; para sumar uno: definición + sprites en `HEROES` del generador + entrada en el registro; su precio sale de su `rarity`) · Escenas: `src/scenes/` (Boot, Menu, Game, Hud)
+- Arte de héroes: Iron Man sale de `tools/ironman-reference.mjs`; Capitán y Thor están dibujados desde cero en `tools/hero-art.mjs` (cuadros de 48×48, suelo en (24, 41), `DRAWN_HEROES` en el generador); Spider-Man y Hulk siguen provisionales.
+- Íconos de la tienda: `tools/meta-icons.mjs` (dibujados con código, 16×16), `tools/meta-icons-custom.mjs` (a mano, 16×16) y `tools/meta-icons-custom32.mjs` (a mano, 32×32); la hoja final usa cuadros de 32×32 (`SHEET_CELL`, `META_ITEM_SIZE`).
 - Detalles de sprites y cómo agregar animaciones o personajes: `README.md`

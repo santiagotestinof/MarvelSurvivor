@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { IRON_MAN_REF } from './ironman-reference.mjs';
+import { GW, GH, drawDrawnHero } from './hero-art.mjs';
 import { buildMetaIconSheet } from './meta-icons.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -564,6 +565,33 @@ function saveHero(id) {
   return { idle, walk };
 }
 
+
+// ---------------------------------------------------------------- Capitán y Thor (dibujados desde cero en tools/hero-art.mjs)
+const DRAWN_HEROES = ['capitan', 'thor'];
+const DRAWN_FRAME = 48;
+/** Suelo en (24, 41): los pies terminan en la fila 40 de la grilla y el contorno en la 41. */
+function drawnFrame(id, { fx, fy, stride = 0, bob = 0 }) {
+  const { grid, palette } = drawDrawnHero(id, { back: fy < 0, stride, bob });
+  const cv = new Canvas(DRAWN_FRAME, DRAWN_FRAME);
+  const ox = (DRAWN_FRAME - GW) / 2;
+  for (let y = 0; y < GH; y++)
+    for (let x = 0; x < GW; x++) {
+      const letter = fx < 0 ? grid[y][GW - 1 - x] : grid[y][x];
+      if (letter === '.') continue;
+      cv.set(ox + x, y, hex(palette[letter]));
+    }
+  return cv;
+}
+function buildDrawnSheet(id, frames) {
+  const sheet = new Canvas(frames.length * DRAWN_FRAME, DIRECTIONS.length * DRAWN_FRAME);
+  DIRECTIONS.forEach(([fx, fy], row) => {
+    frames.forEach((f, col) => sheet.blit(drawnFrame(id, { fx, fy, ...f }), col * DRAWN_FRAME, row * DRAWN_FRAME));
+  });
+  return sheet;
+}
+const DRAWN_IDLE = [0, -1, -1, 0].map((bob) => ({ bob }));
+const DRAWN_WALK = [0, 2, 2, 0, -2, -2].map((stride, i) => ({ stride, bob: i % 3 === 0 ? -1 : 0 }));
+
 // ---------------------------------------------------------------- terreno y objetos
 
 function makeGrass(seed) {
@@ -909,7 +937,14 @@ save(ironWalk, 'characters/ironman/ironman-walk.png');
 const idle = ironIdle;
 const walk = ironWalk;
 const heroSheets = {};
-for (const id of Object.keys(HEROES)) if (id !== 'ironman') heroSheets[id] = saveHero(id);
+for (const id of Object.keys(HEROES)) if (id !== 'ironman' && !DRAWN_HEROES.includes(id)) heroSheets[id] = saveHero(id);
+for (const id of DRAWN_HEROES) {
+  const idleSheet = buildDrawnSheet(id, DRAWN_IDLE);
+  const walkSheet = buildDrawnSheet(id, DRAWN_WALK);
+  save(idleSheet, `characters/${id}/${id}-idle.png`);
+  save(walkSheet, `characters/${id}/${id}-walk.png`);
+  heroSheets[id] = { idle: idleSheet, walk: walkSheet };
+}
 save(makeGround(), 'tiles/ground.png');
 save(makeTree(), 'props/tree.png');
 save(makeRock(), 'props/rock.png');

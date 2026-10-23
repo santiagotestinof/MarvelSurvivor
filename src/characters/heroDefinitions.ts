@@ -16,6 +16,10 @@ function sheets(id: string): CharacterDefinition['sheets'] {
 const FRAME = { width: 32, height: 32 };
 const ORIGIN = { x: 0.5, y: 30 / 32 };
 const BODY = { width: 10, height: 8, offsetX: 11, offsetY: 22 };
+/** Capitán y Thor se dibujaron más grandes (cuadros de 48×48, suelo en (24, 41)), igual que Iron Man. */
+const FRAME_BIG = { width: 48, height: 48 };
+const ORIGIN_BIG = { x: 0.5, y: 41 / 48 };
+const BODY_BIG = { width: 10, height: 8, offsetX: 19, offsetY: 37 };
 
 export const CAPITAN_ID = 'capitan';
 export const SPIDERMAN_ID = 'spiderman';
@@ -28,9 +32,9 @@ export const capitanDefinition: CharacterDefinition = {
   displayName: 'Capitán América',
   rarity: 'common',
   weaponText: 'Escudo: va y vuelve atravesando enemigos',
-  frame: FRAME,
-  origin: ORIGIN,
-  body: BODY,
+  frame: FRAME_BIG,
+  origin: ORIGIN_BIG,
+  body: BODY_BIG,
   stats: {
     moveSpeed: 76.5,
     maxHealth: 130,
@@ -80,9 +84,9 @@ export const thorDefinition: CharacterDefinition = {
   displayName: 'Thor',
   rarity: 'epic',
   weaponText: 'Rayos: caen sobre los enemigos y dañan en área',
-  frame: FRAME,
-  origin: ORIGIN,
-  body: BODY,
+  frame: FRAME_BIG,
+  origin: ORIGIN_BIG,
+  body: BODY_BIG,
   stats: {
     moveSpeed: 81,
     maxHealth: 110,
