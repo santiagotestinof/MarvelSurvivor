@@ -50,6 +50,7 @@ export class BootScene extends Phaser.Scene {
     this.createShadowTexture();
     this.createGemTexture();
     this.createCoinTexture();
+    this.createMagnetTexture();
     registerUpgradeIcons(this);
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       registerCharacterAnimations(this, definition);
@@ -83,6 +84,19 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xffc933, 1).fillCircle(4, 4, 3);
     g.fillStyle(0xfff0a6, 1).fillRect(2, 2, 2, 2);
     g.generateTexture(TEXTURES.coin, 8, 8);
+    g.destroy();
+  }
+
+  /** Imán de experiencia provisional: herradura roja con las puntas plateadas. */
+  private createMagnetTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x5a1010, 1).fillRect(0, 0, 10, 10);
+    g.clear();
+    g.fillStyle(0x7a1414, 1).fillRect(0, 1, 4, 9).fillRect(6, 1, 4, 9).fillRect(0, 6, 10, 4);
+    g.fillStyle(0xe23b3b, 1).fillRect(1, 2, 2, 7).fillRect(7, 2, 2, 7).fillRect(1, 7, 8, 2);
+    g.fillStyle(0xdfe6ee, 1).fillRect(0, 0, 4, 3).fillRect(6, 0, 4, 3);
+    g.fillStyle(0xffffff, 1).fillRect(1, 1, 1, 1);
+    g.generateTexture(TEXTURES.magnet, 10, 10);
     g.destroy();
   }
 

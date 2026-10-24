@@ -61,3 +61,6 @@ Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `E
 | Doctor Strange | Aura de runas | Dimensión lenta: aura 1,8 veces más grande que ralentiza a los enemigos | Área |
 
 Valores en `EVOLUTION` de `gameplayConfig.ts`. Sin verificar el balance.
+
+## Imán de experiencia
+- Al romper una caja o roca hay un 5 % de chance (`PROP_MAGNET_CHANCE`) de que suelte un imán. Al juntarlo, toda la experiencia que hay en el piso, en todo el mapa, va hacia el jugador (el oro no).

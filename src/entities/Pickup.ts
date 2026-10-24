@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { TEXTURES } from '../config/assetKeys';
 
-export type PickupKind = 'xp' | 'gold';
+export type PickupKind = 'xp' | 'gold' | 'magnet';
 
-const TEXTURE_OF: Record<PickupKind, string> = { xp: TEXTURES.gem, gold: TEXTURES.coin };
+const TEXTURE_OF: Record<PickupKind, string> = { xp: TEXTURES.gem, gold: TEXTURES.coin, magnet: TEXTURES.magnet };
 
-/** Objeto que se junta: gema de experiencia o moneda de oro. Va hacia el jugador cuando éste se acerca. */
+/** Objeto que se junta: gema de experiencia, moneda de oro o imán (atrae toda la experiencia del mapa). Va hacia el jugador cuando éste se acerca. */
 export class Pickup extends Phaser.GameObjects.Image {
   readonly kind: PickupKind;
   readonly value: number;
@@ -20,7 +20,7 @@ export class Pickup extends Phaser.GameObjects.Image {
     scene.add.existing(this);
     this.setDepth(y - 1);
     // Las gemas que valen más (de enemigos grandes) son más grandes y verdes; las monedas grandes, más grandes.
-    if (value > 1) this.setScale(1.5);
+    if (value > 1 || kind === 'magnet') this.setScale(1.5);
     if (kind === 'xp' && value > 1) this.setTint(0x7dff9a);
     this.bob = scene.tweens.add({ targets: this, y: y - 2, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }

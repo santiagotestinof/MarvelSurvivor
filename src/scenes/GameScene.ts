@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { GOLD, PROGRESSION, REVIVAL, ROUND } from '../config/gameplayConfig';
+import { GOLD, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -450,12 +450,14 @@ export class GameScene extends Phaser.Scene {
       const y = prop.y + Phaser.Math.Between(-6, 8);
       this.pickups.push(new Pickup(this, x, y, 'gold', 1));
     }
+    if (Math.random() < PROP_MAGNET_CHANCE) this.pickups.push(new Pickup(this, prop.x, prop.y - 4, 'magnet', 0));
   }
 
   /** Mueve lo que se junta hacia el jugador cuando está cerca y suma lo que llega. */
   private updatePickups(delta: number): void {
     const radiusSq = this.stats.pickupRadius ** 2;
     const targetY = this.player.y - 8;
+    let pulledAll = false;
     this.pickups = this.pickups.filter((pickup) => {
       if (!pickup.isMagnetized) {
         const dx = this.player.x - pickup.x;
@@ -464,12 +466,15 @@ export class GameScene extends Phaser.Scene {
       }
       if (pickup.isMagnetized && pickup.moveToward(this.player.x, targetY, delta)) {
         if (pickup.kind === 'xp') this.progression.addXp(pickup.value * this.stats.xpMult);
-        else this.gold += pickup.value * this.stats.goldMult;
+        else if (pickup.kind === 'gold') this.gold += pickup.value * this.stats.goldMult;
+        else pulledAll = true;
         pickup.destroy();
         return false;
       }
       return true;
     });
+    // Imán: toda la experiencia que hay en el piso, en todo el mapa, va hacia el jugador.
+    if (pulledAll) for (const pickup of this.pickups) if (pickup.kind === 'xp') pickup.magnetize();
   }
 
   /** Al terminar la ronda: decide cuánto oro se guarda (todo si gana, la mitad si pierde). */

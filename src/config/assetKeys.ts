@@ -17,6 +17,7 @@ export const TEXTURES = {
   fire: 'fire',
   gem: 'xp-gem',
   coin: 'gold-coin',
+  magnet: 'magnet-pickup',
 } as const;
 
 /** Animaciones de efectos (no de personajes ni enemigos). */
