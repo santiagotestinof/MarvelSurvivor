@@ -1,3 +1,4 @@
+import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { CHARACTER_REGISTRY } from '../characters/registry';
 import { TEXTURES } from '../config/assetKeys';
@@ -27,6 +28,7 @@ export class CharacterScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor('#0e1a12');
+    audio.play('menu');
     this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
     this.shade = this.add.graphics();
     this.title = this.add.text(0, 0, 'PERSONAJES', textStyle(28, '#ffffff')).setOrigin(0.5);

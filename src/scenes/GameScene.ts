@@ -1,3 +1,4 @@
+import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { SCENE_KEYS } from '../config/sceneKeys';
@@ -86,6 +87,7 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.frozen = false;
+    audio.play('game');
     const testParam = new URLSearchParams(window.location.search).get('test');
     const testMode = testParam === '1';
     const doombotTest = testParam === 'doombots';
@@ -114,6 +116,7 @@ export class GameScene extends Phaser.Scene {
     this.events.on('player-hurt', (dealt: number, maxHealth: number) => {
       const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
       this.spawnBloodBurst(strength);
+      audio.playHit(strength);
     });
 
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);

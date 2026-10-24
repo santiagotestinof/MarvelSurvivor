@@ -1,3 +1,4 @@
+import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { TEXTURES } from '../config/assetKeys';
 import { computeZoom } from '../config/cameraConfig';
@@ -47,6 +48,7 @@ export class ShopScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor('#0e1a12');
+    audio.play('menu');
     this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
     this.shade = this.add.graphics();
 
