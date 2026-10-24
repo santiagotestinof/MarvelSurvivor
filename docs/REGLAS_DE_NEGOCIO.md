@@ -15,13 +15,14 @@ Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir d
 
 | Arma (héroe) | Nv 1 | Nv 2 | Nv 3 | Nv 4 | Nv 5 |
 |---|---|---|---|---|---|
+| Unibeam (Iron Man) | 1 rayo del reactor | +1 rayo | Dispara más seguido (−20 %) | El rayo dura más (+40 %) | +40 % de daño, rayo más ancho (+30 %) |
 | Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño |
 | Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área |
 | Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño |
 | Tormenta (Thor) | 3 rayos | +1 rayo | Tormenta más seguida (−20 %) | +1 rayo | +30 % de daño, +25 % de área |
 | Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje |
 
-Iron Man todavía no tiene arma especial (los Minimisiles pasaron a ser su arma principal): hay que diseñarle una.
+Los Minimisiles de Iron Man son su arma principal (no tienen niveles fijos); su arma especial es el Unibeam.
 
 ## 2. Qué significa cada estadística
 

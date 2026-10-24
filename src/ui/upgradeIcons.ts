@@ -204,6 +204,18 @@ const ICONS: Record<string, string[]> = {
     '.Y.....Y..',
     '..........',
   ],
+  unibeam: [
+    '..........',
+    '..CCCC....',
+    '.CWWWWC...',
+    'CWWCCWWCCC',
+    'CWWCCWWWWW',
+    'CWWCCWWCCC',
+    '.CWWWWC...',
+    '..CCCC....',
+    '..........',
+    '..........',
+  ],
   evolution: [
     '....YY....',
     '....YY....',
