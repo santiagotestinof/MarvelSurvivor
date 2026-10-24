@@ -6,7 +6,7 @@ import { PauseOverlay } from '../ui/PauseOverlay';
 import { ResultOverlay } from '../ui/ResultOverlay';
 import { UpgradeMenu, type UpgradePrompt } from '../ui/UpgradeMenu';
 import { formatTime, textStyle, uiScale } from '../ui/uiLayout';
-import { UPGRADE_ICON_SIZE, upgradeIconKey } from '../ui/upgradeIcons';
+import { UPGRADE_ICON_SIZE, setUpgradeIcon, upgradeIconKey } from '../ui/upgradeIcons';
 import type { GameScene, HudSnapshot } from './GameScene';
 
 /** Demora entre el final de la ronda y la pantalla de resultado. */
@@ -214,7 +214,8 @@ export class HudScene extends Phaser.Scene {
       icon.setVisible(!!item);
       count.setVisible(!!item);
       if (!item) continue;
-      icon.setTexture(upgradeIconKey(item.id)).setScale(iconScale).setPosition(x + slot / 2, y + slot / 2);
+      setUpgradeIcon(icon, item.id, iconScale);
+      icon.setPosition(x + slot / 2, y + slot / 2);
       count
         .setFontSize(Math.max(10, Math.round(slot * 0.34)))
         .setText(`${item.count}`)

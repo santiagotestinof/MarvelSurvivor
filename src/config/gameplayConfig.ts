@@ -28,9 +28,9 @@ export const PLAYER_HIT = {
  * (cada una con su valor propio). La Suerte permanente (`stats.luck`) hace más probables las raras.
  */
 export const UPGRADE_RARITY = {
-  weights: { common: 55, rare: 28, epic: 13, legendary: 4 },
+  weights: { common: 86, rare: 10, epic: 3, legendary: 1 },
   /** Cuánto sube el peso de cada rareza por nivel de Suerte. */
-  luckBoost: { rare: 0.1, epic: 0.25, legendary: 0.5 },
+  luckBoost: { rare: 0.05, epic: 0.08, legendary: 0.12 },
 };
 
 export const PROGRESSION = {

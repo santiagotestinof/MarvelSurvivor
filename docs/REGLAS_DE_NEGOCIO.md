@@ -43,6 +43,6 @@ Los Minimisiles evolucionan en Misiles incendiarios al llegar al nv 5 (con Más 
 (Ninguna por ahora.)
 
 ## Rareza de las mejoras pasivas (implementada)
-- Cada vez que se ofrece una pasiva con valores por rareza se sortea común / rara / épica / legendaria (pesos 55/28/13/4; la Suerte sube los pesos de las raras). Los valores están en `tiers` de `src/progression/upgrades.ts`.
+- Cada vez que se ofrece una pasiva con valores por rareza se sortea común / rara / épica / legendaria (pesos 86/10/3/1, o sea 1 % legendaria; la Suerte sube los pesos de las raras). Los valores están en `tiers` de `src/progression/upgrades.ts`.
 - Las tarjetas de mejora son solo ARMA o PASIVA (sin categorías de ataque/defensa/utilidad).
 - Armadura (reduce el daño de cada golpe) y Vida máxima existen como pasivas en ronda y como mejoras permanentes.

@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { HERO_ICONS } from './heroIcons';
+import { META_ITEM_SIZE, META_ITEM_TEXTURE, metaItemFrame } from './metaItemIcons';
 
 /**
  * Íconos provisionales de las mejoras, dibujados como pixel art desde texto (como los sprites
@@ -279,6 +280,35 @@ const ICONS: Record<string, string[]> = {
 
 /** Lado de cada ícono en píxeles (antes de escalar). */
 export const UPGRADE_ICON_SIZE = 10;
+
+/** Pasivas de la ronda que usan el mismo ícono que su mejora permanente de la tienda (id de la pasiva → id permanente). */
+const META_ICON_OF: Record<string, string> = {
+  damage: 'might',
+  'fire-rate': 'cooldown',
+  duration: 'duration',
+  amount: 'amount',
+  area: 'area',
+  speed: 'move-speed',
+  health: 'max-health',
+  armor: 'armor',
+  repair: 'recovery',
+  magnet: 'magnet',
+  'shot-speed': 'projectile-speed',
+};
+
+/**
+ * Pone el ícono de una mejora en una imagen. `scale` es el de los íconos chicos (10×10); los de la tienda
+ * (32×32) se achican para ocupar el mismo lugar.
+ */
+export function setUpgradeIcon(icon: Phaser.GameObjects.Image, id: string, scale: number): void {
+  const meta = META_ICON_OF[id];
+  if (meta && icon.scene.textures.exists(META_ITEM_TEXTURE)) {
+    icon.setTexture(META_ITEM_TEXTURE, metaItemFrame(meta)).setScale((scale * UPGRADE_ICON_SIZE) / META_ITEM_SIZE);
+  } else {
+    const key = upgradeIconKey(id);
+    icon.setTexture(icon.scene.textures.exists(key) ? key : '__WHITE').setScale(scale);
+  }
+}
 
 export function upgradeIconKey(upgradeId: string): string {
   return `upgrade-icon:${upgradeId}`;
