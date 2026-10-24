@@ -4,9 +4,7 @@ import type { Enemy } from '../entities/Enemy';
 
 /** Ataque cuerpo a cuerpo: aviso breve, impacto único y enfriamiento entre golpes. */
 interface PendingMeleeAttack {
-  startedAt: number;
   impactAt: number;
-  marker: Phaser.GameObjects.Arc;
 }
 
 const ATTACK_START_RANGE = 38;
@@ -35,7 +33,6 @@ export class MeleeAttackSystem {
     }
     for (const [enemy, attack] of this.pending) {
       if (!active.has(enemy)) {
-        attack.marker.destroy();
         this.pending.delete(enemy);
       }
     }
@@ -43,9 +40,6 @@ export class MeleeAttackSystem {
     for (const enemy of active) {
       const attack = this.pending.get(enemy);
       if (attack) {
-        const progress = Phaser.Math.Clamp((now - attack.startedAt) / WINDUP_MS, 0, 1);
-        attack.marker.setAlpha(0.25 + Math.sin(now / 45) * 0.2 + progress * 0.35);
-        attack.marker.setScale(0.75 + progress * 0.35);
         if (now < attack.impactAt) continue;
 
         const distance = Phaser.Math.Distance.Between(
@@ -66,20 +60,13 @@ export class MeleeAttackSystem {
       );
       if (distance > ATTACK_START_RANGE) continue;
 
-      enemy.lockForShot(WINDUP_MS, this.player.x, this.player.y - 8);
-      const marker = this.scene.add.circle(this.player.x, this.player.y - 8, HIT_RANGE, 0xff3b30, 0.12)
-        .setStrokeStyle(2, 0xff6a52, 0.9)
-        .setDepth(this.player.y + 2);
       this.pending.set(enemy, {
-        startedAt: now,
         impactAt: now + WINDUP_MS,
-        marker,
       });
     }
   }
 
   destroy(): void {
-    for (const attack of this.pending.values()) attack.marker.destroy();
     this.pending.clear();
     this.nextAttackAt.clear();
   }
