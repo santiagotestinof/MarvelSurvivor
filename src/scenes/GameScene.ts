@@ -152,7 +152,6 @@ export class GameScene extends Phaser.Scene {
       { width: map.widthPx, height: map.heightPx },
     );
     this.meleeAttacks = new MeleeAttackSystem(
-      this,
       this.player,
       () => this.clock < this.ironManFlyingUntil,
     );
