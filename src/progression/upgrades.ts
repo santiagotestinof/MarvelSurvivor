@@ -127,7 +127,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   {
     id: 'health',
     passive: true,
-    name: 'Armadura',
+    name: 'Vida máxima',
     description: '+25 de vida máxima y cura 25',
     category: 'defense',
     apply: ({ player }) => player.addMaxHealth(25),

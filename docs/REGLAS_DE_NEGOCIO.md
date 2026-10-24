@@ -33,7 +33,8 @@ Pendiente: los Minimisiles de Iron Man (y su evolución en fuego) todavía usan 
 ## 3. Mejoras de la ronda
 
 - Solo se pueden tener 4 tipos de pasivas distintas por ronda (`PROGRESSION.maxPassiveTypes`).
-- Pasivas que existen en la ronda: Más daño, Cadencia, Duración, Cantidad (máx. 3), Área, Velocidad, Armadura, Imán, Alcance (más "Reparación", que no ocupa lugar).
+- Pasivas que existen en la ronda: Más daño, Cadencia, Duración, Cantidad (máx. 3), Área, Velocidad, Vida máxima, Imán, Alcance (más "Reparación", que no ocupa lugar).
+- **Nombres:** "Vida máxima" es la que sube la vida máxima y "Armadura" es la que reduce el daño de cada golpe (esta última hoy es solo permanente).
 - Cada pasiva de la ronda debería tener su equivalente permanente en la tienda y viceversa.
 
 ## 4. Ideas aprobadas, todavía NO implementadas
