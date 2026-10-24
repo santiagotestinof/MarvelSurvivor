@@ -17,7 +17,6 @@ export class MeleeAttackSystem {
   private readonly pending = new Map<Enemy, PendingMeleeAttack>();
 
   constructor(
-    private readonly scene: Phaser.Scene,
     private readonly player: Character,
     private readonly isPlayerUntargetable: () => boolean,
   ) {}
