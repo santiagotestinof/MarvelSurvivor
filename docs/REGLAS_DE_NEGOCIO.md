@@ -28,7 +28,8 @@ Los Minimisiles de Iron Man son su arma principal (no tienen niveles fijos); su 
 
 - **Cadencia** (velocidad de disparo / enfriamiento): qué tan seguido pegan o disparan las armas. En Doctor Strange: la velocidad de las chispas de los portales y el ritmo del aura.
 - **Duración**: cuánto tiempo dura un efecto una vez creado (por ejemplo, cuánto quedan abiertos los portales, el fuego, las telarañas). No cambia cada cuánto se crea uno nuevo.
-- **Cantidad**: unidades extra de lo que lanza el arma (portales, escudos, telarañas, rayos, misiles, disparos).
+- **Cantidad** (pasiva, ocupa casillero): unidades extra de las armas **especiales** (portales, escudos orbitales, trampas, tormenta de rayos, Unibeam). No afecta al ataque principal.
+- **Disparo múltiple** (mejora del arma principal, no ocupa casillero): disparos/misiles/rayos/zarpazos extra del ataque principal. No afecta a las armas especiales.
 - **Área**: tamaño del daño o del efecto (aura, explosiones, rayos, telarañas).
 
 ## 3. Mejoras de la ronda

@@ -88,7 +88,7 @@ export class MissileWeapon {
 
     if (this.level === 0 || now - this.lastFiredAt < MISSILES.cooldownMs * this.stats.cooldownMult) return;
     // Cantidad: 1 misil más los de "Disparo múltiple" y de la pasiva Cantidad.
-    const count = this.stats.projectileCount + this.stats.amountBonus;
+    const count = this.stats.projectileCount;
     const targets = this.nearestEnemies(this.owner.x, this.owner.y, count);
     const prop = targets.length === 0 ? this.nearestProp() : null;
     if (targets.length === 0 && !prop) return;

@@ -98,7 +98,7 @@ export class AutoAttackSystem {
   /** Thor: un rayo por cada disparo disponible, sobre los enemigos más cercanos (o una caja si no hay). */
   private strike(): boolean {
     const range = this.attack.aimRange * this.stats.rangeMult;
-    const count = this.stats.projectileCount + this.stats.amountBonus;
+    const count = this.stats.projectileCount;
     const targets: AimPoint[] = activeEnemies(this.enemies)
       .map((enemy) => ({ x: enemy.x, y: enemy.y - 6, d: (enemy.x - this.owner.x) ** 2 + (enemy.y - this.owner.y) ** 2 }))
       .filter((t) => t.d <= range * range)
@@ -163,7 +163,7 @@ export class AutoAttackSystem {
     const originY = this.owner.y - 8;
     const aim = Math.atan2(target.y - originY, target.x - originX);
     // Furia circular (evolución): el abanico pasa a ser un círculo completo alrededor de Hulk.
-    const count = stats.evolved ? 1 : stats.projectileCount + stats.amountBonus;
+    const count = stats.evolved ? 1 : stats.projectileCount;
     const reach = this.attack.maxDistance * stats.rangeMult * stats.fanReachMult;
     const arc = stats.evolved
       ? Math.PI * 2
@@ -257,7 +257,7 @@ export class AutoAttackSystem {
     const originY = this.owner.y - 14; // a la altura del pecho
     const aim = Math.atan2(target.y - originY, target.x - originX);
     const speed = this.attack.projectileSpeed * stats.projectileSpeedMult;
-    const count = stats.projectileCount + stats.amountBonus;
+    const count = stats.projectileCount;
 
     // Escudo rebotador (evolución del Capitán): salta de un enemigo al próximo en vez de ir y volver.
     const bounces = this.attack.kind === 'shield' && stats.evolved && targetIsEnemy;
