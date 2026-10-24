@@ -30,7 +30,7 @@ export class MeleeAttackSystem {
     for (const enemy of this.nextAttackAt.keys()) {
       if (!active.has(enemy)) this.nextAttackAt.delete(enemy);
     }
-    for (const [enemy, attack] of this.pending) {
+    for (const enemy of this.pending.keys()) {
       if (!active.has(enemy)) {
         this.pending.delete(enemy);
       }
