@@ -54,7 +54,7 @@ export class MeleeAttackSystem {
           enemy.x, enemy.y, this.player.x, this.player.y - 8,
         );
         if (!this.isPlayerUntargetable() && distance <= HIT_RANGE) {
-          this.player.takeDamage(enemy.contactDamage);
+          this.player.takeDamage(enemy.meleeDamage);
         }
         attack.marker.destroy();
         this.pending.delete(enemy);
