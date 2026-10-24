@@ -263,7 +263,7 @@ export class Shockwave extends LeveledWeapon {
 }
 
 /** Valores base de los portales de Strange: no cambian con el nivel del arma (solo con las mejoras comunes). */
-const PORTAL = { openEveryMs: 7000, shotEveryMs: 520, durationMs: 4000, sparkDamage: 7, sparkSpeed: 200 } as const;
+const PORTAL = { openEveryMs: 5000, shotEveryMs: 420, durationMs: 4500, sparkDamage: 8, sparkSpeed: 200 } as const;
 
 interface Portal {
   g: Phaser.GameObjects.Container;
