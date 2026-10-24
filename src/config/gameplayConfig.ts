@@ -18,11 +18,6 @@ export const ROUND = {
   bossMinionIntervalMs: 4500,
 };
 
-export const PLAYER_HIT = {
-  /** Tiempo sin recibir daño después de un golpe. */
-  invulnerabilityMs: 700,
-};
-
 /**
  * Rareza de las mejoras de la ronda: al ofrecer una mejora con niveles de rareza se sortea común / rara / épica / legendaria
  * (cada una con su valor propio). La Suerte permanente (`stats.luck`) hace más probables las raras.
