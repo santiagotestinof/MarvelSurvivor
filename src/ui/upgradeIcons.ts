@@ -332,10 +332,11 @@ const META_ICON_OF: Record<string, string> = {
   'shot-speed': 'projectile-speed',
 };
 
-/** Pasivas con un ícono propio de Santi (imagen de 32 de ancho): Alcance = visor de Cíclope, Crítico = shuriken. */
+/** Pasivas con un ícono propio de Santi (imagen de 32 de ancho): Alcance = visor de Cíclope, Crítico = shuriken, Perforación = cola de Scorpion. */
 const IMAGE_ICONS: Record<string, { key: string; path: string }> = {
   range: { key: 'icon-range', path: 'assets/ui/icon-range.png' },
   crit: { key: 'icon-crit', path: 'assets/ui/icon-crit.png' },
+  pierce: { key: 'icon-pierce', path: 'assets/ui/icon-pierce.png' },
 };
 
 declare const __BUILD_ID__: string;
