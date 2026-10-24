@@ -332,11 +332,29 @@ const META_ICON_OF: Record<string, string> = {
   'shot-speed': 'projectile-speed',
 };
 
+/** Pasivas con un ícono propio de Santi (imagen de 32 de ancho): Alcance = visor de Cíclope, Crítico = shuriken. */
+const IMAGE_ICONS: Record<string, { key: string; path: string }> = {
+  range: { key: 'icon-range', path: 'assets/ui/icon-range.png' },
+  crit: { key: 'icon-crit', path: 'assets/ui/icon-crit.png' },
+};
+
+declare const __BUILD_ID__: string;
+
+/** Encola la carga de esos íconos (llamar desde preload). */
+export function loadImageIcons(scene: Phaser.Scene): void {
+  for (const icon of Object.values(IMAGE_ICONS)) scene.load.image(icon.key, `${icon.path}?v=${__BUILD_ID__}`);
+}
+
 /**
  * Pone el ícono de una mejora en una imagen. `scale` es el de los íconos chicos (10×10); los de la tienda
  * (32×32) se achican para ocupar el mismo lugar.
  */
 export function setUpgradeIcon(icon: Phaser.GameObjects.Image, id: string, scale: number): void {
+  const own = IMAGE_ICONS[id];
+  if (own && icon.scene.textures.exists(own.key)) {
+    icon.setTexture(own.key).setScale((scale * UPGRADE_ICON_SIZE) / META_ITEM_SIZE);
+    return;
+  }
   const meta = META_ICON_OF[id];
   if (meta && icon.scene.textures.exists(META_ITEM_TEXTURE)) {
     icon.setTexture(META_ITEM_TEXTURE, metaItemFrame(meta)).setScale((scale * UPGRADE_ICON_SIZE) / META_ITEM_SIZE);
