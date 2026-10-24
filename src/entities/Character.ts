@@ -122,10 +122,6 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     this.currentHealth = Math.max(0, this.currentHealth - Math.max(1, amount - this.armor));
     this.invulnerableUntil = now + PLAYER_HIT.invulnerabilityMs;
 
-    this.setTintFill(0xff3b30);
-    this.scene.time.delayedCall(80, () => {
-      if (this.active && !this.isDead) this.clearTint();
-    });
     this.scene.tweens.add({
       targets: this,
       alpha: 0.4,
