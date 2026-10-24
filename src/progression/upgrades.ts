@@ -220,6 +220,50 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
       text: (v) => `+${pct(v)} de alcance de disparo`,
     },
   }),
+  tiered({
+    id: 'luck',
+    passive: true,
+    name: 'Suerte',
+    tiers: {
+      values: [0.5, 1, 2, 3],
+      apply: ({ stats }, v) => {
+        stats.luck += v;
+        stats.critChance += v * 0.02;
+        stats.goldChanceMult += v * 0.1;
+      },
+      text: (v) => `+${v} de suerte: mejoras más raras, más crítico y más oro`,
+    },
+  }),
+  tiered({
+    id: 'growth',
+    passive: true,
+    name: 'Crecimiento',
+    tiers: {
+      values: [0.05, 0.1, 0.17, 0.25],
+      apply: ({ stats }, v) => (stats.xpMult += v),
+      text: (v) => `+${pct(v)} de experiencia`,
+    },
+  }),
+  tiered({
+    id: 'greed',
+    passive: true,
+    name: 'Codicia',
+    tiers: {
+      values: [0.1, 0.2, 0.35, 0.5],
+      apply: ({ stats }, v) => (stats.goldMult += v),
+      text: (v) => `+${pct(v)} de oro`,
+    },
+  }),
+  tiered({
+    id: 'curse',
+    passive: true,
+    name: 'Maldición',
+    tiers: {
+      values: [0.05, 0.1, 0.15, 0.25],
+      apply: ({ stats }, v) => (stats.curseMult += v),
+      text: (v) => `+${pct(v)} de velocidad, vida y cantidad de enemigos (más XP y oro)`,
+    },
+  }),
 
   // ---- Ataque básico (repulsor)
   {

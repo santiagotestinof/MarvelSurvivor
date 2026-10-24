@@ -330,6 +330,10 @@ const META_ICON_OF: Record<string, string> = {
   repair: 'recovery',
   magnet: 'magnet',
   'shot-speed': 'projectile-speed',
+  luck: 'luck',
+  growth: 'growth',
+  greed: 'greed',
+  curse: 'curse',
 };
 
 /** Pasivas con un ícono propio de Santi (imagen de 32 de ancho): Alcance = visor de Cíclope, Crítico = shuriken, Perforación = cola de Scorpion, Disparo múltiple = tentáculos. */

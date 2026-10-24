@@ -35,7 +35,7 @@ Los Minimisiles de Iron Man son su arma principal (no tienen niveles fijos); su 
 ## 3. Mejoras de la ronda
 
 - Solo se pueden tener 4 tipos de pasivas distintas por ronda (`PROGRESSION.maxPassiveTypes`).
-- Pasivas que existen en la ronda: Más daño, Cadencia, Duración, Cantidad (máx. 3), Área, Velocidad, Vida máxima, Armadura, Imán, Alcance (más "Reparación", que no ocupa lugar).
+- Pasivas que existen en la ronda: Más daño, Cadencia, Duración, Cantidad (máx. 3), Área, Velocidad, Vida máxima, Armadura, Imán, Alcance, Crítico, Suerte, Crecimiento, Codicia y Maldición (más "Reparación", que no ocupa lugar). Suerte/Crecimiento/Codicia/Maldición salen de las mejoras permanentes del mismo nombre y suman a lo que dé la tienda.
 - **Nombres:** "Vida máxima" es la que sube la vida máxima y "Armadura" es la que reduce el daño de cada golpe (las dos existen en la ronda y en la tienda).
 - Cada pasiva de la ronda debería tener su equivalente permanente en la tienda y viceversa.
 
