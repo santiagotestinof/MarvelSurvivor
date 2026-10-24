@@ -107,9 +107,9 @@ export class HudScene extends Phaser.Scene {
     const canvas = this.textures.createCanvas(HURT_TEXTURE, size, size);
     if (!canvas) return;
     const ctx = canvas.getContext();
-    const gradient = ctx.createRadialGradient(size / 2, size / 2, size * 0.25, size / 2, size / 2, size * 0.72);
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, size * 0.38, size / 2, size / 2, size * 0.75);
     gradient.addColorStop(0, 'rgba(220,0,0,0)');
-    gradient.addColorStop(1, 'rgba(220,0,0,0.95)');
+    gradient.addColorStop(1, 'rgba(200,0,0,0.6)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
     canvas.refresh();
@@ -118,8 +118,8 @@ export class HudScene extends Phaser.Scene {
   private flashHurt(dealt: number, maxHealth: number): void {
     const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
     this.tweens.killTweensOf(this.hurtVignette);
-    this.hurtVignette.setAlpha(0.45 + 0.5 * strength);
-    this.tweens.add({ targets: this.hurtVignette, alpha: 0, duration: 450, ease: 'Quad.easeOut' });
+    this.hurtVignette.setAlpha(0.18 + 0.27 * strength);
+    this.tweens.add({ targets: this.hurtVignette, alpha: 0, duration: 380, ease: 'Quad.easeOut' });
   }
 
   update(): void {

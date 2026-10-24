@@ -113,7 +113,7 @@ export class GameScene extends Phaser.Scene {
     this.events.off('player-hurt');
     this.events.on('player-hurt', (dealt: number, maxHealth: number) => {
       const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
-      this.cameras.main.shake(120 + 90 * strength, 0.003 + 0.008 * strength);
+      this.cameras.main.shake(70 + 50 * strength, 0.0008 + 0.0022 * strength);
     });
 
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);

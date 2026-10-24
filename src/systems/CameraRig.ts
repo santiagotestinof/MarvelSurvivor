@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { CAMERA_CONFIG, computeRoundZoom } from '../config/cameraConfig';
 
-/** Cámara que sigue suavemente a un objetivo, queda dentro de los límites del mapa y usa zoom en pasos de 0,5. */
+/** Cámara que sigue suavemente a un objetivo, queda dentro de los límites del mapa y usa zoom en pasos de 0,25. */
 export class CameraRig {
   private readonly camera: Phaser.Cameras.Scene2D.Camera;
 
