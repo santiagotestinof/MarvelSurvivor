@@ -82,7 +82,9 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.frozen = false;
-    const testMode = new URLSearchParams(window.location.search).get('test') === '1';
+    const testParam = new URLSearchParams(window.location.search).get('test');
+    const testMode = testParam === '1';
+    const doombotTest = testParam === 'doombots';
     this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
     this.ironManFlyingUntil = 0;
     this.nextUltimateShotAt = 0;
@@ -151,7 +153,7 @@ export class GameScene extends Phaser.Scene {
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
       this.dropLoot(e);
       this.round.onEnemyKilled(e);
-    }, this.stats);
+    }, this.stats, doombotTest);
     this.bossAttacks = new BossAttackSystem(
       this,
       this.player,
