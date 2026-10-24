@@ -34,16 +34,15 @@ Los Minimisiles evolucionan en Misiles incendiarios al llegar al nv 5 (con Más 
 ## 3. Mejoras de la ronda
 
 - Solo se pueden tener 4 tipos de pasivas distintas por ronda (`PROGRESSION.maxPassiveTypes`).
-- Pasivas que existen en la ronda: Más daño, Cadencia, Duración, Cantidad (máx. 3), Área, Velocidad, Vida máxima, Imán, Alcance (más "Reparación", que no ocupa lugar).
-- **Nombres:** "Vida máxima" es la que sube la vida máxima y "Armadura" es la que reduce el daño de cada golpe (esta última hoy es solo permanente).
+- Pasivas que existen en la ronda: Más daño, Cadencia, Duración, Cantidad (máx. 3), Área, Velocidad, Vida máxima, Armadura, Imán, Alcance (más "Reparación", que no ocupa lugar).
+- **Nombres:** "Vida máxima" es la que sube la vida máxima y "Armadura" es la que reduce el daño de cada golpe (las dos existen en la ronda y en la tienda).
 - Cada pasiva de la ronda debería tener su equivalente permanente en la tienda y viceversa.
 
 ## 4. Ideas aprobadas, todavía NO implementadas
 
-- **Rareza en las mejoras de la ronda:** que no todas valgan lo mismo. Por ejemplo, Cadencia común +2 % y legendaria +15 %. La rareza se sortea al ofrecer la mejora (y la Suerte la inclina).
-
+- Ninguna por ahora.
 
 ## Rareza de las mejoras pasivas (implementada)
-- Ccada vez que se ofrece una pasiva con valores por rareza se sortea común / rara / épica / legendaria (pesos 55/28/13/4; la Suerte sube los pesos de las raras). Los valores están en `tiers` de `src/progression/upgrades.ts`.
+- Cada vez que se ofrece una pasiva con valores por rareza se sortea común / rara / épica / legendaria (pesos 55/28/13/4; la Suerte sube los pesos de las raras). Los valores están en `tiers` de `src/progression/upgrades.ts`.
 - Las tarjetas de mejora son solo ARMA o PASIVA (sin categorías de ataque/defensa/utilidad).
 - Armadura (reduce el daño de cada golpe) y Vida máxima existen como pasivas en ronda y como mejoras permanentes.
