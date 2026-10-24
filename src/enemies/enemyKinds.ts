@@ -90,7 +90,7 @@ export interface EnemyKind {
   body: { width: number; height: number; offsetX: number; offsetY: number };
   health: number;
   speed: number;
-  contactDamage: number;
+  meleeDamage: number;
   /** Experiencia que suelta al morir (0 = nada). */
   xpValue: number;
   /** Probabilidad de soltar una moneda al morir y valor de esa moneda (sin `gold` no suelta nada). */
@@ -116,7 +116,7 @@ export const DRONE: EnemyKind = {
   body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
   health: 30,
   speed: 41.8,
-  contactDamage: 13,
+  meleeDamage: 13,
   xpValue: 1,
   gold: { chance: 0.05, value: 1 },
   spawn: { fromProgress: 0, weight: 6 },
@@ -135,7 +135,7 @@ export const SENTINEL: EnemyKind = {
   body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
   health: 12,
   speed: 30,
-  contactDamage: 4,
+  meleeDamage: 4,
   xpValue: 2,
   gold: { chance: 0.1, value: 1 },
   rangedAttack: { range: 145, cooldownMs: 2400, damage: 6, projectileSpeed: 165 },
@@ -155,7 +155,7 @@ export const SCOUT: EnemyKind = {
   body: { width: 13, height: 11, offsetX: 9, offsetY: 19 },
   health: 10,
   speed: 64,
-  contactDamage: 5,
+  meleeDamage: 5,
   xpValue: 1,
   gold: { chance: 0.05, value: 1 },
   spawn: { fromProgress: 0.15, weight: 3 },
@@ -174,7 +174,7 @@ export const BRUTE: EnemyKind = {
   body: { width: 18, height: 12, offsetX: 7, offsetY: 18 },
   health: 110,
   speed: 25,
-  contactDamage: 8,
+  meleeDamage: 8,
   xpValue: 4,
   gold: { chance: 0.2, value: 3 },
   spawn: { fromProgress: 0.4, weight: 1.5 },
@@ -194,7 +194,7 @@ export const OVERLORD: EnemyKind = {
   body: { width: 22, height: 18, offsetX: 13, offsetY: 26 },
   health: 440,
   speed: 33,
-  contactDamage: 20,
+  meleeDamage: 20,
   xpValue: 0,
 };
 

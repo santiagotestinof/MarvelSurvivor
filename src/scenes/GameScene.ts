@@ -20,6 +20,7 @@ import { BossAttackSystem } from '../systems/BossAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import { MissileWeapon } from '../systems/MissileWeapon';
+import { MeleeAttackSystem } from '../systems/MeleeAttackSystem';
 import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
 import { TIME_STOP, TimeStopUltimate } from '../systems/TimeStopUltimate';
@@ -45,6 +46,7 @@ export class GameScene extends Phaser.Scene {
   private attack!: AutoAttackSystem;
   private missiles!: MissileWeapon;
   private rangedAttacks!: RangedAttackSystem;
+  private meleeAttacks!: MeleeAttackSystem;
   private bossAttacks!: BossAttackSystem;
   private waves!: WaveSystem;
   private round!: RoundController;
@@ -84,7 +86,9 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.frozen = false;
-    const testMode = new URLSearchParams(window.location.search).get('test') === '1';
+    const testParam = new URLSearchParams(window.location.search).get('test');
+    const testMode = testParam === '1';
+    const doombotTest = testParam === 'doombots';
     this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
     this.ironManFlyingUntil = 0;
     this.timeStop = null;
@@ -154,11 +158,15 @@ export class GameScene extends Phaser.Scene {
       this.player,
       { width: map.widthPx, height: map.heightPx },
     );
+    this.meleeAttacks = new MeleeAttackSystem(
+      this.player,
+      () => this.clock < this.ironManFlyingUntil,
+    );
 
     this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
       this.dropLoot(e);
       this.round.onEnemyKilled(e);
-    }, this.stats);
+    }, this.stats, doombotTest);
     this.bossAttacks = new BossAttackSystem(
       this,
       this.player,
@@ -167,12 +175,6 @@ export class GameScene extends Phaser.Scene {
     );
     this.round = new RoundController(0, this.player, this.waves, this.enemies);
 
-    // Enemigos que tocan al jugador le hacen daño (con invulnerabilidad corta).
-    this.physics.add.overlap(this.player, this.enemies, (_p, e) => {
-      const enemy = e as Enemy;
-      if (this.clock < this.ironManFlyingUntil) return;
-      if (!enemy.dying && !enemy.harmless && !enemy.frozen) this.player.takeDamage(enemy.contactDamage);
-    });
     // Proyectiles que tocan enemigos.
     this.physics.add.overlap(this.attack.projectiles, this.enemies, (p, e) => {
       const projectile = p as Projectile;
@@ -208,7 +210,11 @@ export class GameScene extends Phaser.Scene {
 
     // Al volver del menú (CONTINUAR) la ronda sigue en pausa hasta que el jugador toque SEGUIR.
     this.events.on(Phaser.Scenes.Events.WAKE, () => this.scene.pause());
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop(SCENE_KEYS.hud));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scene.stop(SCENE_KEYS.hud);
+      this.meleeAttacks.destroy();
+      this.rangedAttacks.destroy();
+    });
   }
 
   isIronManSelected(): boolean {
@@ -625,6 +631,7 @@ export class GameScene extends Phaser.Scene {
     this.tryRevive();
     const timeStopped = this.timeStop?.isActive(now) ?? false;
     if (!timeStopped) this.rangedAttacks.update(now, delta, activeEnemies);
+    this.meleeAttacks.update(now, activeEnemies);
     this.round.update(now);
     if (!timeStopped) this.bossAttacks.update(now, delta, this.round.currentBoss);
 

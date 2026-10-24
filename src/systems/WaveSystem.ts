@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { WAVES } from '../config/gameplayConfig';
-import { pickWaveEnemy, type EnemyKind } from '../enemies/enemyKinds';
+import { BRUTE, pickWaveEnemy, type EnemyKind } from '../enemies/enemyKinds';
 import type { Character } from '../entities/Character';
 import { Enemy, type EnemyScaling } from '../entities/Enemy';
 import type { PlayerStats } from '../progression/PlayerStats';
@@ -17,6 +17,7 @@ export class WaveSystem {
     private readonly world: { width: number; height: number },
     private readonly onEnemyDied: (enemy: Enemy) => void,
     private readonly stats: PlayerStats,
+    private readonly forceDoombots = false,
   ) {}
 
   /** Multiplicadores de vida y velocidad según el progreso del tiempo (`0` al inicio, `1` al llegar al jefe y sigue subiendo). */
@@ -44,7 +45,7 @@ export class WaveSystem {
     const batch = Math.max(1, Math.round(Phaser.Math.Between(1, maxBatch) * crowd));
     const scaling = this.getScaling(progress);
     for (let i = 0; i < batch && this.aliveCount() < maxAlive; i++) {
-      const kind = pickWaveEnemy(progress, (id) => this.aliveCountOfKind(id));
+      const kind = this.forceDoombots ? BRUTE : pickWaveEnemy(progress, (id) => this.aliveCountOfKind(id));
       this.spawnEnemy(kind, scaling);
     }
   }
