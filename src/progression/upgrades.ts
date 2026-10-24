@@ -99,6 +99,16 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     apply: ({ stats }) => (stats.durationMult *= 1.15),
   },
   {
+    id: 'amount',
+    passive: true,
+    name: 'Cantidad',
+    description: '+1 disparo, portal, escudo o rayo en las armas',
+    category: 'attack',
+    describe: ({ stats }) => `+1 disparo, portal, escudo o rayo en las armas (${stats.amountBonus} → ${stats.amountBonus + 1})`,
+    isAvailable: (ctx) => times(ctx, 'amount') < 3,
+    apply: ({ stats }) => stats.amountBonus++,
+  },
+  {
     id: 'area',
     passive: true,
     name: 'Área',

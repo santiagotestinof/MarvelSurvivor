@@ -59,6 +59,18 @@ const ICONS: Record<string, string[]> = {
     '..........',
     '..........',
   ],
+  amount: [
+    '..........',
+    '.YY....YY.',
+    'YWWY..YWWY',
+    'YWWY..YWWY',
+    '.YY....YY.',
+    '....YY....',
+    '...YWWY...',
+    '...YWWY...',
+    '....YY....',
+    '..........',
+  ],
   area: [
     '.G......G.',
     'G.G....G.G',
