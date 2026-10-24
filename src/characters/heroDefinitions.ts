@@ -141,7 +141,7 @@ export const strangeDefinition: CharacterDefinition = {
   // Dibujo de Santi a tamaño original: cuadro de 48×56, suelo en (24, 51) y el cuerpo flota 3 px.
   frame: { width: 48, height: 56 },
   origin: { x: 0.5, y: 51 / 56 },
-  body: { width: 10, height: 8, offsetX: 19, offsetY: 47 },
+  body: { width: 8, height: 6, offsetX: 20, offsetY: 48 },
   stats: {
     moveSpeed: 84,
     maxHealth: 105,
