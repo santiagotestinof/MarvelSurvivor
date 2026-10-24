@@ -35,7 +35,7 @@ export class RangedAttackSystem {
   ) {}
 
   update(now: number, delta: number, enemies: Enemy[]): void {
-    const active = new Set(enemies.filter((enemy) => enemy.active && !enemy.dying && enemy.kind.rangedAttack));
+    const active = new Set(enemies.filter((enemy) => enemy.active && !enemy.dying && !enemy.harmless && enemy.kind.rangedAttack));
 
     for (const enemy of this.nextShotAt.keys()) {
       if (!active.has(enemy)) this.nextShotAt.delete(enemy);

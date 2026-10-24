@@ -17,7 +17,7 @@ const FACING_TURN_SPEED = 8.5;
 /** Enemigo que persigue al jugador en línea recta. */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   readonly kind: EnemyKind;
-  readonly contactDamage: number;
+  readonly meleeDamage: number;
   readonly maxHealth: number;
   dying = false;
   /** Enemigo sin colmillos: está en el mapa pero no hace daño al tocar. */
@@ -42,7 +42,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.currentHealth = this.maxHealth;
     this.speedScale = scaling.speed;
     this.moveSpeed = kind.speed * scaling.speed;
-    this.contactDamage = kind.contactDamage;
+    this.meleeDamage = kind.meleeDamage;
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
