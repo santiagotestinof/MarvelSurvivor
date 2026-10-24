@@ -148,7 +148,8 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     name: 'Cantidad',
     description: '+1 unidad en tu arma especial (portal, escudo, trampa, rayo, Unibeam)',
     describe: ({ stats }) => `+1 unidad en tu arma especial (portal, escudo, trampa, rayo, Unibeam) (${stats.amountBonus} → ${stats.amountBonus + 1})`,
-    isAvailable: (ctx) => times(ctx, 'amount') < 3,
+    // Solo suma a las armas especiales: sale una vez que el héroe ya tiene la suya.
+    isAvailable: (ctx) => times(ctx, 'amount') < 3 && (ctx.heroWeapon?.level ?? 0) > 0,
     apply: ({ stats }) => stats.amountBonus++,
   },
   tiered({
