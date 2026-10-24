@@ -18,7 +18,7 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 
 ## Estado por fase
 - Fase 1 (hecha): proyecto, mapa de pruebas, Iron Man con 8 direcciones, cámara, colisiones.
-- Fase 2 (hecha): menú, ronda de 5 min con oleadas de un enemigo (Dron), jefe (Overlord), vida y daño por contacto, ataque automático, joystick táctil, pantalla de resultado.
+- Fase 2 (hecha): menú, ronda de 15 min (antes 5) con oleadas de un enemigo (Dron), jefe (Overlord), vida y daño por contacto, ataque automático, joystick táctil, pantalla de resultado.
 - Fase 3 (hecha): gemas de XP, niveles, elegir 1 de 3 mejoras de stats.
 - Fase 4 (hecha): enemigos Explorador (rápido, frágil, desde el 15%) y Blindado (lento, resistente, gema de 4 XP, desde el 40%); arma Minimisiles (se desbloquea con una mejora, hasta 4 misiles por ráfaga, daño en área).
 - Fase 5 (hecha): mejoras del repulsor (disparo múltiple, perforación, velocidad, crítico) y evolución Misiles incendiarios (misiles nv4 + "Más daño" x3; deja fuego en el piso; 4 mejoras de fuego de hasta 5 niveles). Las mejoras guardan cuántas veces se eligieron (`taken`) para los requisitos.
