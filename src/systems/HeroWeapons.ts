@@ -189,6 +189,9 @@ export class Shockwave extends LeveledWeapon {
 }
 
 
+/** Valores base de los portales de Strange: no cambian con el nivel del arma (solo con las mejoras comunes). */
+const PORTAL = { openEveryMs: 7000, shotEveryMs: 520, durationMs: 4000, sparkDamage: 7, sparkSpeed: 200 } as const;
+
 interface Portal {
   g: Phaser.GameObjects.Container;
   ring: Phaser.GameObjects.Image;
@@ -224,8 +227,9 @@ export class Portals extends LeveledWeapon {
     const { scene, owner, stats } = this.deps;
 
     if (now >= this.nextOpen) {
-      this.nextOpen = now + (8200 - this.level * 500) * stats.cooldownMult;
-      const amount = 1 + Math.floor(this.level / 3) + stats.amountBonus;
+      this.nextOpen = now + PORTAL.openEveryMs * stats.cooldownMult;
+      // El nivel del arma SOLO suma portales (hasta 3) y chispas por ráfaga (nv 4 y 5); lo demás sube únicamente con las mejoras comunes.
+      const amount = Math.min(this.level, 3) + stats.amountBonus;
       for (let i = 0; i < amount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = Phaser.Math.Between(40, 95) * stats.rangeMult;
@@ -245,8 +249,9 @@ export class Portals extends LeveledWeapon {
       if (now < portal.nextShot) continue;
       const target = this.nearestTarget(portal.x, portal.y);
       if (!target) continue;
-      portal.nextShot = now + (560 - this.level * 55) * stats.cooldownMult;
-      this.shoot(portal.x, portal.y, target.x, target.y);
+      portal.nextShot = now + PORTAL.shotEveryMs * stats.cooldownMult;
+      const volley = 1 + Math.max(0, this.level - 3);
+      for (let k = 0; k < volley; k++) this.shoot(portal.x, portal.y, target.x, target.y, (k - (volley - 1) / 2) * 0.22);
     }
   }
 
@@ -258,7 +263,7 @@ export class Portals extends LeveledWeapon {
     const glow = scene.add.circle(0, 0, radius * 1.15, 0xff9a2e, 0.18).setBlendMode(Phaser.BlendModes.ADD);
     const g = scene.add.container(x, y, [glow, hole, ring]).setDepth(y - 0.8).setScale(0.1);
     scene.tweens.add({ targets: g, scale: 1, duration: 180, ease: 'Back.Out' });
-    this.portals.push({ g, ring, x, y, until: now + (3200 + this.level * 450) * stats.durationMult, nextShot: now + 250 });
+    this.portals.push({ g, ring, x, y, until: now + PORTAL.durationMs * stats.durationMult, nextShot: now + 250 });
   }
 
   private nearestTarget(x: number, y: number): { x: number; y: number } | null {
@@ -285,12 +290,12 @@ export class Portals extends LeveledWeapon {
     return best;
   }
 
-  private shoot(x: number, y: number, tx: number, ty: number): void {
+  private shoot(x: number, y: number, tx: number, ty: number, spread = 0): void {
     const { scene, stats } = this.deps;
-    const angle = Math.atan2(ty - y, tx - x) + Phaser.Math.FloatBetween(-0.06, 0.06);
-    const speed = (190 + this.level * 12) * stats.projectileSpeedMult;
+    const angle = Math.atan2(ty - y, tx - x) + spread + Phaser.Math.FloatBetween(-0.06, 0.06);
+    const speed = PORTAL.sparkSpeed * stats.projectileSpeedMult;
     const critical = Math.random() < stats.critChance;
-    const damage = (4 + this.level * 1.8) * stats.damageMult * (critical ? stats.critMult : 1);
+    const damage = PORTAL.sparkDamage * stats.damageMult * (critical ? stats.critMult : 1);
     const sprite = scene.add.image(x, y, TEXTURES.spark).setDepth(999_980).setRotation(angle).setScale(stats.areaMult ** 0.5);
     this.sparks.push({
       sprite,
