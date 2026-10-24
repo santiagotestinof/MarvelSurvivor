@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 
-/** Ataque cuerpo a cuerpo: aviso breve, impacto único y enfriamiento entre golpes. */
+/** Ataque cuerpo a cuerpo con tiempo de preparación, impacto único y enfriamiento. */
 interface PendingMeleeAttack {
   impactAt: number;
 }
@@ -47,7 +47,6 @@ export class MeleeAttackSystem {
         if (!this.isPlayerUntargetable() && distance <= HIT_RANGE) {
           this.player.takeDamage(enemy.meleeDamage);
         }
-        attack.marker.destroy();
         this.pending.delete(enemy);
         this.nextAttackAt.set(enemy, now + COOLDOWN_MS);
         continue;
