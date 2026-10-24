@@ -40,7 +40,7 @@ Los Minimisiles evolucionan en Misiles incendiarios al llegar al nv 5 (con Más 
 
 ## 4. Ideas aprobadas, todavía NO implementadas
 
-- Ninguna por ahora.
+(Ninguna por ahora.)
 
 ## Rareza de las mejoras pasivas (implementada)
 - Cada vez que se ofrece una pasiva con valores por rareza se sortea común / rara / épica / legendaria (pesos 55/28/13/4; la Suerte sube los pesos de las raras). Los valores están en `tiers` de `src/progression/upgrades.ts`.
