@@ -30,7 +30,7 @@ export const PLAYER_HIT = {
 export const UPGRADE_RARITY = {
   weights: { common: 86, rare: 10, epic: 3, legendary: 1 },
   /** Cuánto sube el peso de cada rareza por nivel de Suerte. */
-  luckBoost: { rare: 0.05, epic: 0.08, legendary: 0.12 },
+  luckBoost: { rare: 0.2, epic: 0.5, legendary: 1.4 },
 };
 
 export const PROGRESSION = {
