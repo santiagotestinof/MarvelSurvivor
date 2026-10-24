@@ -9,6 +9,7 @@ import { ROUND } from '../config/gameplayConfig';
 import { Direction } from '../core/direction';
 import { DRONE, enemyAnimationKey, enemyDirectionFromVector } from '../enemies/enemyKinds';
 import { animationKey } from '../systems/AnimationSystem';
+import { SoundPanel } from '../ui/SoundPanel';
 import { UiButton } from '../ui/UiButton';
 import { saveData } from '../meta/saveData';
 import { drawPanel, formatTime, textStyle, uiScale } from '../ui/uiLayout';
@@ -34,6 +35,8 @@ export class MenuScene extends Phaser.Scene {
   private heroStats!: Phaser.GameObjects.Text;
   private playButton!: UiButton;
   private shopButton!: UiButton;
+  private soundButton!: UiButton;
+  private soundPanel!: SoundPanel;
   private charactersButton!: UiButton;
   private heroRarity!: Phaser.GameObjects.Text;
   private goldLabel!: Phaser.GameObjects.Text;
@@ -89,6 +92,8 @@ export class MenuScene extends Phaser.Scene {
     this.playButton = new UiButton(this, 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE'], true);
     this.shopButton = new UiButton(this, 'MEJORAS', 20, () => this.scene.start(SCENE_KEYS.shop), ['M']);
     this.charactersButton = new UiButton(this, 'PERSONAJES', 20, () => this.scene.start(SCENE_KEYS.characters), ['P']);
+    this.soundButton = new UiButton(this, 'SONIDO', 20, () => this.soundPanel.open(), ['S']);
+    this.soundPanel = new SoundPanel(this, 100);
     this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
 
     this.panel = this.add.graphics();
@@ -170,7 +175,7 @@ export class MenuScene extends Phaser.Scene {
     const buttonSize = Math.max(16, Math.round(5.5 * ui));
     this.playButton.setFontSize(buttonSize);
     const small = Math.max(12, Math.round(buttonSize * 0.72));
-    const secondary = [this.charactersButton, this.shopButton];
+    const secondary = [this.charactersButton, this.shopButton, this.soundButton];
     for (const button of secondary) button.setFontSize(small);
     const gap = Math.round(small * 0.8);
     const rowWidth = secondary.reduce((sum, button) => sum + button.width, 0) + gap * (secondary.length - 1);
@@ -187,6 +192,7 @@ export class MenuScene extends Phaser.Scene {
         x += button.width + gap;
       }
     });
+    this.soundPanel.layout(ui, width, height);
     this.goldLabel.setText(`ORO: ${saveData.gold}`).setFontSize(Math.max(12, Math.round(4 * ui))).setPosition(width - 3 * ui, 3 * ui);
 
     this.help.setFontSize(Math.max(10, Math.round(3 * ui)));

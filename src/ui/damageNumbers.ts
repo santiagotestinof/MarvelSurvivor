@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { UI_FONT } from './uiLayout';
 
 /** Tope de números vivos a la vez: con muchos golpes por segundo (aura, tormenta) no se llena la pantalla. */
 const MAX_LIVE = 45;
@@ -14,19 +13,18 @@ export function showDamageNumber(scene: Phaser.Scene, x: number, y: number, amou
   const value = Math.max(1, Math.round(amount));
   const text = scene.add
     .text(x + Phaser.Math.Between(-4, 4), y, String(value), {
-      fontFamily: UI_FONT,
-      fontStyle: 'bold',
-      fontSize: '11px',
+      fontFamily: '"Press Start 2P", monospace',
+      fontSize: '7px',
       color: '#ffffff',
       stroke: '#000000',
-      strokeThickness: 3,
+      strokeThickness: 2,
     })
     .setOrigin(0.5, 1)
     .setDepth(1_000_002)
     .setResolution(2);
   scene.tweens.add({
     targets: text,
-    y: y - 16,
+    y: y - 12,
     alpha: 0,
     duration: 550,
     ease: 'Cubic.easeOut',

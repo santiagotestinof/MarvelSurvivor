@@ -3,6 +3,7 @@ import '@fontsource/montserrat/latin-400.css';
 import '@fontsource/montserrat/latin-700.css';
 import '@fontsource/montserrat/latin-ext-400.css';
 import '@fontsource/montserrat/latin-ext-700.css';
+import '@fontsource/press-start-2p/latin-400.css';
 import { createGameConfig } from './config/gameConfig';
 
 /**
@@ -30,7 +31,7 @@ if (!container) throw new Error('Falta el contenedor #game en index.html.');
 // pero nunca hay que quedarse esperándola: si tarda o falla, el juego arranca igual con la fuente de respaldo.
 const FONT_WAIT_MS = 1500;
 const fontsReady = Promise.race([
-  Promise.all([document.fonts.load('400 16px Montserrat'), document.fonts.load('700 16px Montserrat')]),
+  Promise.all([document.fonts.load('400 16px Montserrat'), document.fonts.load('700 16px Montserrat'), document.fonts.load('8px "Press Start 2P"')]),
   new Promise((resolve) => window.setTimeout(resolve, FONT_WAIT_MS)),
 ]).catch(() => undefined);
 

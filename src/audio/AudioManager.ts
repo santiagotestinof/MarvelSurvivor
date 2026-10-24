@@ -2,12 +2,12 @@
  * Música y efectos de sonido, generados con Web Audio (no hay archivos de audio ni material de terceros).
  * - Música: un secuenciador chico con bajo, arpegio, melodía y batería. Hay dos temas: `menu` (tranquilo) y `game` (acción).
  * - Efecto de golpe recibido: `playHit`.
- * - Tecla M: silenciar / activar el sonido (se guarda en el navegador).
+ * - Volúmenes: `masterVolume` (todo el sonido) y `musicVolume` (solo la música), de 0 a 1; se guardan en el navegador y se cambian desde `SoundPanel`.
  * Los navegadores no dejan sonar nada hasta que el jugador toca o aprieta algo, así que el audio arranca en la primera interacción.
  */
 export type Track = 'menu' | 'game';
 
-const MUTE_KEY = 'marvel-survivors-muted';
+const VOLUME_KEY = 'marvel-survivors-volume';
 const MUSIC_VOLUME = 0.22;
 const SFX_VOLUME = 0.5;
 
@@ -50,25 +50,41 @@ class AudioManager {
   private timer: number | null = null;
   private step = 0;
   private nextTime = 0;
-  private muted = false;
+  private master01 = 1;
+  private music01 = 1;
   private lastHitAt = 0;
 
   constructor() {
     try {
-      this.muted = window.localStorage.getItem(MUTE_KEY) === '1';
+      const saved = JSON.parse(window.localStorage.getItem(VOLUME_KEY) ?? 'null') as { master?: number; music?: number } | null;
+      if (saved && typeof saved.master === 'number') this.master01 = Math.min(1, Math.max(0, saved.master));
+      if (saved && typeof saved.music === 'number') this.music01 = Math.min(1, Math.max(0, saved.music));
     } catch {
-      this.muted = false;
+      /* sin guardado: volúmenes por defecto */
     }
     const unlock = (): void => this.unlock();
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'm' || e.key === 'M') this.toggleMute();
-    });
   }
 
-  get isMuted(): boolean {
-    return this.muted;
+  get masterVolume(): number {
+    return this.master01;
+  }
+
+  get musicVolume(): number {
+    return this.music01;
+  }
+
+  setMasterVolume(value: number): void {
+    this.master01 = Math.min(1, Math.max(0, value));
+    this.applyVolumes();
+    this.save();
+  }
+
+  setMusicVolume(value: number): void {
+    this.music01 = Math.min(1, Math.max(0, value));
+    this.applyVolumes();
+    this.save();
   }
 
   /** Elige el tema que tiene que sonar (si ya suena, no hace nada). */
@@ -77,20 +93,24 @@ class AudioManager {
     if (this.ctx && this.ctx.state === 'running') this.start(track);
   }
 
-  toggleMute(): void {
-    this.muted = !this.muted;
+  private save(): void {
     try {
-      window.localStorage.setItem(MUTE_KEY, this.muted ? '1' : '0');
+      window.localStorage.setItem(VOLUME_KEY, JSON.stringify({ master: this.master01, music: this.music01 }));
     } catch {
       /* sin guardado, no pasa nada */
     }
-    if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : 1, this.ctx.currentTime, 0.03);
+  }
+
+  private applyVolumes(): void {
+    if (!this.ctx || !this.master || !this.musicBus) return;
+    this.master.gain.setTargetAtTime(this.master01, this.ctx.currentTime, 0.02);
+    this.musicBus.gain.setTargetAtTime(MUSIC_VOLUME * this.music01, this.ctx.currentTime, 0.02);
   }
 
   /** "Te pegaron": un golpe seco (grave) con un chasquido. `strength` va de 0 a 1. */
   playHit(strength = 0.6): void {
     const ctx = this.ctx;
-    if (!ctx || !this.master || ctx.state !== 'running' || this.muted) return;
+    if (!ctx || !this.master || ctx.state !== 'running' || this.master01 <= 0) return;
     const t = ctx.currentTime;
     if (t - this.lastHitAt < 0.07) return; // varios golpes juntos no se vuelven un ruido continuo
     this.lastHitAt = t;
@@ -131,10 +151,10 @@ class AudioManager {
       if (!Ctor) return;
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
-      this.master.gain.value = this.muted ? 0 : 1;
+      this.master.gain.value = this.master01;
       this.master.connect(this.ctx.destination);
       this.musicBus = this.ctx.createGain();
-      this.musicBus.gain.value = MUSIC_VOLUME;
+      this.musicBus.gain.value = MUSIC_VOLUME * this.music01;
       this.musicBus.connect(this.master);
       const length = Math.floor(this.ctx.sampleRate * 0.25);
       this.noise = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
