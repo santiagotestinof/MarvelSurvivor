@@ -8,8 +8,8 @@ import type { Enemy } from '../entities/Enemy';
 const LEFT_FACING = new Set([Direction.DownLeft, Direction.Left, Direction.UpLeft]);
 
 export const TIME_STOP = {
-  durationMs: 4000,
-  cooldownMs: 45_000,
+  durationMs: 5000,
+  cooldownMs: 35_000,
 } as const;
 
 /**
