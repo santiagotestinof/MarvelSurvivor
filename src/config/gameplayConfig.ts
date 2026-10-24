@@ -60,11 +60,11 @@ export const PROGRESSION = {
 };
 
 export const WAVES = {
-  startIntervalMs: 1400,
-  endIntervalMs: 450,
+  startIntervalMs: 800,
+  endIntervalMs: 220,
   /** Enemigos por aparición: crece de 1 a este valor durante la ronda. */
-  maxBatch: 2,
-  maxAlive: 60,
+  maxBatch: 3,
+  maxAlive: 160,
   /** Distancia fuera de la pantalla donde aparecen. */
   spawnMargin: 28,
   /** Al final de la ronda los enemigos tienen (1 + healthGrowth) veces la vida base. */
