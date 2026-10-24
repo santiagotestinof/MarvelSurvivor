@@ -243,7 +243,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
       exclusiveTo: [heroId],
       describe: ({ heroWeapon }) => {
         const level = heroWeapon?.level ?? 0;
-        return level === 0 ? `ARMA NUEVA: ${weapon.text}` : `${weapon.text} (nv ${level} → ${level + 1})`;
+        return level === 0 ? `ARMA NUEVA: ${weapon.text}` : `${weapon.levels[level - 1]} (nv ${level} → ${level + 1})`;
       },
       isAvailable: ({ heroWeapon }) => !!heroWeapon && !heroWeapon.maxed,
       apply: ({ heroWeapon }) => heroWeapon?.levelUp(),

@@ -28,8 +28,44 @@ export interface HeroWeaponDeps {
   props: () => Iterable<BreakableProp>;
 }
 
+/**
+ * Qué suma cada nivel de un arma (como en Vampire Survivors): el nivel 1 la desbloquea con sus valores base y cada nivel
+ * siguiente da un bono fijo y distinto. La cadencia, el daño, etc. NO suben solos: solo por esta tabla o por las mejoras comunes.
+ */
+export interface LevelBonus {
+  /** Unidades extra (portales, escudos, telarañas, rayos). */
+  amount?: number;
+  /** Multiplicador del tiempo entre disparos / activaciones (0,8 = 20 % más rápido). */
+  cooldown?: number;
+  damage?: number;
+  area?: number;
+  duration?: number;
+  /** Velocidad de giro (escudos). */
+  spin?: number;
+  /** Empuje (onda de choque). */
+  knockback?: number;
+}
+
+/** Bonos acumulados hasta `level` (el nivel 1 no suma nada). */
+function accumulate(table: Partial<Record<number, LevelBonus>>, level: number): Required<LevelBonus> {
+  const total = { amount: 0, cooldown: 1, damage: 1, area: 1, duration: 1, spin: 1, knockback: 1 };
+  for (let l = 2; l <= level; l++) {
+    const b = table[l];
+    if (!b) continue;
+    total.amount += b.amount ?? 0;
+    total.cooldown *= b.cooldown ?? 1;
+    total.damage *= b.damage ?? 1;
+    total.area *= b.area ?? 1;
+    total.duration *= b.duration ?? 1;
+    total.spin *= b.spin ?? 1;
+    total.knockback *= b.knockback ?? 1;
+  }
+  return total;
+}
+
 abstract class LeveledWeapon implements HeroWeapon {
   level = 0;
+  protected abstract readonly table: Partial<Record<number, LevelBonus>>;
 
   constructor(protected readonly deps: HeroWeaponDeps) {}
 
@@ -41,26 +77,39 @@ abstract class LeveledWeapon implements HeroWeapon {
     this.level = Math.min(HERO_WEAPON_MAX_LEVEL, this.level + 1);
   }
 
+  /** Bonos fijos del nivel actual. */
+  protected get bonus(): Required<LevelBonus> {
+    return accumulate(this.table, this.level);
+  }
+
   abstract update(now: number, delta: number): void;
 }
 
 /** Capitán América: escudos que giran a su alrededor y golpean a todo el que toquen. */
+export const ORBIT_SHIELDS_LEVELS = ['+1 escudo', 'Giran más rápido', '+1 escudo', 'Más daño y área'];
 export class OrbitShields extends LeveledWeapon {
+  protected readonly table = {
+    2: { amount: 1 },
+    3: { spin: 1.3 },
+    4: { amount: 1 },
+    5: { damage: 1.4, area: 1.2 },
+  };
   private readonly sprites: Phaser.GameObjects.Image[] = [];
   private angle = 0;
   private readonly nextHit = new WeakMap<Enemy, number>();
 
   update(now: number, delta: number): void {
     const { scene, owner, enemies, stats } = this.deps;
-    const count = this.level > 0 ? this.level + 1 + stats.amountBonus : 0;
+    const b = this.bonus;
+    const count = this.level > 0 ? 2 + b.amount + stats.amountBonus : 0;
     while (this.sprites.length < count) this.sprites.push(scene.add.image(0, 0, TEXTURES.shield).setDepth(999_990));
     while (this.sprites.length > count) this.sprites.pop()?.destroy();
     if (count === 0) return;
 
-    this.angle += (delta / 1000) * (2.6 + this.level * 0.25);
-    const radius = (30 + this.level * 3) * stats.areaMult;
-    const damage = (6 + this.level * 2) * stats.damageMult;
-    const scale = 1 + 0.15 * stats.areaMult;
+    this.angle += (delta / 1000) * 2.85 * b.spin;
+    const radius = 33 * b.area * stats.areaMult;
+    const damage = 8 * b.damage * stats.damageMult;
+    const scale = 1 + 0.15 * stats.areaMult * b.area;
     const list = activeEnemies(enemies);
     this.sprites.forEach((sprite, i) => {
       const a = this.angle + (i * Math.PI * 2) / count;
@@ -77,18 +126,26 @@ export class OrbitShields extends LeveledWeapon {
 }
 
 /** Spider-Man: deja telarañas en el piso que frenan y lastiman a los enemigos que las pisan. */
+export const WEB_TRAPS_LEVELS = ['+1 telaraña', 'Telarañas más grandes', 'Duran más', '+1 telaraña y más daño'];
 export class WebTraps extends LeveledWeapon {
+  protected readonly table = {
+    2: { amount: 1 },
+    3: { area: 1.25 },
+    4: { duration: 1.3 },
+    5: { amount: 1, damage: 1.5 },
+  };
   private readonly webs: { g: Phaser.GameObjects.Graphics; x: number; y: number; radius: number; until: number; nextTick: number; damage: number }[] = [];
   private nextDrop = 0;
 
   update(now: number): void {
     if (this.level === 0) return;
     const { scene, owner, enemies, stats, props } = this.deps;
+    const b = this.bonus;
 
     if (now >= this.nextDrop) {
-      this.nextDrop = now + (3400 - this.level * 350) * stats.cooldownMult;
+      this.nextDrop = now + 3000 * b.cooldown * stats.cooldownMult;
       const near = activeEnemies(enemies).filter((e) => (e.x - owner.x) ** 2 + (e.y - owner.y) ** 2 < 170 * 170);
-      const amount = 1 + Math.floor(this.level / 2) + stats.amountBonus;
+      const amount = 1 + b.amount + stats.amountBonus;
       for (let i = 0; i < amount; i++) {
         const target = near.length > 0 ? near[Math.floor(Math.random() * near.length)] : null;
         const x = target ? target.x : owner.x + Phaser.Math.Between(-60, 60);
@@ -118,7 +175,8 @@ export class WebTraps extends LeveledWeapon {
 
   private spawn(x: number, y: number, now: number): void {
     const { scene, stats } = this.deps;
-    const radius = (24 + this.level * 4) * stats.areaMult;
+    const b = this.bonus;
+    const radius = 28 * b.area * stats.areaMult;
     const g = scene.add.graphics().setDepth(2);
     g.fillStyle(0xf2f2f2, 0.12).fillCircle(x, y, radius);
     g.lineStyle(1.5, 0xf2f2f2, 0.85);
@@ -132,26 +190,34 @@ export class WebTraps extends LeveledWeapon {
       x,
       y,
       radius,
-      until: now + (3500 + this.level * 600) * stats.durationMult,
+      until: now + 4100 * b.duration * stats.durationMult,
       nextTick: now + 350,
-      damage: (3 + this.level * 1.5) * stats.damageMult,
+      damage: 4.5 * b.damage * stats.damageMult,
     });
   }
 }
 
 /** Thor: cada tanto, una tormenta hace caer rayos sobre enemigos al azar alrededor. */
+export const THUNDER_STORM_LEVELS = ['+1 rayo', 'Tormenta más seguida', '+1 rayo', 'Más daño y área'];
 export class ThunderStorm extends LeveledWeapon {
+  protected readonly table = {
+    2: { amount: 1 },
+    3: { cooldown: 0.8 },
+    4: { amount: 1 },
+    5: { damage: 1.3, area: 1.25 },
+  };
   private nextStorm = 0;
 
   update(now: number): void {
     if (this.level === 0 || now < this.nextStorm) return;
     const { scene, owner, enemies, stats, props } = this.deps;
-    this.nextStorm = now + (4300 - this.level * 350) * stats.cooldownMult;
+    const b = this.bonus;
+    this.nextStorm = now + 4000 * b.cooldown * stats.cooldownMult;
 
     const pool = activeEnemies(enemies).filter((e) => (e.x - owner.x) ** 2 + (e.y - owner.y) ** 2 < 260 * 260);
-    const bolts = 2 + this.level + stats.amountBonus;
-    const radius = 30 * stats.areaMult;
-    const damage = (14 + this.level * 3) * stats.damageMult;
+    const bolts = 3 + b.amount + stats.amountBonus;
+    const radius = 30 * b.area * stats.areaMult;
+    const damage = 17 * b.damage * stats.damageMult;
     for (let i = 0; i < bolts; i++) {
       const target = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
       const x = target ? target.x : owner.x + Phaser.Math.Between(-120, 120);
@@ -165,19 +231,27 @@ export class ThunderStorm extends LeveledWeapon {
 }
 
 /** Hulk: golpea el piso y una onda de choque daña y empuja a todos los que lo rodean. */
+export const SHOCKWAVE_LEVELS = ['Onda más grande', 'Golpea más seguido', 'Más daño', 'Más área y más empuje'];
 export class Shockwave extends LeveledWeapon {
+  protected readonly table = {
+    2: { area: 1.2 },
+    3: { cooldown: 0.8 },
+    4: { damage: 1.35 },
+    5: { area: 1.2, knockback: 1.3 },
+  };
   private nextWave = 0;
 
   update(now: number): void {
     if (this.level === 0 || now < this.nextWave) return;
     const { scene, owner, enemies, stats, props } = this.deps;
-    const radius = (46 + this.level * 12) * stats.areaMult;
+    const b = this.bonus;
+    const radius = 58 * b.area * stats.areaMult;
     const trigger = radius * 1.15;
     const near = activeEnemies(enemies).some((e) => (e.x - owner.x) ** 2 + (e.y - owner.y) ** 2 <= trigger * trigger);
     if (!near) return;
-    this.nextWave = now + (3600 - this.level * 350) * stats.cooldownMult;
+    this.nextWave = now + 3600 * b.cooldown * stats.cooldownMult;
 
-    damageArea(enemies, props(), owner.x, owner.y - 4, radius, (14 + this.level * 4) * stats.damageMult, 210);
+    damageArea(enemies, props(), owner.x, owner.y - 4, radius, 18 * b.damage * stats.damageMult, 210 * b.knockback);
     const ring = scene.add
       .circle(owner.x, owner.y - 2, radius, 0x8be05a, 0.3)
       .setStrokeStyle(3, 0xc8ff9a, 0.9)
@@ -187,7 +261,6 @@ export class Shockwave extends LeveledWeapon {
     scene.cameras.main.shake(90, 0.003);
   }
 }
-
 
 /** Valores base de los portales de Strange: no cambian con el nivel del arma (solo con las mejoras comunes). */
 const PORTAL = { openEveryMs: 7000, shotEveryMs: 520, durationMs: 4000, sparkDamage: 7, sparkSpeed: 200 } as const;
@@ -216,7 +289,14 @@ interface Spark {
  * Doctor Strange: abre portales fijos en puntos al azar a su alrededor; cada uno dispara chispas al enemigo más cercano
  * mientras dura. Usa las mejoras comunes: daño, enfriamiento, duración, área, cantidad, velocidad del disparo, perforación y crítico.
  */
+export const PORTALS_LEVELS = ['+1 portal', 'Disparan más rápido', '+1 portal', 'Más daño'];
 export class Portals extends LeveledWeapon {
+  protected readonly table = {
+    2: { amount: 1 },
+    3: { cooldown: 0.78 },
+    4: { amount: 1 },
+    5: { damage: 1.4 },
+  };
   private readonly portals: Portal[] = [];
   private readonly sparks: Spark[] = [];
   private nextOpen = 0;
@@ -229,8 +309,7 @@ export class Portals extends LeveledWeapon {
     if (now >= this.nextOpen) {
       // Cadencia = velocidad de las chispas; Duración = cuánto quedan abiertos. Cada cuánto se abre uno nuevo no depende de ninguna.
       this.nextOpen = now + PORTAL.openEveryMs;
-      // El nivel del arma SOLO suma portales (hasta 3) y chispas por ráfaga (nv 4 y 5); lo demás sube únicamente con las mejoras comunes.
-      const amount = Math.min(this.level, 3) + stats.amountBonus;
+      const amount = 1 + this.bonus.amount + stats.amountBonus;
       for (let i = 0; i < amount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = Phaser.Math.Between(40, 95) * stats.rangeMult;
@@ -250,9 +329,8 @@ export class Portals extends LeveledWeapon {
       if (now < portal.nextShot) continue;
       const target = this.nearestTarget(portal.x, portal.y);
       if (!target) continue;
-      portal.nextShot = now + PORTAL.shotEveryMs * stats.cooldownMult;
-      const volley = 1 + Math.max(0, this.level - 3);
-      for (let k = 0; k < volley; k++) this.shoot(portal.x, portal.y, target.x, target.y, (k - (volley - 1) / 2) * 0.22);
+      portal.nextShot = now + PORTAL.shotEveryMs * this.bonus.cooldown * stats.cooldownMult;
+      this.shoot(portal.x, portal.y, target.x, target.y);
     }
   }
 
@@ -291,12 +369,12 @@ export class Portals extends LeveledWeapon {
     return best;
   }
 
-  private shoot(x: number, y: number, tx: number, ty: number, spread = 0): void {
+  private shoot(x: number, y: number, tx: number, ty: number): void {
     const { scene, stats } = this.deps;
-    const angle = Math.atan2(ty - y, tx - x) + spread + Phaser.Math.FloatBetween(-0.06, 0.06);
+    const angle = Math.atan2(ty - y, tx - x) + Phaser.Math.FloatBetween(-0.06, 0.06);
     const speed = PORTAL.sparkSpeed * stats.projectileSpeedMult;
     const critical = Math.random() < stats.critChance;
-    const damage = PORTAL.sparkDamage * stats.damageMult * (critical ? stats.critMult : 1);
+    const damage = PORTAL.sparkDamage * this.bonus.damage * stats.damageMult * (critical ? stats.critMult : 1);
     const sprite = scene.add.image(x, y, TEXTURES.spark).setDepth(999_980).setRotation(angle).setScale(stats.areaMult ** 0.5);
     this.sparks.push({
       sprite,
@@ -351,36 +429,41 @@ export class Portals extends LeveledWeapon {
 /** Qué arma secundaria exclusiva tiene cada héroe (por id de héroe). */
 export const HERO_WEAPONS: Record<
   string,
-  { upgradeId: string; name: string; text: string; create: (deps: HeroWeaponDeps) => HeroWeapon }
+  { upgradeId: string; name: string; text: string; levels: string[]; create: (deps: HeroWeaponDeps) => HeroWeapon }
 > = {
   capitan: {
     upgradeId: 'orbit-shields',
     name: 'Escudos orbitales',
     text: 'Escudos que giran a tu alrededor y golpean a todos',
+    levels: ORBIT_SHIELDS_LEVELS,
     create: (deps) => new OrbitShields(deps),
   },
   spiderman: {
     upgradeId: 'web-traps',
     name: 'Trampas de telaraña',
     text: 'Telarañas en el piso que frenan y lastiman',
+    levels: WEB_TRAPS_LEVELS,
     create: (deps) => new WebTraps(deps),
   },
   thor: {
     upgradeId: 'thunder-storm',
     name: 'Tormenta',
     text: 'Una lluvia de rayos cae sobre los enemigos',
+    levels: THUNDER_STORM_LEVELS,
     create: (deps) => new ThunderStorm(deps),
   },
   strange: {
     upgradeId: 'portals',
     name: 'Portales',
     text: 'Abre portales alrededor que disparan chispas',
+    levels: PORTALS_LEVELS,
     create: (deps) => new Portals(deps),
   },
   hulk: {
     upgradeId: 'shockwave',
     name: 'Onda de choque',
     text: 'Golpe al piso: daña y empuja a todos alrededor',
+    levels: SHOCKWAVE_LEVELS,
     create: (deps) => new Shockwave(deps),
   },
 };
