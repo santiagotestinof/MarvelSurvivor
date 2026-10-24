@@ -227,7 +227,8 @@ export class Portals extends LeveledWeapon {
     const { scene, owner, stats } = this.deps;
 
     if (now >= this.nextOpen) {
-      this.nextOpen = now + PORTAL.openEveryMs * stats.cooldownMult;
+      // Cadencia = velocidad de las chispas; Duración = cuánto quedan abiertos. Cada cuánto se abre uno nuevo no depende de ninguna.
+      this.nextOpen = now + PORTAL.openEveryMs;
       // El nivel del arma SOLO suma portales (hasta 3) y chispas por ráfaga (nv 4 y 5); lo demás sube únicamente con las mejoras comunes.
       const amount = Math.min(this.level, 3) + stats.amountBonus;
       for (let i = 0; i < amount; i++) {
