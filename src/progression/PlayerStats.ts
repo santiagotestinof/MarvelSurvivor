@@ -7,6 +7,9 @@ export class PlayerStats {
   /** Distancia a la que las gemas empiezan a ir hacia el jugador. */
   pickupRadius = 36;
 
+  /** Suerte (mejora permanente): inclina el sorteo de rareza de las mejoras hacia las raras. */
+  luck = 0;
+
   /** Multiplicador de la experiencia que dan las gemas. */
   xpMult = 1;
   /** Multiplicador del valor de cada moneda de oro. */

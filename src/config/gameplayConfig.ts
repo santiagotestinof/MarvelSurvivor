@@ -23,6 +23,16 @@ export const PLAYER_HIT = {
   invulnerabilityMs: 700,
 };
 
+/**
+ * Rareza de las mejoras de la ronda: al ofrecer una mejora con niveles de rareza se sortea común / rara / épica / legendaria
+ * (cada una con su valor propio). La Suerte permanente (`stats.luck`) hace más probables las raras.
+ */
+export const UPGRADE_RARITY = {
+  weights: { common: 55, rare: 28, epic: 13, legendary: 4 },
+  /** Cuánto sube el peso de cada rareza por nivel de Suerte. */
+  luckBoost: { rare: 0.1, epic: 0.25, legendary: 0.5 },
+};
+
 export const PROGRESSION = {
   /** XP necesaria para pasar del nivel 1 al 2. */
   baseXp: 5,

@@ -122,10 +122,11 @@ export const META_UPGRADES: readonly MetaUpgradeDefinition[] = [
     name: 'Suerte',
     maxLevel: 5,
     baseCost: 60,
-    effect: (level) => `${percent(level * 0.02)} de crítico y ${percent(level * 0.1)} de oro en enemigos`,
+    effect: (level) => `${percent(level * 0.02)} de crítico, ${percent(level * 0.1)} de oro en enemigos y mejoras más raras`,
     apply: (level, { stats }) => {
       stats.critChance += level * 0.02;
       stats.goldChanceMult += level * 0.1;
+      stats.luck += level;
     },
   },
   {

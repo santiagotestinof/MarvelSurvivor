@@ -40,3 +40,9 @@ Pendiente: los Minimisiles de Iron Man (y su evolución en fuego) todavía usan 
 ## 4. Ideas aprobadas, todavía NO implementadas
 
 - **Rareza en las mejoras de la ronda:** que no todas valgan lo mismo. Por ejemplo, Cadencia común +2 % y legendaria +15 %. La rareza se sortea al ofrecer la mejora (y la Suerte la inclina).
+
+
+## Rareza de las mejoras pasivas (implementada)
+- Ccada vez que se ofrece una pasiva con valores por rareza se sortea común / rara / épica / legendaria (pesos 55/28/13/4; la Suerte sube los pesos de las raras). Los valores están en `tiers` de `src/progression/upgrades.ts`.
+- Las tarjetas de mejora son solo ARMA o PASIVA (sin categorías de ataque/defensa/utilidad).
+- Armadura (reduce el daño de cada golpe) y Vida máxima existen como pasivas en ronda y como mejoras permanentes.

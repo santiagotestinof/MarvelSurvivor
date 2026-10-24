@@ -59,6 +59,18 @@ const ICONS: Record<string, string[]> = {
     '..........',
     '..........',
   ],
+  armor: [
+    '.SSSSSSSS.',
+    'SSWWSSSSSS',
+    'SWWSSSSSSS',
+    'SSSSSKSSSS',
+    'SSSSSKSSSS',
+    '.SSSKKSSS.',
+    '.SSSSSSSS.',
+    '..SSSSSS..',
+    '...SSSS...',
+    '....SS....',
+  ],
   amount: [
     '..........',
     '.YY....YY.',
