@@ -42,6 +42,11 @@ export class PlayerStats {
   /** Probabilidad de que usar una de las tres anteriores no gaste el uso. */
   preserveChance = 0;
 
+  /** El arma principal del héroe ya evolucionó (cada héroe evoluciona distinto, ver `upgrades.ts`). */
+  evolved = false;
+  /** Rebotes extra del escudo evolucionado del Capitán. */
+  bounceBonus = 0;
+
   // Ataque básico (repulsor)
   /** Disparos por ataque, abiertos en abanico hacia el mismo objetivo. */
   projectileCount = 1;

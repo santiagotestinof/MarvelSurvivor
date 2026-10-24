@@ -1,10 +1,10 @@
-import { BASIC_ATTACK_LIMITS, FIRE, MISSILES, PROGRESSION, UPGRADE_RARITY } from '../config/gameplayConfig';
+import { BASIC_ATTACK_LIMITS, EVOLUTION, FIRE, PROGRESSION, UPGRADE_RARITY } from '../config/gameplayConfig';
 import type { AttackKind } from '../characters/CharacterDefinition';
 import type { Character } from '../entities/Character';
 import type { Rarity } from '../characters/CharacterDefinition';
 import { RARITY_ORDER } from '../characters/rarity';
 import { HERO_WEAPONS, HERO_WEAPON_MAX_LEVEL, type HeroWeapon } from '../systems/HeroWeapons';
-import { MISSILE_LEVELS, type FireUpgrade, type MissileWeapon } from '../systems/MissileWeapon';
+import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
 
 export interface UpgradeContext {
@@ -99,6 +99,16 @@ function fireUpgrade(kind: FireUpgrade, id: string, name: string, text: string):
     apply: ({ missiles }) => missiles.upgradeFire(kind),
   };
 }
+
+/** Evolución del arma principal de cada héroe y la pasiva que hay que haber tomado `EVOLUTION.passivePicks` veces. */
+const EVOLUTIONS = [
+  { hero: 'ironman', id: 'missiles-evolution', name: 'Misiles incendiarios', requires: 'fire-rate', text: 'Las explosiones de los minimisiles dejan fuego que quema' },
+  { hero: 'capitan', id: 'evolution-capitan', name: 'Escudo rebotador', requires: 'amount', text: 'El escudo se lanza a un enemigo y rebota entre ellos (5 rebotes)' },
+  { hero: 'spiderman', id: 'evolution-spiderman', name: 'Telaraña inmovilizadora', requires: 'duration', text: 'Las telarañas inmovilizan unos segundos al enemigo que pegan' },
+  { hero: 'thor', id: 'evolution-thor', name: 'Martillo sísmico', requires: 'range', text: 'Además de los rayos, el martillo lanza una onda que rompe el piso en una línea larga' },
+  { hero: 'hulk', id: 'evolution-hulk', name: 'Furia circular', requires: 'damage', text: 'El zarpazo pasa a ser un círculo completo alrededor de Hulk' },
+  { hero: 'strange', id: 'evolution-strange', name: 'Dimensión lenta', requires: 'area', text: 'El aura se vuelve enorme y ralentiza a los enemigos que entran' },
+] as const;
 
 export const UPGRADES: readonly UpgradeDefinition[] = [
   // ---- Stats generales
@@ -217,8 +227,9 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     name: 'Disparo múltiple',
     description: '+1 disparo en abanico',
     describe: ({ stats, basicKind }) =>
-      `${basicKind === 'fan' ? '+1 zarpazo en otra dirección' : basicKind === 'thunder' ? '+1 rayo por ataque' : '+1 disparo en abanico'} (${stats.projectileCount} → ${stats.projectileCount + 1})`,
-    isAvailable: ({ stats, basicKind }) => basicKind !== 'aura' && stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
+      `${basicKind === 'fan' ? '+1 zarpazo en otra dirección' : basicKind === 'thunder' ? '+1 rayo por ataque' : basicKind === 'rocket' ? '+1 misil por ráfaga' : '+1 disparo en abanico'} (${stats.projectileCount} → ${stats.projectileCount + 1})`,
+    isAvailable: ({ stats, basicKind }) =>
+      basicKind !== 'aura' && !(basicKind === 'fan' && stats.evolved) && stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
     apply: ({ stats }) => stats.projectileCount++,
   },
   {
@@ -237,6 +248,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: '+25% de velocidad de los disparos',
     isAvailable: (ctx) =>
       (ctx.basicKind === 'bolt' ||
+        ctx.basicKind === 'rocket' ||
         ctx.basicKind === 'web' ||
         ctx.basicKind === 'shield' ||
         (ctx.basicKind === 'aura' && (ctx.heroWeapon?.level ?? 0) > 0)) &&
@@ -254,30 +266,34 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     },
   }),
 
-  // ---- Minimisiles y su evolución
+  // ---- Evoluciones del arma principal: una por héroe, piden tomar varias veces una pasiva relacionada
+  ...EVOLUTIONS.map(
+    (evo): UpgradeDefinition => ({
+      id: evo.id,
+      name: evo.name,
+      description: evo.text,
+      describe: () => `EVOLUCIÓN: ${evo.text}`,
+      exclusiveTo: [evo.hero],
+      isAvailable: (ctx) => !ctx.stats.evolved && times(ctx, evo.requires) >= EVOLUTION.passivePicks,
+      apply: (ctx) => {
+        ctx.stats.evolved = true;
+        if (evo.hero === 'ironman') ctx.missiles.evolve();
+      },
+      // Es la recompensa de juntar el requisito: que no tarde en salir.
+      weight: 4,
+    }),
+  ),
   {
-    id: 'missiles',
-    exclusiveTo: IRON_MAN_ONLY,
-    name: 'Minimisiles',
-    description: 'Misiles teledirigidos que explotan',
-    describe: ({ missiles }) => {
-      if (missiles.level === 0) return `ARMA NUEVA: ${MISSILE_LEVELS[0]}, teledirigidos y explosivos`;
-      const text = `${MISSILE_LEVELS[missiles.level]} (nv ${missiles.level} → ${missiles.level + 1})`;
-      return missiles.level + 1 === MISSILES.maxLevel ? `${text}. Al máximo, con Más daño x${MISSILES.evolutionDamagePicks}, evolucionan` : text;
+    id: 'shield-bounces',
+    name: 'Más rebotes',
+    description: '+1 rebote del escudo',
+    exclusiveTo: ['capitan'],
+    describe: ({ stats }) => {
+      const now = EVOLUTION.shieldBounces + stats.bounceBonus;
+      return `+1 rebote del escudo (${now} → ${now + 1})`;
     },
-    isAvailable: ({ missiles }) => !missiles.maxed,
-    apply: ({ missiles }) => missiles.levelUp(),
-  },
-  {
-    id: 'missiles-evolution',
-    exclusiveTo: IRON_MAN_ONLY,
-    name: 'Misiles incendiarios',
-    description: 'Las explosiones dejan fuego que quema',
-    isAvailable: (ctx) =>
-      ctx.missiles.maxed && !ctx.missiles.evolved && times(ctx, 'damage') >= MISSILES.evolutionDamagePicks,
-    apply: ({ missiles }) => missiles.evolve(),
-    // Es la recompensa de juntar los requisitos: que no tarde en salir.
-    weight: 4,
+    isAvailable: ({ stats }) => stats.evolved && stats.bounceBonus < EVOLUTION.shieldMaxExtra,
+    apply: ({ stats }) => stats.bounceBonus++,
   },
   fireUpgrade('duration', 'burn-duration', 'Fuego duradero', '+30% de duración del fuego'),
   fireUpgrade('damage', 'burn-damage', 'Fuego intenso', '+30% de daño del fuego'),
@@ -307,7 +323,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: '+25% de ángulo del zarpazo',
     exclusiveTo: ['hulk'],
     describe: (ctx) => `+25% de ángulo del zarpazo (nv ${times(ctx, 'fan-width')} → ${times(ctx, 'fan-width') + 1})`,
-    isAvailable: (ctx) => times(ctx, 'fan-width') < HERO_WEAPON_MAX_LEVEL,
+    isAvailable: (ctx) => !ctx.stats.evolved && times(ctx, 'fan-width') < HERO_WEAPON_MAX_LEVEL,
     apply: ({ stats }) => (stats.fanAngleMult *= 1.25),
   },
   {

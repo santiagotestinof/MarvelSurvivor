@@ -204,6 +204,30 @@ const ICONS: Record<string, string[]> = {
     '.Y.....Y..',
     '..........',
   ],
+  evolution: [
+    '....YY....',
+    '....YY....',
+    '...YWWY...',
+    'YYYWWWWYYY',
+    '.YYWWWWYY.',
+    '..YYWWYY..',
+    '..YYWWYY..',
+    '.YYY..YYY.',
+    '.YY....YY.',
+    '..........',
+  ],
+  'shield-bounces': [
+    '..........',
+    '.BBBB.....',
+    'BWWWWB.CC.',
+    'BWRRWB..C.',
+    'BWRRWB.C..',
+    'BWWWWB.CC.',
+    '.BBBB..C..',
+    '......CC..',
+    '..........',
+    '..........',
+  ],
   'missiles-evolution': [
     '......SWR.',
     '.....SWSR.',
@@ -311,7 +335,8 @@ export function setUpgradeIcon(icon: Phaser.GameObjects.Image, id: string, scale
 }
 
 export function upgradeIconKey(upgradeId: string): string {
-  return `upgrade-icon:${upgradeId}`;
+  // Todas las evoluciones de héroe comparten la estrella.
+  return `upgrade-icon:${upgradeId.startsWith('evolution-') ? 'evolution' : upgradeId}`;
 }
 
 /** Genera las texturas de los íconos (llamar una vez, desde BootScene). */

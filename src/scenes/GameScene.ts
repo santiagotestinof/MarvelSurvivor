@@ -144,7 +144,10 @@ export class GameScene extends Phaser.Scene {
       this.stats,
       (x, y, radius, damage) =>
         map.damagePropsInRadius(x, y, radius, damage),
+      () => map.breakables,
     );
+    // Los minimisiles son el arma principal de Iron Man.
+    if (this.player.definition.stats.attack.kind === 'rocket') this.missiles.unlock();
 
     this.rangedAttacks = new RangedAttackSystem(
       this,
@@ -176,8 +179,13 @@ export class GameScene extends Phaser.Scene {
       const enemy = e as Enemy;
       if (enemy.dying || !projectile.canHit(enemy)) return;
       enemy.takeDamage(projectile.damage);
-      if (projectile.slow && !enemy.dying) enemy.applySlow(projectile.slow.ms, projectile.slow.factor);
-      if (projectile.registerHit(enemy)) projectile.destroy();
+      if (projectile.slow && !enemy.dying) {
+        // El jefe no queda inmóvil del todo: solo se frena mucho.
+        const factor = projectile.slow.factor === 0 && enemy.kind.id === 'overlord' ? 0.5 : projectile.slow.factor;
+        enemy.applySlow(projectile.slow.ms, factor);
+      }
+      if (projectile.isBouncer) projectile.rebound(enemy);
+      else if (projectile.registerHit(enemy)) projectile.destroy();
     });
 
     // Los disparos del repulsor también rompen cajas y rocas (las atraviesan, como a los enemigos con perforación).

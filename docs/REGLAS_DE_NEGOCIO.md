@@ -15,14 +15,13 @@ Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir d
 
 | Arma (héroe) | Nv 1 | Nv 2 | Nv 3 | Nv 4 | Nv 5 |
 |---|---|---|---|---|---|
-| Minimisiles (Iron Man) | 1 misil | +1 misil | Ráfagas más seguidas (−20 %) | +1 misil | +40 % de daño, +20 % de área |
 | Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño |
 | Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área |
 | Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño |
 | Tormenta (Thor) | 3 rayos | +1 rayo | Tormenta más seguida (−20 %) | +1 rayo | +30 % de daño, +25 % de área |
 | Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje |
 
-Los Minimisiles evolucionan en Misiles incendiarios al llegar al nv 5 (con Más daño x3); las mejoras de fuego siguen su propio sistema de niveles.
+Iron Man todavía no tiene arma especial (los Minimisiles pasaron a ser su arma principal): hay que diseñarle una.
 
 ## 2. Qué significa cada estadística
 
@@ -46,3 +45,18 @@ Los Minimisiles evolucionan en Misiles incendiarios al llegar al nv 5 (con Más 
 - Cada vez que se ofrece una pasiva con valores por rareza se sortea común / rara / épica / legendaria (pesos 86/10/3/1, o sea 1 % legendaria; la Suerte al máximo deja 69 / 16 / 8 / 6 %, o sea 6 % legendaria). Los valores están en `tiers` de `src/progression/upgrades.ts`.
 - Las tarjetas de mejora son solo ARMA o PASIVA (sin categorías de ataque/defensa/utilidad).
 - Armadura (reduce el daño de cada golpe) y Vida máxima existen como pasivas en ronda y como mejoras permanentes.
+
+## Evoluciones del arma principal
+
+Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `EVOLUTION.passivePicks` (3) veces la pasiva asociada. La evolución es una mejora más que sale en el sorteo (peso alto) y se elige una sola vez.
+
+| Héroe | Arma principal | Evolución | Pasiva requerida (x3) |
+|---|---|---|---|
+| Iron Man | Minimisiles (cohetes teledirigidos; reemplazaron al repulsor) | Misiles incendiarios: las explosiones dejan fuego (+ mejoras de fuego) | Cadencia |
+| Capitán América | Escudo boomerang | Escudo rebotador: se lanza a un enemigo y rebota entre ellos (5 rebotes; mejora "Más rebotes" hasta 10) | Cantidad |
+| Spider-Man | Telarañas (frenan un poco, 30 % por 1,2 s) | Telaraña inmovilizadora: inmoviliza 2,5 s al que pega (el jefe solo se frena) | Duración |
+| Thor | Rayos en área | Martillo sísmico: además, una onda en línea larga que rompe el piso | Alcance |
+| Hulk | Zarpazo en abanico | Furia circular: el zarpazo es un círculo completo alrededor de Hulk | Más daño |
+| Doctor Strange | Aura de runas | Dimensión lenta: aura 1,8 veces más grande que ralentiza a los enemigos | Área |
+
+Valores en `EVOLUTION` de `gameplayConfig.ts`. Sin verificar el balance.

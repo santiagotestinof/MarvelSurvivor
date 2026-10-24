@@ -26,9 +26,10 @@ export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
  * Cómo ataca el héroe:
  * - bolt: disparo recto (repulsor) · shield: escudo que rebota y vuelve · web: telaraña que frena
  * - thunder: rayo instantáneo en área sobre los enemigos cercanos · fan: abanico fino cuerpo a cuerpo (Hulk)
+ * - rocket: minimisiles teledirigidos (Iron Man; los dispara `MissileWeapon`, no `AutoAttackSystem`)
  * - aura: círculo de runas alrededor del héroe que daña seguido a todo lo que entra (Doctor Strange; `radius` es el radio)
  */
-export type AttackKind = 'bolt' | 'shield' | 'web' | 'thunder' | 'fan' | 'aura';
+export type AttackKind = 'bolt' | 'shield' | 'web' | 'thunder' | 'fan' | 'aura' | 'rocket';
 
 /** Ataque automático básico: dispara al enemigo más cercano dentro de `aimRange`. */
 export interface AttackDefinition {

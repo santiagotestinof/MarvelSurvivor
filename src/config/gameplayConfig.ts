@@ -33,6 +33,24 @@ export const UPGRADE_RARITY = {
   luckBoost: { rare: 0.2, epic: 0.5, legendary: 1.4 },
 };
 
+/** Evolución del arma principal de cada héroe. */
+export const EVOLUTION = {
+  /** Veces que hay que haber tomado la pasiva asociada para que salga la evolución. */
+  passivePicks: 3,
+  /** Escudo rebotador del Capitán: rebotes de base (la mejora "Más rebotes" suma hasta `shieldMaxExtra` más). */
+  shieldBounces: 5,
+  shieldMaxExtra: 5,
+  /** Telaraña inmovilizadora de Spider-Man: cuánto queda inmóvil el enemigo (ms). */
+  webFreezeMs: 2500,
+  /** Martillo sísmico de Thor: largo y ancho de la onda en línea (px). */
+  thorLineLength: 190,
+  thorLineWidth: 22,
+  /** Dimensión lenta de Strange: cuánto se agranda el aura y cómo frena a los enemigos. */
+  strangeRadiusMult: 1.8,
+  strangeSlowMs: 900,
+  strangeSlowFactor: 0.55,
+};
+
 export const PROGRESSION = {
   /** XP necesaria para pasar del nivel 1 al 2. */
   baseXp: 5,
@@ -63,7 +81,7 @@ export const WAVES = {
 /** Minimisiles teledirigidos (se desbloquean con la mejora "Minimisiles"). */
 export const MISSILES = {
   /** Tiempo entre ráfagas (lo acorta la mejora de cadencia). */
-  cooldownMs: 2400,
+  cooldownMs: 1100,
   damage: 22,
   /** Píxeles por segundo. */
   speed: 170,
@@ -76,10 +94,6 @@ export const MISSILES = {
   /** La explosión daña a los cercanos con esta fracción del daño. */
   splashRadius: 24,
   splashDamageRatio: 0.5,
-  /** Nivel máximo del arma (cada nivel da un bono fijo, ver `MISSILE_TABLE`). */
-  maxLevel: 5,
-  /** Veces que hay que haber elegido "Más daño" para que aparezca la evolución (con los misiles al máximo). */
-  evolutionDamagePicks: 3,
 };
 
 /** Fuego que dejan los misiles evolucionados (Misiles incendiarios). Las mejoras de fuego lo multiplican. */
