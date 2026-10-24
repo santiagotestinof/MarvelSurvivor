@@ -19,7 +19,7 @@ export class PauseOverlay {
     this.title = scene.add.text(0, 0, 'PAUSA', textStyle(40)).setOrigin(0.5).setDepth(DEPTH + 1).setVisible(false);
     this.resumeButton = new UiButton(scene, 'SEGUIR [ESC]', 18, onToggle, [], true).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 
-    this.menuButton = new UiButton(scene, 'MENÚ PRINCIPAL', 14, onMenu).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
+    this.menuButton = new UiButton(scene, 'ABANDONAR RONDA', 14, onMenu).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 
     const keyboard = scene.input.keyboard;
     if (keyboard) keyboard.addKey('ESC').on('down', onToggle);
