@@ -113,7 +113,7 @@ export class GameScene extends Phaser.Scene {
     this.events.off('player-hurt');
     this.events.on('player-hurt', (dealt: number, maxHealth: number) => {
       const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
-      this.cameras.main.shake(70 + 50 * strength, 0.0008 + 0.0022 * strength);
+      this.spawnBloodBurst(strength);
     });
 
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
@@ -644,5 +644,28 @@ export class GameScene extends Phaser.Scene {
 
 
     if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();
+  }
+
+  /** Salpicadura de gotitas rojas sobre el personaje cuando lo golpean (cuadraditos de 2 px que salen, caen y se desvanecen). */
+  private spawnBloodBurst(strength: number): void {
+    if (!this.player) return;
+    const count = Math.round(5 + 5 * strength);
+    for (let i = 0; i < count; i++) {
+      const size = Phaser.Math.Between(1, 2);
+      const drop = this.add
+        .rectangle(this.player.x + Phaser.Math.Between(-3, 3), this.player.y - 14 + Phaser.Math.Between(-4, 4), size, size, i % 3 === 0 ? 0xa80000 : 0xd81414)
+        .setDepth(1_000_001);
+      const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      const dist = Phaser.Math.Between(8, 22);
+      this.tweens.add({
+        targets: drop,
+        x: drop.x + Math.cos(angle) * dist,
+        y: drop.y + Math.sin(angle) * dist * 0.7 + 8,
+        alpha: 0,
+        duration: Phaser.Math.Between(280, 460),
+        ease: 'Quad.easeOut',
+        onComplete: () => drop.destroy(),
+      });
+    }
   }
 }

@@ -118,7 +118,7 @@ export class HudScene extends Phaser.Scene {
   private flashHurt(dealt: number, maxHealth: number): void {
     const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
     this.tweens.killTweensOf(this.hurtVignette);
-    this.hurtVignette.setAlpha(0.18 + 0.27 * strength);
+    this.hurtVignette.setAlpha(0.1 + 0.15 * strength);
     this.tweens.add({ targets: this.hurtVignette, alpha: 0, duration: 380, ease: 'Quad.easeOut' });
   }
 
