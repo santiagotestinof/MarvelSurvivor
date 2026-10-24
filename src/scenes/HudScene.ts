@@ -9,6 +9,8 @@ import { formatTime, textStyle, uiScale } from '../ui/uiLayout';
 import { UPGRADE_ICON_SIZE, setUpgradeIcon, upgradeIconKey } from '../ui/upgradeIcons';
 import type { GameScene, HudSnapshot } from './GameScene';
 
+const HURT_TEXTURE = 'hurt-vignette';
+
 /** Demora entre el final de la ronda y la pantalla de resultado. */
 const RESULT_DELAY_MS = 700;
 
@@ -36,6 +38,7 @@ export class HudScene extends Phaser.Scene {
   private result!: ResultOverlay;
   private pause!: PauseOverlay;
 
+  private hurtVignette!: Phaser.GameObjects.Image;
   private ui = 2;
   private resultScheduled = false;
   private latest: HudSnapshot | null = null;
@@ -84,9 +87,39 @@ export class HudScene extends Phaser.Scene {
       this.gameScene.activateUltimate();
     });
 
+    // Viñeta roja en los bordes: se enciende al recibir un golpe y se desvanece.
+    this.createHurtTexture();
+    this.hurtVignette = this.add.image(0, 0, HURT_TEXTURE).setOrigin(0).setDepth(20).setAlpha(0);
+    this.gameScene.events.on('player-hurt', this.flashHurt, this);
+
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
+      this.gameScene.events.off('player-hurt', this.flashHurt, this);
+    });
+  }
+
+  /** Textura de la viñeta: transparente en el centro y roja hacia los bordes. */
+  private createHurtTexture(): void {
+    if (this.textures.exists(HURT_TEXTURE)) return;
+    const size = 256;
+    const canvas = this.textures.createCanvas(HURT_TEXTURE, size, size);
+    if (!canvas) return;
+    const ctx = canvas.getContext();
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, size * 0.25, size / 2, size / 2, size * 0.72);
+    gradient.addColorStop(0, 'rgba(220,0,0,0)');
+    gradient.addColorStop(1, 'rgba(220,0,0,0.95)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    canvas.refresh();
+  }
+
+  private flashHurt(dealt: number, maxHealth: number): void {
+    const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
+    this.tweens.killTweensOf(this.hurtVignette);
+    this.hurtVignette.setAlpha(0.45 + 0.5 * strength);
+    this.tweens.add({ targets: this.hurtVignette, alpha: 0, duration: 450, ease: 'Quad.easeOut' });
   }
 
   update(): void {
@@ -127,6 +160,7 @@ export class HudScene extends Phaser.Scene {
 
   private layout(): void {
     const { width, height } = this.scale;
+    this.hurtVignette.setDisplaySize(width, height);
     this.ui = uiScale(width, height);
     const ui = this.ui;
 

@@ -1,3 +1,4 @@
+import { showDamageNumber } from '../ui/damageNumbers';
 import Phaser from 'phaser';
 import {
   enemyAnimationKey,
@@ -226,6 +227,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       return true;
     }
     this.currentHealth -= amount;
+    showDamageNumber(this.scene, this.x, this.y - this.displayHeight * this.originY - 2, amount);
 
     if (this.currentHealth <= 0) {
       this.die();

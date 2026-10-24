@@ -119,7 +119,10 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     const now = this.scene.time.now;
     if (this.isDead || now < this.invulnerableUntil) return false;
 
-    this.currentHealth = Math.max(0, this.currentHealth - Math.max(1, amount - this.armor));
+    const dealt = Math.max(1, amount - this.armor);
+    this.currentHealth = Math.max(0, this.currentHealth - dealt);
+    // Aviso al juego y al HUD: vibración de la cámara y viñeta roja (ver GameScene y HudScene).
+    this.scene.events.emit('player-hurt', dealt, this.maxHealth);
     this.invulnerableUntil = now + PLAYER_HIT.invulnerabilityMs;
 
     this.scene.tweens.add({

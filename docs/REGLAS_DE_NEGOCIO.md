@@ -64,3 +64,7 @@ Valores en `EVOLUTION` de `gameplayConfig.ts`. Sin verificar el balance.
 
 ## Imán de experiencia
 - Al romper una caja o roca hay un 5 % de chance (`PROP_MAGNET_CHANCE`) de que suelte un imán. Al juntarlo, toda la experiencia que hay en el piso, en todo el mapa, va hacia el jugador (el oro no).
+
+## Avisos de daño
+- Al recibir un golpe el jugador ve una viñeta roja en los bordes de la pantalla y la cámara vibra; los dos son más fuertes cuanto más daño se recibe (`player-hurt` en `Character`, `GameScene` y `HudScene`).
+- Sobre la cabeza de cada enemigo aparece un número con el daño que se le hizo (`ui/damageNumbers.ts`, hasta 45 a la vez).

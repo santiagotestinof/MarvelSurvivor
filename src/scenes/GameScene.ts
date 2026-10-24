@@ -109,6 +109,13 @@ export class GameScene extends Phaser.Scene {
     this.environmentObstacles = map.obstacles;
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
+    // Al recibir un golpe la cámara vibra más cuanto más duele.
+    this.events.off('player-hurt');
+    this.events.on('player-hurt', (dealt: number, maxHealth: number) => {
+      const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
+      this.cameras.main.shake(120 + 90 * strength, 0.003 + 0.008 * strength);
+    });
+
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
     this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
     if (this.player.definition.id === 'strange') this.timeStop = new TimeStopUltimate(this, this.player);
