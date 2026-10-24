@@ -91,6 +91,22 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     apply: ({ stats }) => (stats.cooldownMult *= 0.87),
   },
   {
+    id: 'duration',
+    passive: true,
+    name: 'Duración',
+    description: '+15% de duración de los efectos (portales, fuego, misiles)',
+    category: 'attack',
+    apply: ({ stats }) => (stats.durationMult *= 1.15),
+  },
+  {
+    id: 'area',
+    passive: true,
+    name: 'Área',
+    description: '+15% de área de las armas (aura, explosiones, rayos)',
+    category: 'attack',
+    apply: ({ stats }) => (stats.areaMult *= 1.15),
+  },
+  {
     id: 'speed',
     passive: true,
     name: 'Velocidad',
