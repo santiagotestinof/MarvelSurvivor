@@ -6,8 +6,6 @@ import type { Enemy } from '../entities/Enemy';
 interface PendingMeleeAttack {
   startedAt: number;
   impactAt: number;
-  targetX: number;
-  targetY: number;
   marker: Phaser.GameObjects.Arc;
 }
 
@@ -75,8 +73,6 @@ export class MeleeAttackSystem {
       this.pending.set(enemy, {
         startedAt: now,
         impactAt: now + WINDUP_MS,
-        targetX: this.player.x,
-        targetY: this.player.y - 8,
         marker,
       });
     }
