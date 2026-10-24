@@ -15,13 +15,14 @@ Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir d
 
 | Arma (héroe) | Nv 1 | Nv 2 | Nv 3 | Nv 4 | Nv 5 |
 |---|---|---|---|---|---|
+| Minimisiles (Iron Man) | 1 misil | +1 misil | Ráfagas más seguidas (−20 %) | +1 misil | +40 % de daño, +20 % de área |
 | Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño |
 | Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área |
 | Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño |
 | Tormenta (Thor) | 3 rayos | +1 rayo | Tormenta más seguida (−20 %) | +1 rayo | +30 % de daño, +25 % de área |
 | Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje |
 
-Pendiente: los Minimisiles de Iron Man (y su evolución en fuego) todavía usan el sistema anterior.
+Los Minimisiles evolucionan en Misiles incendiarios al llegar al nv 5 (con Más daño x3); las mejoras de fuego siguen su propio sistema de niveles.
 
 ## 2. Qué significa cada estadística
 

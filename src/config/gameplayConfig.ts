@@ -76,8 +76,8 @@ export const MISSILES = {
   /** La explosión daña a los cercanos con esta fracción del daño. */
   splashRadius: 24,
   splashDamageRatio: 0.5,
-  /** Nivel máximo = misiles por ráfaga. */
-  maxLevel: 4,
+  /** Nivel máximo del arma (cada nivel da un bono fijo, ver `MISSILE_TABLE`). */
+  maxLevel: 5,
   /** Veces que hay que haber elegido "Más daño" para que aparezca la evolución (con los misiles al máximo). */
   evolutionDamagePicks: 3,
 };

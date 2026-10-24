@@ -4,7 +4,7 @@ import type { Character } from '../entities/Character';
 import type { Rarity } from '../characters/CharacterDefinition';
 import { RARITY_ORDER } from '../characters/rarity';
 import { HERO_WEAPONS, HERO_WEAPON_MAX_LEVEL, type HeroWeapon } from '../systems/HeroWeapons';
-import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
+import { MISSILE_LEVELS, type FireUpgrade, type MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
 
 export interface UpgradeContext {
@@ -261,8 +261,8 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     name: 'Minimisiles',
     description: 'Misiles teledirigidos que explotan',
     describe: ({ missiles }) => {
-      if (missiles.level === 0) return 'ARMA NUEVA: misiles teledirigidos que explotan';
-      const text = `+1 misil por ráfaga (${missiles.level} → ${missiles.level + 1})`;
+      if (missiles.level === 0) return `ARMA NUEVA: ${MISSILE_LEVELS[0]}, teledirigidos y explosivos`;
+      const text = `${MISSILE_LEVELS[missiles.level]} (nv ${missiles.level} → ${missiles.level + 1})`;
       return missiles.level + 1 === MISSILES.maxLevel ? `${text}. Al máximo, con Más daño x${MISSILES.evolutionDamagePicks}, evolucionan` : text;
     },
     isAvailable: ({ missiles }) => !missiles.maxed,

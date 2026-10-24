@@ -6,10 +6,36 @@ import { FireZone } from '../entities/FireZone';
 import { HomingMissile } from '../entities/HomingMissile';
 import type { PlayerStats } from '../progression/PlayerStats';
 
+/** Bono fijo de cada nivel de los Minimisiles (nv 1 = base). Se acumulan desde el nv 2. */
+interface MissileBonus {
+  amount?: number;
+  /** Multiplica el tiempo entre ráfagas (menor = más seguido). */
+  cooldown?: number;
+  damage?: number;
+  area?: number;
+}
+
+const MISSILE_TABLE: readonly MissileBonus[] = [
+  {}, // nv 1: 1 misil
+  { amount: 1 },
+  { cooldown: 0.8 },
+  { amount: 1 },
+  { damage: 1.4, area: 1.2 },
+];
+
+/** Textos de la tarjeta al pasar a cada nivel (el nv 1 es la presentación del arma). */
+export const MISSILE_LEVELS: readonly string[] = [
+  '1 misil por ráfaga',
+  '+1 misil por ráfaga',
+  'Ráfagas más seguidas (−20 %)',
+  '+1 misil por ráfaga',
+  '+40 % de daño, +20 % de área de la explosión',
+];
+
 export type FireUpgrade = 'duration' | 'damage' | 'rate' | 'size';
 
 /**
- * Minimisiles: cada `MISSILES.cooldownMs` lanza una ráfaga de `level` misiles hacia los enemigos
+ * Minimisiles: cada `MISSILES.cooldownMs` lanza una ráfaga de misiles (cantidad y bonos fijos por nivel, `MISSILE_TABLE`) hacia los enemigos
  * más cercanos. Al pegar explotan y dañan también a los que estén alrededor.
  * Arranca bloqueada (nivel 0); la mejora "Minimisiles" la desbloquea y la sube de nivel.
  * Evolucionada (Misiles incendiarios), cada explosión deja un charco de fuego (`FIRE`).
@@ -43,6 +69,19 @@ export class MissileWeapon {
 
   get maxed(): boolean {
     return this.level >= MISSILES.maxLevel;
+  }
+
+  /** Suma de los bonos fijos de los niveles alcanzados. */
+  private get bonus(): Required<MissileBonus> {
+    const total = { amount: 0, cooldown: 1, damage: 1, area: 1 };
+    for (let i = 1; i < this.level; i++) {
+      const b = MISSILE_TABLE[i];
+      total.amount += b.amount ?? 0;
+      total.cooldown *= b.cooldown ?? 1;
+      total.damage *= b.damage ?? 1;
+      total.area *= b.area ?? 1;
+    }
+    return total;
   }
 
   levelUp(): void {
@@ -86,9 +125,9 @@ export class MissileWeapon {
       else missile.steer(deltaMs, () => this.nearestEnemies(missile.x, missile.y, 1)[0] ?? null);
     }
 
-    if (this.level === 0 || now - this.lastFiredAt < MISSILES.cooldownMs * this.stats.cooldownMult) return;
+    if (this.level === 0 || now - this.lastFiredAt < MISSILES.cooldownMs * this.bonus.cooldown * this.stats.cooldownMult) return;
     // Cantidad: el nivel del arma más los misiles extra de la mejora permanente.
-    const count = this.level + this.stats.amountBonus;
+    const count = 1 + this.bonus.amount + this.stats.amountBonus;
     const targets = this.nearestEnemies(this.owner.x, this.owner.y, count);
     if (targets.length === 0) return;
 
@@ -134,8 +173,8 @@ export class MissileWeapon {
     const y = missile.y;
     missile.destroy();
 
-    const damage = MISSILES.damage * this.stats.damageMult;
-    const splashRadius = MISSILES.splashRadius * this.stats.areaMult;
+    const damage = MISSILES.damage * this.bonus.damage * this.stats.damageMult;
+    const splashRadius = MISSILES.splashRadius * this.bonus.area * this.stats.areaMult;
     const splashSq = splashRadius ** 2;
     hit?.takeDamage(damage);
     for (const enemy of this.enemies.getChildren() as Enemy[]) {
