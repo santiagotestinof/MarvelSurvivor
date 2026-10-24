@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import { TEXTURES } from '../config/assetKeys';
+import { Direction } from '../core/direction';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
+
+/** Direcciones en las que el sprite de Strange va espejado. */
+const LEFT_FACING = new Set([Direction.DownLeft, Direction.Left, Direction.UpLeft]);
 
 export const TIME_STOP = {
   durationMs: 4000,
@@ -63,6 +67,7 @@ export class TimeStopUltimate {
     for (const enemy of enemies) if (enemy.active && !enemy.dying) enemy.freeze();
     this.arms
       ?.setPosition(this.player.x, this.player.y + Math.sin(now / 160) * 1.5)
+      .setFlipX(LEFT_FACING.has(this.player.direction))
       .setDepth(this.player.y - 0.2);
     return false;
   }

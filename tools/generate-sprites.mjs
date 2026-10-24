@@ -626,19 +626,24 @@ const DRAWN_WALK = [0, 2, 2, 0, -2, -2].map((stride, i) => ({ stride, bob: i % 3
  */
 const STRANGE_W = 48;
 const STRANGE_H = 56;
-function strangeFrame(ref, { bob = 0, sway = 0 }) {
+function strangeFrame(ref, { bob = 0, sway = 0, mirror = false }) {
   const rows = ref.map((row) => row.split(' '));
   const w = rows[0].length;
   const cv = new Canvas(STRANGE_W, STRANGE_H);
   const ox = Math.round((STRANGE_W - w) / 2) + sway;
   const oy = 2 + bob;
   rows.forEach((row, y) => row.forEach((c, x) => c !== '-' && cv.set(ox + x, oy + y, hex(`#${c}`))));
-  return cv;
+  if (!mirror) return cv;
+  // Espejo del cuadro entero (igual que `flipX` de la capa de brazos de la ulti).
+  const flipped = new Canvas(STRANGE_W, STRANGE_H);
+  for (let y = 0; y < STRANGE_H; y++) for (let x = 0; x < STRANGE_W; x++) if (cv.opaque(x, y)) flipped.set(STRANGE_W - 1 - x, y, cv.get(x, y));
+  return flipped;
 }
 function buildStrangeSheet(frames) {
   const sheet = new Canvas(frames.length * STRANGE_W, DIRECTIONS.length * STRANGE_H);
-  DIRECTIONS.forEach((_, row) =>
-    frames.forEach((f, col) => sheet.blit(strangeFrame(STRANGE_REF, f), col * STRANGE_W, row * STRANGE_H)),
+  // Al ir hacia la izquierda se espeja; quieto, de frente o de espaldas queda como el dibujo original.
+  DIRECTIONS.forEach(([fx], row) =>
+    frames.forEach((f, col) => sheet.blit(strangeFrame(STRANGE_REF, { ...f, mirror: fx < 0 }), col * STRANGE_W, row * STRANGE_H)),
   );
   return sheet;
 }

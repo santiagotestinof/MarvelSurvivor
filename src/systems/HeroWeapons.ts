@@ -224,8 +224,8 @@ export class Portals extends LeveledWeapon {
     const { scene, owner, stats } = this.deps;
 
     if (now >= this.nextOpen) {
-      this.nextOpen = now + (4600 - this.level * 330) * stats.cooldownMult;
-      const amount = 1 + Math.floor(this.level / 2) + stats.amountBonus;
+      this.nextOpen = now + (8200 - this.level * 500) * stats.cooldownMult;
+      const amount = 1 + Math.floor(this.level / 3) + stats.amountBonus;
       for (let i = 0; i < amount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = Phaser.Math.Between(40, 95) * stats.rangeMult;
