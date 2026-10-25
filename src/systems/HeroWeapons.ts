@@ -214,12 +214,14 @@ export class ThunderStorm extends LeveledWeapon {
     const b = this.bonus;
     this.nextStorm = now + 4000 * b.cooldown * stats.cooldownMult;
 
-    const pool = activeEnemies(enemies).filter((e) => (e.x - owner.x) ** 2 + (e.y - owner.y) ** 2 < 260 * 260);
+    const view = scene.cameras.main.worldView;
+    const pool = activeEnemies(enemies).filter((e) => view.contains(e.x, e.y));
+    Phaser.Utils.Array.Shuffle(pool);
     const bolts = 3 + b.amount + stats.amountBonus;
     const radius = 30 * b.area * stats.areaMult;
     const damage = 17 * b.damage * stats.damageMult;
     for (let i = 0; i < bolts; i++) {
-      const target = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+      const target = pool.length > 0 ? pool[i % pool.length] : null;
       const x = target ? target.x : owner.x + Phaser.Math.Between(-120, 120);
       const y = target ? target.y - 6 : owner.y + Phaser.Math.Between(-80, 80);
       scene.time.delayedCall(i * 110, () => {

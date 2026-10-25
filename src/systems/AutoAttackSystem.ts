@@ -95,15 +95,13 @@ export class AutoAttackSystem {
     return { damage, critical };
   }
 
-  /** Thor: un rayo por cada disparo disponible, sobre los enemigos más cercanos (o una caja si no hay). */
+  /** Thor: un rayo por cada disparo disponible, sobre enemigos al azar que estén en pantalla (o una caja si no hay). */
   private strike(): boolean {
-    const range = this.attack.aimRange * this.stats.rangeMult;
     const count = this.stats.projectileCount;
-    const targets: AimPoint[] = activeEnemies(this.enemies)
-      .map((enemy) => ({ x: enemy.x, y: enemy.y - 6, d: (enemy.x - this.owner.x) ** 2 + (enemy.y - this.owner.y) ** 2 }))
-      .filter((t) => t.d <= range * range)
-      .sort((a, b) => a.d - b.d)
-      .slice(0, count);
+    const view = this.scene.cameras.main.worldView;
+    const pool = activeEnemies(this.enemies).filter((enemy) => view.contains(enemy.x, enemy.y));
+    Phaser.Utils.Array.Shuffle(pool);
+    const targets: AimPoint[] = pool.slice(0, count).map((enemy) => ({ x: enemy.x, y: enemy.y - 6, d: 0 }));
     if (targets.length === 0) {
       const prop = this.findNearestProp();
       if (!prop) return false;
