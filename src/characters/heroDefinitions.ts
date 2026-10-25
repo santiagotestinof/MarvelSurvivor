@@ -34,7 +34,7 @@ export const capitanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 76.5,
+    moveSpeed: 70.4,
     maxHealth: 130,
     attack: {
       kind: 'shield',
@@ -59,7 +59,7 @@ export const spidermanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 106.2,
+    moveSpeed: 97.7,
     maxHealth: 80,
     attack: {
       kind: 'web',
@@ -86,7 +86,7 @@ export const thorDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 81,
+    moveSpeed: 74.5,
     maxHealth: 110,
     attack: {
       kind: 'thunder',
@@ -112,7 +112,7 @@ export const hulkDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: { width: 12, height: 8, offsetX: 10, offsetY: 22 },
   stats: {
-    moveSpeed: 80,
+    moveSpeed: 73.6,
     maxHealth: 190,
     attack: {
       kind: 'fan',
@@ -143,7 +143,7 @@ export const strangeDefinition: CharacterDefinition = {
   origin: { x: 0.5, y: 51 / 56 },
   body: { width: 8, height: 6, offsetX: 20, offsetY: 48 },
   stats: {
-    moveSpeed: 84,
+    moveSpeed: 77.3,
     maxHealth: 105,
     attack: {
       kind: 'aura',
