@@ -1,7 +1,7 @@
 /**
  * Música y efectos de sonido, generados con Web Audio (no hay archivos de audio ni material de terceros).
  * - Música: un secuenciador chico con bajo, arpegio, melodía y batería. Hay dos temas: `menu` (tranquilo) y `game` (acción).
- * - Efecto de golpe recibido: `playHit`.
+ * - Efecto de golpe a un enemigo: `playEnemyHit` (al jugador no le suena nada cuando lo golpean).
  * - Volúmenes: `masterVolume` (todo el sonido) y `musicVolume` (solo la música), de 0 a 1; se guardan en el navegador y se cambian desde `SoundPanel`.
  * Los navegadores no dejan sonar nada hasta que el jugador toca o aprieta algo, así que el audio arranca en la primera interacción.
  */
@@ -107,26 +107,26 @@ class AudioManager {
     this.musicBus.gain.setTargetAtTime(MUSIC_VOLUME * this.music01, this.ctx.currentTime, 0.02);
   }
 
-  /** "Te pegaron": un golpe seco (grave) con un chasquido. `strength` va de 0 a 1. */
-  playHit(strength = 0.6): void {
+  /** Golpe a un enemigo: un "tac" corto y seco, un poco distinto cada vez. `kill` suma un golpe grave cuando lo derrota. */
+  playEnemyHit(kill = false): void {
     const ctx = this.ctx;
     if (!ctx || !this.master || ctx.state !== 'running' || this.master01 <= 0) return;
     const t = ctx.currentTime;
-    if (t - this.lastHitAt < 0.07) return; // varios golpes juntos no se vuelven un ruido continuo
+    if (t - this.lastHitAt < 0.045) return; // aura y tormentas pegan muchas veces por segundo: no se vuelve un zumbido
     this.lastHitAt = t;
-    const vol = SFX_VOLUME * (0.55 + 0.45 * Math.min(1, strength));
-    const detune = 0.92 + Math.random() * 0.16;
+    const detune = 0.85 + Math.random() * 0.3;
+    const vol = SFX_VOLUME * 0.55;
 
-    const thump = ctx.createOscillator();
-    const thumpGain = ctx.createGain();
-    thump.type = 'sine';
-    thump.frequency.setValueAtTime(190 * detune, t);
-    thump.frequency.exponentialRampToValueAtTime(48, t + 0.14);
-    thumpGain.gain.setValueAtTime(vol, t);
-    thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-    thump.connect(thumpGain).connect(this.master);
-    thump.start(t);
-    thump.stop(t + 0.18);
+    const tick = ctx.createOscillator();
+    const tickGain = ctx.createGain();
+    tick.type = 'square';
+    tick.frequency.setValueAtTime(520 * detune, t);
+    tick.frequency.exponentialRampToValueAtTime(140 * detune, t + 0.06);
+    tickGain.gain.setValueAtTime(vol * 0.5, t);
+    tickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    tick.connect(tickGain).connect(this.master);
+    tick.start(t);
+    tick.stop(t + 0.08);
 
     if (this.noise) {
       const hit = ctx.createBufferSource();
@@ -134,13 +134,26 @@ class AudioManager {
       const hitGain = ctx.createGain();
       hit.buffer = this.noise;
       filter.type = 'bandpass';
-      filter.frequency.value = 1400 * detune;
-      filter.Q.value = 0.9;
-      hitGain.gain.setValueAtTime(vol * 0.9, t);
-      hitGain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+      filter.frequency.value = 2200 * detune;
+      filter.Q.value = 0.8;
+      hitGain.gain.setValueAtTime(vol, t);
+      hitGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
       hit.connect(filter).connect(hitGain).connect(this.master);
       hit.start(t);
-      hit.stop(t + 0.1);
+      hit.stop(t + 0.06);
+    }
+
+    if (kill) {
+      const thump = ctx.createOscillator();
+      const thumpGain = ctx.createGain();
+      thump.type = 'sine';
+      thump.frequency.setValueAtTime(150 * detune, t);
+      thump.frequency.exponentialRampToValueAtTime(45, t + 0.13);
+      thumpGain.gain.setValueAtTime(vol * 0.9, t);
+      thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      thump.connect(thumpGain).connect(this.master);
+      thump.start(t);
+      thump.stop(t + 0.16);
     }
   }
 

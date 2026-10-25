@@ -25,7 +25,7 @@ export class PauseOverlay {
     this.menuButton = new UiButton(scene, 'ABANDONAR RONDA', 14, onMenu).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 
     this.soundPanel = new SoundPanel(scene, DEPTH + 10, () => undefined, false);
-    this.soundButton = new UiButton(scene, 'SONIDO', 14, () => this.soundPanel.open()).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
+    this.soundButton = new UiButton(scene, 'CONFIGURACIÓN', 14, () => this.soundPanel.open()).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 
     const keyboard = scene.input.keyboard;
     // Con el menú de sonido abierto, ESC lo cierra en vez de seguir la partida.

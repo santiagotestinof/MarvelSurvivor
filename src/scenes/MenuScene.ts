@@ -92,7 +92,7 @@ export class MenuScene extends Phaser.Scene {
     this.playButton = new UiButton(this, 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE'], true);
     this.shopButton = new UiButton(this, 'MEJORAS', 20, () => this.scene.start(SCENE_KEYS.shop), ['M']);
     this.charactersButton = new UiButton(this, 'PERSONAJES', 20, () => this.scene.start(SCENE_KEYS.characters), ['P']);
-    this.soundButton = new UiButton(this, 'SONIDO', 20, () => this.soundPanel.open(), ['S']);
+    this.soundButton = new UiButton(this, 'CONFIGURACIÓN', 20, () => this.soundPanel.open(), ['C']);
     this.soundPanel = new SoundPanel(this, 100);
     this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
 

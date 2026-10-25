@@ -35,10 +35,10 @@ export class SoundPanel {
     // El fondo oscuro tapa y bloquea todo lo que hay debajo.
     this.dim = scene.add.rectangle(0, 0, 10, 10, 0x05080c, 0.78).setOrigin(0).setDepth(depth).setInteractive();
     this.panel = scene.add.graphics().setDepth(depth + 1);
-    this.title = scene.add.text(0, 0, 'SONIDO', textStyle(24)).setOrigin(0.5).setDepth(depth + 2);
+    this.title = scene.add.text(0, 0, 'CONFIGURACIÓN', textStyle(24)).setOrigin(0.5).setDepth(depth + 2);
     this.sliders = [
-      this.makeSlider('SONIDO GENERAL', () => audio.masterVolume, (v) => audio.setMasterVolume(v)),
-      this.makeSlider('MÚSICA', () => audio.musicVolume, (v) => audio.setMusicVolume(v)),
+      this.makeSlider('SONIDO: GENERAL', () => audio.masterVolume, (v) => audio.setMasterVolume(v)),
+      this.makeSlider('SONIDO: MÚSICA', () => audio.musicVolume, (v) => audio.setMusicVolume(v)),
     ];
     this.closeButton = new UiButton(scene, 'LISTO', 18, () => this.close(), [], true).setDepth(depth + 2);
     this.all.push(this.dim, this.panel, this.title, this.closeButton);

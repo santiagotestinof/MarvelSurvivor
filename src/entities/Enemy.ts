@@ -1,3 +1,4 @@
+import { audio } from '../audio/AudioManager';
 import { showDamageNumber } from '../ui/damageNumbers';
 import Phaser from 'phaser';
 import {
@@ -228,6 +229,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
     this.currentHealth -= amount;
     showDamageNumber(this.scene, this.x, this.y - this.displayHeight * this.originY - 2, amount);
+    audio.playEnemyHit(this.currentHealth <= 0);
 
     if (this.currentHealth <= 0) {
       this.die();
