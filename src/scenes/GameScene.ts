@@ -29,6 +29,7 @@ import { WaveSystem } from '../systems/WaveSystem';
 import { damageArea } from '../systems/areaDamage';
 import { OVERLORD } from '../enemies/enemyKinds';
 import { TestMap } from '../world/TestMap';
+import { createHeroUltimate, type HeroUltimate } from '../systems/HeroUltimates';
 import { BossArena, type WorldRect } from '../world/BossArena';
 import type { HudScene } from './HudScene';
 
@@ -76,6 +77,7 @@ export class GameScene extends Phaser.Scene {
   private ultimateKey: Phaser.Input.Keyboard.Key | null = null;
   private ironManFlyingUntil = 0;
   private timeStop: TimeStopUltimate | null = null;
+  private heroUltimate: HeroUltimate | null = null;
   private nextUltimateShotAt = 0;
   private ultimateReadyAt = 0;
   private ironManFlightEffect: Phaser.GameObjects.Container | null = null;
@@ -99,6 +101,7 @@ export class GameScene extends Phaser.Scene {
     this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
     this.ironManFlyingUntil = 0;
     this.timeStop = null;
+    this.heroUltimate = null;
     this.nextUltimateShotAt = 0;
     this.ultimateReadyAt = 0;
     this.ironManFlightEffect?.destroy();
@@ -150,6 +153,15 @@ export class GameScene extends Phaser.Scene {
       () => map.breakables,
     );
 
+    this.heroUltimate = createHeroUltimate(this.player.definition.id, {
+      scene: this,
+      player: this.player,
+      enemies: this.enemies,
+      props: () => map.breakables,
+      stats: this.stats,
+      projectiles: this.attack.projectiles,
+      projectileTexture: this.player.definition.stats.attack.projectileTexture,
+    });
     this.heroWeapon =
       HERO_WEAPONS[this.player.definition.id]?.create({
         scene: this,
@@ -241,15 +253,15 @@ export class GameScene extends Phaser.Scene {
 
   /** ¿El héroe elegido tiene ultimate? (Iron Man: vuelo · Doctor Strange: tiempo detenido). */
   hasUltimate(): boolean {
-    return this.isIronManSelected() || this.timeStop !== null;
+    return this.isIronManSelected() || this.timeStop !== null || this.heroUltimate !== null;
   }
 
   /** Estado de la ultimate para el control del HUD. */
   getUltimateState(): { active: boolean; remainingMs: number; activeRemainingMs: number; activeLabel: string } {
-    const stopActive = this.timeStop?.isActive(this.clock) ?? false;
+    const stopActive = (this.timeStop?.isActive(this.clock) ?? false) || (this.heroUltimate?.isActive(this.clock) ?? false);
     const active = stopActive || (this.isIronManSelected() && this.clock < this.ironManFlyingUntil);
     const activeRemainingMs = stopActive
-      ? (this.timeStop?.remainingMs(this.clock) ?? 0)
+      ? (this.timeStop?.remainingMs(this.clock) ?? this.heroUltimate?.remainingMs(this.clock) ?? 0)
       : active
         ? Math.max(0, this.ironManFlyingUntil - this.clock)
         : 0;
@@ -257,12 +269,18 @@ export class GameScene extends Phaser.Scene {
       active,
       remainingMs: active ? 0 : Math.max(0, this.ultimateReadyAt - this.clock),
       activeRemainingMs,
-      activeLabel: stopActive ? 'TIEMPO' : 'VUELO',
+      activeLabel: stopActive ? (this.heroUltimate?.label ?? 'TIEMPO') : 'VUELO',
     };
   }
 
   /** Activa el vuelo de Iron Man con E o desde el botón táctil del HUD. */
   activateUltimate(): void {
+    if (this.heroUltimate) {
+      if (this.round.ended || this.frozen || this.player.isDead) return;
+      if (this.heroUltimate.isActive(this.clock) || this.clock < this.ultimateReadyAt) return;
+      this.heroUltimate.start(this.clock);
+      return;
+    }
     if (this.timeStop) {
       if (this.round.ended || this.frozen || this.player.isDead) return;
       if (this.timeStop.isActive(this.clock) || this.clock < this.ultimateReadyAt) return;
@@ -303,6 +321,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateUltimate(now: number): void {
+    if (this.heroUltimate) {
+      if (this.heroUltimate.update(now)) this.ultimateReadyAt = now + this.heroUltimate.cooldownMs;
+      return;
+    }
     if (this.timeStop) {
       if (this.timeStop.update(now, this.enemies.getChildren() as Enemy[])) this.ultimateReadyAt = now + TIME_STOP.cooldownMs;
       return;

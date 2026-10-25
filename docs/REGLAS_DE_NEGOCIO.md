@@ -90,3 +90,14 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Arena del jefe
 - Cuando termina el tiempo de la ronda (30 min) un fundido a negro lleva al jugador a una arena cerrada, donde solo está el jefe final (y los Drones que invoca). No vuelve al mapa: se gana al derrotar al jefe. Lo que había en el piso (experiencia y oro) se suma antes de pasar.
+
+
+## Ultimates (tecla E / botón ULT)
+| Héroe | Ulti | Efecto | Enfriamiento |
+|---|---|---|---|
+| Iron Man | Vuelo | 5 s de vuelo con misiles | 40 s |
+| Doctor Strange | Tiempo detenido | 5 s: congela a todos y descarga el daño al final | 35 s |
+| Capitán América | Escudos | 16 escudos en todas direcciones que atraviesan (45 de daño) | 38 s |
+| Spider-Man | Red gigante | 25 de daño y casi inmóviles 4 s a todos los de la pantalla (al jefe lo frena a la mitad) | 36 s |
+| Thor | Trueno | 4 s de 2 rayos cada 140 ms sobre enemigos de la pantalla (40 de daño) | 40 s |
+| Hulk | Aplastar | Onda de radio 190, 110 de daño y mucho empuje | 42 s |
