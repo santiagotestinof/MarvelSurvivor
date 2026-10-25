@@ -73,6 +73,21 @@ export const WAVES = {
   speedGrowth: 0.55,
 };
 
+/**
+ * Oleadas especiales: cada tanto entra de golpe un grupo grande, alternando una manada (todos juntos desde un costado)
+ * y un círculo que rodea al jugador. Con `?oleada` en la URL salen cada 15 s para probarlas.
+ */
+export const SPECIAL_WAVES = {
+  /** Cuándo sale la primera y cada cuánto las siguientes (tiempo de la ronda). */
+  firstAtMs: 60_000,
+  everyMs: 75_000,
+  /** Enemigos de la manada y del círculo: crecen de un valor a otro durante la ronda. */
+  hordeCount: { from: 20, to: 45 },
+  ringCount: { from: 22, to: 40 },
+  /** Cuántos enemigos más que el tope normal se aceptan mientras dura la oleada. */
+  extraAlive: 60,
+};
+
 /** Minimisiles teledirigidos (se desbloquean con la mejora "Minimisiles"). */
 export const MISSILES = {
   /** Tiempo entre ráfagas (lo acorta la mejora de cadencia). */

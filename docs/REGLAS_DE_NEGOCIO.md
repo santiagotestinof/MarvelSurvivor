@@ -74,3 +74,6 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 ## Avisos de daño
 - Al recibir un golpe el jugador ve una viñeta roja en los bordes de la pantalla y la cámara vibra; los dos son más fuertes cuanto más daño se recibe (`player-hurt` en `Character`, `GameScene` y `HudScene`).
 - Sobre la cabeza de cada enemigo aparece un número con el daño que se le hizo (`ui/damageNumbers.ts`, hasta 45 a la vez).
+
+## Oleadas especiales
+- Primera al minuto 1 de la ronda y después cada 1:15 (`SPECIAL_WAVES`). Se alternan: **manada** (entre 20 y 45 enemigos del mismo tipo, apretados, entrando por un costado) y **círculo** (entre 22 y 40, todos juntos alrededor del jugador, justo fuera de pantalla). Un cartel en pantalla avisa ("¡MANADA!" / "¡TE RODEAN!"). El tipo de enemigo sale del sorteo normal según el avance de la ronda.

@@ -5,7 +5,7 @@ import { PROGRESSION } from '../config/gameplayConfig';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { ResultOverlay } from '../ui/ResultOverlay';
 import { UpgradeMenu, type UpgradePrompt } from '../ui/UpgradeMenu';
-import { formatTime, textStyle, uiScale } from '../ui/uiLayout';
+import { formatTime, textStyle, uiScale, UI_FONT } from '../ui/uiLayout';
 import { UPGRADE_ICON_SIZE, setUpgradeIcon, upgradeIconKey } from '../ui/upgradeIcons';
 import type { GameScene, HudSnapshot } from './GameScene';
 
@@ -38,6 +38,7 @@ export class HudScene extends Phaser.Scene {
   private result!: ResultOverlay;
   private pause!: PauseOverlay;
 
+  private specialText!: Phaser.GameObjects.Text;
   private hurtVignette!: Phaser.GameObjects.Image;
   private ui = 2;
   private resultScheduled = false;
@@ -87,6 +88,13 @@ export class HudScene extends Phaser.Scene {
       this.gameScene.activateUltimate();
     });
 
+    this.specialText = this.add
+      .text(0, 0, '', { fontFamily: UI_FONT, fontStyle: 'bold', fontSize: '32px', color: '#ff5a4a', stroke: '#000000', strokeThickness: 6 })
+      .setOrigin(0.5)
+      .setDepth(15)
+      .setAlpha(0);
+    this.gameScene.events.on('special-wave', this.announceSpecial, this);
+
     // Viñeta roja en los bordes: se enciende al recibir un golpe y se desvanece.
     this.createHurtTexture();
     this.hurtVignette = this.add.image(0, 0, HURT_TEXTURE).setOrigin(0).setDepth(20).setAlpha(0);
@@ -97,6 +105,7 @@ export class HudScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
       this.gameScene.events.off('player-hurt', this.flashHurt, this);
+      this.gameScene.events.off('special-wave', this.announceSpecial, this);
     });
   }
 
@@ -113,6 +122,14 @@ export class HudScene extends Phaser.Scene {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
     canvas.refresh();
+  }
+
+  /** Cartel grande y breve cuando llega una oleada especial. */
+  private announceSpecial(text: string): void {
+    this.tweens.killTweensOf(this.specialText);
+    this.specialText.setText(text).setAlpha(1).setScale(1.4);
+    this.tweens.add({ targets: this.specialText, scale: 1, duration: 220, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: this.specialText, alpha: 0, delay: 1400, duration: 600 });
   }
 
   private flashHurt(dealt: number, maxHealth: number): void {
@@ -161,6 +178,7 @@ export class HudScene extends Phaser.Scene {
   private layout(): void {
     const { width, height } = this.scale;
     this.hurtVignette.setDisplaySize(width, height);
+    this.specialText.setFontSize(Math.max(22, Math.round(9 * uiScale(width, height)))).setPosition(width / 2, height * 0.24);
     this.ui = uiScale(width, height);
     const ui = this.ui;
 
