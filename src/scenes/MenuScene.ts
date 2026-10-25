@@ -38,6 +38,7 @@ export class MenuScene extends Phaser.Scene {
   private soundButton!: UiButton;
   private soundPanel!: SoundPanel;
   private charactersButton!: UiButton;
+  private mapsButton!: UiButton;
   private heroRarity!: Phaser.GameObjects.Text;
   private goldLabel!: Phaser.GameObjects.Text;
   private panel!: Phaser.GameObjects.Graphics;
@@ -92,6 +93,7 @@ export class MenuScene extends Phaser.Scene {
     this.playButton = new UiButton(this, 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE'], true);
     this.shopButton = new UiButton(this, 'MEJORAS', 20, () => this.scene.start(SCENE_KEYS.shop), ['M']);
     this.charactersButton = new UiButton(this, 'PERSONAJES', 20, () => this.scene.start(SCENE_KEYS.characters), ['P']);
+    this.mapsButton = new UiButton(this, 'MAPAS', 20, () => this.scene.start(SCENE_KEYS.maps), ['A']);
     this.soundButton = new UiButton(this, 'CONFIGURACIÓN', 20, () => this.soundPanel.open(), ['C']);
     this.soundPanel = new SoundPanel(this, 100);
     this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
@@ -175,7 +177,7 @@ export class MenuScene extends Phaser.Scene {
     const buttonSize = Math.max(16, Math.round(5.5 * ui));
     this.playButton.setFontSize(buttonSize);
     const small = Math.max(12, Math.round(buttonSize * 0.72));
-    const secondary = [this.charactersButton, this.shopButton, this.soundButton];
+    const secondary = [this.charactersButton, this.mapsButton, this.shopButton, this.soundButton];
     for (const button of secondary) button.setFontSize(small);
     const gap = Math.round(small * 0.8);
     const rowWidth = secondary.reduce((sum, button) => sum + button.width, 0) + gap * (secondary.length - 1);
