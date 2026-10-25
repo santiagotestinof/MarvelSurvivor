@@ -27,7 +27,9 @@ import { RoundController, type HudState } from '../systems/RoundController';
 import { TIME_STOP, TimeStopUltimate } from '../systems/TimeStopUltimate';
 import { WaveSystem } from '../systems/WaveSystem';
 import { damageArea } from '../systems/areaDamage';
+import { OVERLORD } from '../enemies/enemyKinds';
 import { TestMap } from '../world/TestMap';
+import { BossArena, type WorldRect } from '../world/BossArena';
 import type { HudScene } from './HudScene';
 
 /** Oro de la ronda: lo juntado hasta ahora y, al terminar, lo que se guarda en el progreso. */
@@ -51,6 +53,9 @@ export class GameScene extends Phaser.Scene {
   private bossAttacks!: BossAttackSystem;
   private waves!: WaveSystem;
   private round!: RoundController;
+  private worldRect!: WorldRect;
+  private arena!: BossArena;
+  private arenaEntered = false;
   private frozen = false;
   private stats = new PlayerStats();
   private progression = new ProgressionSystem();
@@ -108,6 +113,10 @@ export class GameScene extends Phaser.Scene {
     this.goldPayout = null;
     const map = new TestMap(this);
     map.build();
+    this.worldRect = { x: 0, y: 0, width: map.widthPx, height: map.heightPx };
+    this.arena = new BossArena(this, map.widthPx);
+    this.arena.build();
+    this.arenaEntered = false;
     this.environmentObstacles = map.obstacles;
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
@@ -165,14 +174,14 @@ export class GameScene extends Phaser.Scene {
     this.rangedAttacks = new RangedAttackSystem(
       this,
       this.player,
-      { width: map.widthPx, height: map.heightPx },
+      this.worldRect,
     );
     this.meleeAttacks = new MeleeAttackSystem(
       this.player,
       () => this.clock < this.ironManFlyingUntil,
     );
 
-    this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
+    this.waves = new WaveSystem(this, this.enemies, this.player, this.worldRect, (e) => {
       this.dropLoot(e);
       this.round.onEnemyKilled(e);
     }, this.stats, doombotTest);
@@ -180,9 +189,9 @@ export class GameScene extends Phaser.Scene {
       this,
       this.player,
       this.waves,
-      { width: map.widthPx, height: map.heightPx },
+      this.worldRect,
     );
-    this.round = new RoundController(0, this.player, this.waves, this.enemies);
+    this.round = new RoundController(0, this.player, this.waves, this.enemies, () => this.enterArena());
 
     // Proyectiles que tocan enemigos.
     this.physics.add.overlap(this.attack.projectiles, this.enemies, (p, e) => {
@@ -589,6 +598,40 @@ export class GameScene extends Phaser.Scene {
     const blast = this.add.circle(this.player.x, this.player.y, REVIVAL.blastRadius, 0xffffff, 0.6).setDepth(999_999).setScale(0.2);
     this.tweens.add({ targets: blast, scale: 1, alpha: 0, duration: 400, onComplete: () => blast.destroy() });
     return true;
+  }
+
+  /**
+   * Al terminar las oleadas: fundido a negro, se borra todo lo que quedaba (la experiencia y el oro del piso se juntan solos),
+   * el jugador pasa a la arena del jefe y ahí aparece el Overlord.
+   */
+  private enterArena(): void {
+    if (this.arenaEntered) return;
+    this.arenaEntered = true;
+    const camera = this.cameras.main;
+    camera.fadeOut(450, 0, 0, 0);
+    camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      if (this.round.ended) return;
+      for (const enemy of [...(this.enemies.getChildren() as Enemy[])]) enemy.destroy();
+      for (const projectile of [...this.attack.projectiles.getChildren()]) projectile.destroy();
+      for (const pickup of this.pickups) {
+        if (pickup.kind === 'xp') this.progression.addXp(pickup.value * this.stats.xpMult);
+        else if (pickup.kind === 'gold') this.gold += pickup.value * this.stats.goldMult;
+        pickup.destroy();
+      }
+      this.pickups = [];
+      Object.assign(this.worldRect, this.arena.rect);
+      const { x, y, width, height } = this.arena.rect;
+      this.physics.world.setBounds(x, y, width, height);
+      camera.setBounds(x, y, width, height);
+      this.player.setPosition(this.arena.playerSpawn.x, this.arena.playerSpawn.y);
+      this.player.setVelocity(0, 0);
+      camera.centerOn(this.player.x, this.player.y);
+      this.round.setBoss(
+        this.waves.spawnAt(OVERLORD, { health: ROUND.bossHealthMultiplier, speed: ROUND.bossSpeedMultiplier }, this.arena.bossSpawn.x, this.arena.bossSpawn.y),
+      );
+      this.events.emit('special-wave', '¡EL JEFE FINAL!');
+      camera.fadeIn(450, 0, 0, 0);
+    });
   }
 
   update(_time: number, delta: number): void {

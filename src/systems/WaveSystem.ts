@@ -3,6 +3,7 @@ import { ROUND, SPECIAL_WAVES, WAVES } from '../config/gameplayConfig';
 import { BRUTE, MINIBOSS, pickWaveEnemy, type EnemyKind } from '../enemies/enemyKinds';
 import type { Character } from '../entities/Character';
 import { Enemy, type EnemyScaling } from '../entities/Enemy';
+import type { WorldRect } from '../world/BossArena';
 import type { PlayerStats } from '../progression/PlayerStats';
 
 /** Genera enemigos fuera de la pantalla, cada vez más seguido y más fuertes/rápidos a medida que avanza el tiempo. */
@@ -19,7 +20,7 @@ export class WaveSystem {
     private readonly scene: Phaser.Scene,
     private readonly enemies: Phaser.Physics.Arcade.Group,
     private readonly player: Character,
-    private readonly world: { width: number; height: number },
+    private readonly world: WorldRect,
     private readonly onEnemyDied: (enemy: Enemy) => void,
     private readonly stats: PlayerStats,
     private readonly forceDoombots = false,
@@ -123,8 +124,8 @@ export class WaveSystem {
   private spawnEnemyAt(kind: EnemyKind, scaling: EnemyScaling, x: number, y: number, clampToWorld = true): Enemy {
     const enemy = new Enemy(
       this.scene,
-      clampToWorld ? Phaser.Math.Clamp(x, 10, this.world.width - 10) : x,
-      clampToWorld ? Phaser.Math.Clamp(y, 10, this.world.height - 10) : y,
+      clampToWorld ? Phaser.Math.Clamp(x, this.world.x + 10, this.world.x + this.world.width - 10) : x,
+      clampToWorld ? Phaser.Math.Clamp(y, this.world.y + 10, this.world.y + this.world.height - 10) : y,
       kind,
       scaling,
     );
@@ -132,6 +133,11 @@ export class WaveSystem {
     this.enemies.add(enemy);
     enemy.once('died', this.onEnemyDied);
     return enemy;
+  }
+
+  /** Genera un enemigo en un punto exacto (el jefe en la arena). */
+  spawnAt(kind: EnemyKind, scaling: EnemyScaling, x: number, y: number): Enemy {
+    return this.spawnEnemyAt(kind, scaling, x, y);
   }
 
   spawnEnemy(kind: EnemyKind, scaling: EnemyScaling): Enemy {
@@ -178,8 +184,8 @@ export class WaveSystem {
         x = view.right + margin;
         y = Phaser.Math.FloatBetween(view.top - margin, view.bottom + margin);
       }
-      x = Phaser.Math.Clamp(x, 10, this.world.width - 10);
-      y = Phaser.Math.Clamp(y, 10, this.world.height - 10);
+      x = Phaser.Math.Clamp(x, this.world.x + 10, this.world.x + this.world.width - 10);
+      y = Phaser.Math.Clamp(y, this.world.y + 10, this.world.y + this.world.height - 10);
       point = { x, y };
       if (!view.contains(x, y)) break;
     }

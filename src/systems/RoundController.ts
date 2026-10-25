@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { ROUND } from '../config/gameplayConfig';
-import { DRONE, OVERLORD } from '../enemies/enemyKinds';
+import { DRONE } from '../enemies/enemyKinds';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { WaveSystem } from './WaveSystem';
@@ -39,12 +39,18 @@ export class RoundController {
     private readonly player: Character,
     private readonly waves: WaveSystem,
     private readonly enemies: Phaser.Physics.Arcade.Group,
+    /** Al terminar las oleadas: el juego lleva al jugador a la arena y genera al jefe allí (después llama a `setBoss`). */
+    private readonly onBossPhase: () => void = () => {},
   ) {
     this.startedAt = startedAt;
   }
 
   get ended(): boolean {
     return this.phase === 'won' || this.phase === 'lost';
+  }
+
+  setBoss(boss: Enemy): void {
+    this.boss = boss;
   }
 
   get currentBoss(): Enemy | null {
@@ -67,15 +73,12 @@ export class RoundController {
       if (elapsed >= ROUND.durationMs) {
         this.phase = 'boss';
         this.waves.stopped = true;
-        this.boss = this.waves.spawnEnemy(OVERLORD, {
-          health: ROUND.bossHealthMultiplier,
-          speed: ROUND.bossSpeedMultiplier,
-        });
-        this.nextBossMinionAt = now + ROUND.bossMinionIntervalMs;
+        this.nextBossMinionAt = now + ROUND.bossMinionIntervalMs + 1500;
+        this.onBossPhase();
       } else {
         this.waves.update(now, progress);
       }
-    } else if (this.phase === 'boss' && now >= this.nextBossMinionAt) {
+    } else if (this.phase === 'boss' && this.boss && now >= this.nextBossMinionAt) {
       this.waves.spawnEnemy(DRONE, this.waves.getScaling(progress));
       this.nextBossMinionAt = now + ROUND.bossMinionIntervalMs;
     }

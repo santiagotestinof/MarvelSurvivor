@@ -86,3 +86,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Dificultad progresiva
 - Al inicio de la ronda los enemigos comunes (Dron, Centinela, Explorador) mueren de un solo golpe del ataque básico de cualquier héroe. Su vida crece durante la ronda (`healthRamp`) hasta llegar al final con la vida que tenían antes (un Dron ~100), así que cada vez hacen falta más golpes.
+
+
+## Arena del jefe
+- Cuando termina el tiempo de la ronda (30 min) un fundido a negro lleva al jugador a una arena cerrada, donde solo está el jefe final (y los Drones que invoca). No vuelve al mapa: se gana al derrotar al jefe. Lo que había en el piso (experiencia y oro) se suma antes de pasar.

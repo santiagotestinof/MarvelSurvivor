@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
+import type { WorldRect } from '../world/BossArena';
 
 interface EnemyShot {
   sprite: Phaser.GameObjects.Arc;
@@ -31,7 +32,7 @@ export class RangedAttackSystem {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly player: Character,
-    private readonly world: { width: number; height: number },
+    private readonly world: WorldRect,
   ) {}
 
   update(now: number, delta: number, enemies: Enemy[]): void {
@@ -134,10 +135,10 @@ export class RangedAttackSystem {
       }
 
       if (
-        shot.sprite.x < 0 ||
-        shot.sprite.y < 0 ||
-        shot.sprite.x > this.world.width ||
-        shot.sprite.y > this.world.height
+        shot.sprite.x < this.world.x ||
+        shot.sprite.y < this.world.y ||
+        shot.sprite.x > this.world.x + this.world.width ||
+        shot.sprite.y > this.world.y + this.world.height
       ) {
         shot.sprite.destroy();
         this.shots.splice(i, 1);
