@@ -91,6 +91,8 @@ export interface EnemyKind {
   /** Caja de colisión en píxeles desde la esquina superior izquierda del cuadro. */
   body: { width: number; height: number; offsetX: number; offsetY: number };
   health: number;
+  /** Cuánto más rápido que el resto crece su vida con la ronda (1 = igual). Arranca débil (muere de un golpe) y llega al final con la vida de siempre. */
+  healthRamp?: number;
   speed: number;
   meleeDamage: number;
   /** Experiencia que suelta al morir (0 = nada). */
@@ -116,7 +118,8 @@ export const DRONE: EnemyKind = {
   directional: true,
   origin: { x: 0.5, y: 0.94 },
   body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
-  health: 30,
+  health: 9,
+  healthRamp: 4.3,
   speed: 41.8,
   meleeDamage: 13,
   xpValue: 1,
@@ -135,7 +138,8 @@ export const SENTINEL: EnemyKind = {
   directional: true,
   origin: { x: 0.5, y: 0.94 },
   body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
-  health: 12,
+  health: 9,
+  healthRamp: 1.5,
   speed: 30,
   meleeDamage: 4,
   xpValue: 2,
@@ -155,7 +159,8 @@ export const SCOUT: EnemyKind = {
   directional: true,
   origin: { x: 0.5, y: 0.94 },
   body: { width: 13, height: 11, offsetX: 9, offsetY: 19 },
-  health: 10,
+  health: 8,
+  healthRamp: 1.35,
   speed: 64,
   meleeDamage: 5,
   xpValue: 1,

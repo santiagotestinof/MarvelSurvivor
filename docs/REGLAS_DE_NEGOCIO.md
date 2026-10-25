@@ -82,3 +82,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 ## Mini jefe
 - Aparece cada tercio de la ronda (a los 5 y 10 min en una ronda de 15; el jefe final sale al terminar). Es un Doombot gigante dorado, con mucha vida (escala con el avance y la Maldición) y 12 de daño por contacto. Un cartel avisa "¡MINI JEFE!".
 - Al derrotarlo suelta mucha experiencia, 12 monedas (2 de oro cada una), una fruta y un imán.
+
+
+## Dificultad progresiva
+- Al inicio de la ronda los enemigos comunes (Dron, Centinela, Explorador) mueren de un solo golpe del ataque básico de cualquier héroe. Su vida crece durante la ronda (`healthRamp`) hasta llegar al final con la vida que tenían antes (un Dron ~100), así que cada vez hacen falta más golpes.

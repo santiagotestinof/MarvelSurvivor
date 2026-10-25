@@ -45,7 +45,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   constructor(scene: Phaser.Scene, x: number, y: number, kind: EnemyKind, scaling: EnemyScaling) {
     super(scene, x, y, kind.texture, 0);
     this.kind = kind;
-    this.maxHealth = Math.round(kind.health * scaling.health);
+    const growth = 1 + (scaling.health - 1) * (kind.healthRamp ?? 1);
+    this.maxHealth = Math.max(1, Math.round(kind.health * growth));
     this.currentHealth = this.maxHealth;
     this.speedScale = scaling.speed;
     this.moveSpeed = kind.speed * scaling.speed;
