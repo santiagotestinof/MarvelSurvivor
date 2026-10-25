@@ -128,8 +128,15 @@ export const BREAKABLE_PROPS = {
   rock: { health: 60, gold: { min: 2, max: 5 } },
 } as const;
 
-/** Probabilidad de que una caja o roca rota suelte un imán que atrae toda la experiencia del mapa. */
-export const PROP_MAGNET_CHANCE = 0.05;
+/** Probabilidad de que una caja o roca rota suelte un imán que atrae toda la experiencia (y las frutas) del mapa. */
+export const PROP_MAGNET_CHANCE = 0.08;
+
+/** Fruta que curan: algunos enemigos la sueltan al morir. Cura una parte de la vida máxima (con un mínimo). */
+export const FRUIT = {
+  chance: 0.03,
+  healFraction: 0.12,
+  minHeal: 8,
+};
 
 export const META = {
   /** Cada nivel cuesta esta cantidad de veces más que el anterior. */

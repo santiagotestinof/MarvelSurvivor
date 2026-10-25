@@ -2,7 +2,7 @@ import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { GOLD, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
+import { FRUIT, GOLD, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -455,6 +455,7 @@ export class GameScene extends Phaser.Scene {
     if (gold && Math.random() < gold.chance * this.stats.goldChanceMult) {
       this.pickups.push(new Pickup(this, enemy.x + 4, enemy.y - 2, 'gold', gold.value));
     }
+    if (Math.random() < FRUIT.chance) this.pickups.push(new Pickup(this, enemy.x - 4, enemy.y - 2, 'fruit', 0));
   }
 
   /** Al romperse una caja o roca: monedas repartidas alrededor. */
@@ -482,14 +483,15 @@ export class GameScene extends Phaser.Scene {
       if (pickup.isMagnetized && pickup.moveToward(this.player.x, targetY, delta)) {
         if (pickup.kind === 'xp') this.progression.addXp(pickup.value * this.stats.xpMult);
         else if (pickup.kind === 'gold') this.gold += pickup.value * this.stats.goldMult;
+        else if (pickup.kind === 'fruit') this.player.heal(Math.max(FRUIT.minHeal, Math.round(this.player.maxHealth * FRUIT.healFraction)));
         else pulledAll = true;
         pickup.destroy();
         return false;
       }
       return true;
     });
-    // Imán: toda la experiencia que hay en el piso, en todo el mapa, va hacia el jugador.
-    if (pulledAll) for (const pickup of this.pickups) if (pickup.kind === 'xp') pickup.magnetize();
+    // Imán: toda la experiencia y las frutas que hay en el piso, en todo el mapa, van hacia el jugador.
+    if (pulledAll) for (const pickup of this.pickups) if (pickup.kind === 'xp' || pickup.kind === 'fruit') pickup.magnetize();
   }
 
   /** Al terminar la ronda: decide cuánto oro se guarda (todo si gana, la mitad si pierde). */

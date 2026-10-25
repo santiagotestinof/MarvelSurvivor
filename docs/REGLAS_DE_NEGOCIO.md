@@ -64,7 +64,10 @@ Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `E
 Valores en `EVOLUTION` de `gameplayConfig.ts`. Sin verificar el balance.
 
 ## Imán de experiencia
-- Al romper una caja o roca hay un 5 % de chance (`PROP_MAGNET_CHANCE`) de que suelte un imán. Al juntarlo, toda la experiencia que hay en el piso, en todo el mapa, va hacia el jugador (el oro no).
+- Al romper una caja o roca hay un 8 % de chance (`PROP_MAGNET_CHANCE`) de que suelte un imán. Al juntarlo, toda la experiencia y todas las frutas que hay en el piso, en todo el mapa, van hacia el jugador (el oro no).
+
+## Frutas que curan
+- Al morir, cualquier enemigo tiene un 3 % de chance (`FRUIT.chance`) de soltar una fruta. Al juntarla cura el 12 % de la vida máxima (mínimo 8). El imán las atrae igual que a la experiencia.
 
 ## Avisos de daño
 - Al recibir un golpe el jugador ve una viñeta roja en los bordes de la pantalla y la cámara vibra; los dos son más fuertes cuanto más daño se recibe (`player-hurt` en `Character`, `GameScene` y `HudScene`).

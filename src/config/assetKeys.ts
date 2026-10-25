@@ -18,6 +18,7 @@ export const TEXTURES = {
   gem: 'xp-gem',
   coin: 'gold-coin',
   magnet: 'magnet-pickup',
+  fruit: 'fruit-pickup',
 } as const;
 
 /** Animaciones de efectos (no de personajes ni enemigos). */

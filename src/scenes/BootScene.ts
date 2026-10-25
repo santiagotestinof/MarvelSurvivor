@@ -52,6 +52,7 @@ export class BootScene extends Phaser.Scene {
     this.createGemTexture();
     this.createCoinTexture();
     this.createMagnetTexture();
+    this.createFruitTexture();
     registerUpgradeIcons(this);
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       registerCharacterAnimations(this, definition);
@@ -98,6 +99,18 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xdfe6ee, 1).fillRect(0, 0, 4, 3).fillRect(6, 0, 4, 3);
     g.fillStyle(0xffffff, 1).fillRect(1, 1, 1, 1);
     g.generateTexture(TEXTURES.magnet, 10, 10);
+    g.destroy();
+  }
+
+  /** Fruta que cura (provisional): manzana roja con hojita. */
+  private createFruitTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x6b1010, 1).fillRect(1, 3, 8, 6).fillRect(2, 2, 6, 8);
+    g.fillStyle(0xe03030, 1).fillRect(2, 3, 6, 6).fillRect(3, 2, 4, 7);
+    g.fillStyle(0xff8a8a, 1).fillRect(3, 4, 1, 2);
+    g.fillStyle(0x5a3a12, 1).fillRect(5, 0, 1, 2);
+    g.fillStyle(0x4cc04c, 1).fillRect(6, 1, 2, 1);
+    g.generateTexture(TEXTURES.fruit, 10, 10);
     g.destroy();
   }
 

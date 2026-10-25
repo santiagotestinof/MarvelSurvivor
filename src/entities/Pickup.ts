@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { TEXTURES } from '../config/assetKeys';
 
-export type PickupKind = 'xp' | 'gold' | 'magnet';
+export type PickupKind = 'xp' | 'gold' | 'magnet' | 'fruit';
 
-const TEXTURE_OF: Record<PickupKind, string> = { xp: TEXTURES.gem, gold: TEXTURES.coin, magnet: TEXTURES.magnet };
+const TEXTURE_OF: Record<PickupKind, string> = { xp: TEXTURES.gem, gold: TEXTURES.coin, magnet: TEXTURES.magnet, fruit: TEXTURES.fruit };
 
-/** Objeto que se junta: gema de experiencia, moneda de oro o imán (atrae toda la experiencia del mapa). Va hacia el jugador cuando éste se acerca. */
+/** Objeto que se junta: gema de experiencia, moneda de oro imán (atrae toda la experiencia y las frutas del mapa) o fruta (cura). Va hacia el jugador cuando éste se acerca. */
 export class Pickup extends Phaser.GameObjects.Image {
   readonly kind: PickupKind;
   readonly value: number;
