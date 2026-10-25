@@ -18,7 +18,7 @@ export interface HeroWeapon {
   update(now: number, delta: number): void;
 }
 
-export const HERO_WEAPON_MAX_LEVEL = 5;
+export const HERO_WEAPON_MAX_LEVEL = 7;
 
 export interface HeroWeaponDeps {
   scene: Phaser.Scene;
@@ -86,13 +86,15 @@ abstract class LeveledWeapon implements HeroWeapon {
 }
 
 /** Capitán América: escudos que giran a su alrededor y golpean a todo el que toquen. */
-export const ORBIT_SHIELDS_LEVELS = ['+1 escudo', 'Giran más rápido', '+1 escudo', 'Más daño y área'];
+export const ORBIT_SHIELDS_LEVELS = ['+1 escudo', 'Giran más rápido', '+1 escudo', 'Más daño y área', '+1 escudo', 'Más daño y giran más rápido'];
 export class OrbitShields extends LeveledWeapon {
   protected readonly table = {
     2: { amount: 1 },
     3: { spin: 1.3 },
     4: { amount: 1 },
     5: { damage: 1.4, area: 1.2 },
+    6: { amount: 1 },
+    7: { damage: 1.3, spin: 1.2 },
   };
   private readonly sprites: Phaser.GameObjects.Image[] = [];
   private angle = 0;
@@ -126,13 +128,15 @@ export class OrbitShields extends LeveledWeapon {
 }
 
 /** Spider-Man: deja telarañas en el piso que frenan y lastiman a los enemigos que las pisan. */
-export const WEB_TRAPS_LEVELS = ['+1 telaraña', 'Telarañas más grandes', 'Duran más', '+1 telaraña y más daño'];
+export const WEB_TRAPS_LEVELS = ['+1 telaraña', 'Telarañas más grandes', 'Duran más', '+1 telaraña y más daño', '+1 telaraña', 'Más daño y más área'];
 export class WebTraps extends LeveledWeapon {
   protected readonly table = {
     2: { amount: 1 },
     3: { area: 1.25 },
     4: { duration: 1.3 },
     5: { amount: 1, damage: 1.5 },
+    6: { amount: 1 },
+    7: { damage: 1.4, area: 1.2 },
   };
   private readonly webs: { g: Phaser.GameObjects.Graphics; x: number; y: number; radius: number; until: number; nextTick: number; damage: number }[] = [];
   private nextDrop = 0;
@@ -198,13 +202,15 @@ export class WebTraps extends LeveledWeapon {
 }
 
 /** Thor: cada tanto, una tormenta hace caer rayos sobre enemigos al azar alrededor. */
-export const THUNDER_STORM_LEVELS = ['+1 rayo', 'Tormenta más seguida', '+1 rayo', 'Más daño y área'];
+export const THUNDER_STORM_LEVELS = ['+1 rayo', 'Tormenta más seguida', '+1 rayo', 'Más daño y área', '+1 rayo', 'Más daño y tormenta más seguida'];
 export class ThunderStorm extends LeveledWeapon {
   protected readonly table = {
     2: { amount: 1 },
     3: { cooldown: 0.8 },
     4: { amount: 1 },
     5: { damage: 1.3, area: 1.25 },
+    6: { amount: 1 },
+    7: { damage: 1.3, cooldown: 0.85 },
   };
   private nextStorm = 0;
 
@@ -233,13 +239,15 @@ export class ThunderStorm extends LeveledWeapon {
 }
 
 /** Hulk: golpea el piso y una onda de choque daña y empuja a todos los que lo rodean. */
-export const SHOCKWAVE_LEVELS = ['Onda más grande', 'Golpea más seguido', 'Más daño', 'Más área y más empuje'];
+export const SHOCKWAVE_LEVELS = ['Onda más grande', 'Golpea más seguido', 'Más daño', 'Más área y más empuje', 'Golpea más seguido', 'Más daño y más área'];
 export class Shockwave extends LeveledWeapon {
   protected readonly table = {
     2: { area: 1.2 },
     3: { cooldown: 0.8 },
     4: { damage: 1.35 },
     5: { area: 1.2, knockback: 1.3 },
+    6: { cooldown: 0.85 },
+    7: { damage: 1.3, area: 1.15 },
   };
   private nextWave = 0;
 
@@ -291,13 +299,15 @@ interface Spark {
  * Doctor Strange: abre portales fijos en puntos al azar a su alrededor; cada uno dispara chispas al enemigo más cercano
  * mientras dura. Usa las mejoras comunes: daño, enfriamiento, duración, área, cantidad, velocidad del disparo, perforación y crítico.
  */
-export const PORTALS_LEVELS = ['+1 portal', 'Disparan más rápido', '+1 portal', 'Más daño'];
+export const PORTALS_LEVELS = ['+1 portal', 'Disparan más rápido', '+1 portal', 'Más daño', '+1 portal', 'Más daño y disparan más rápido'];
 export class Portals extends LeveledWeapon {
   protected readonly table = {
     2: { amount: 1 },
     3: { cooldown: 0.78 },
     4: { amount: 1 },
     5: { damage: 1.4 },
+    6: { amount: 1 },
+    7: { damage: 1.3, cooldown: 0.85 },
   };
   private readonly portals: Portal[] = [];
   private readonly sparks: Spark[] = [];
@@ -446,13 +456,15 @@ interface Beam {
  * Iron Man: dispara un rayo desde el reactor del pecho hacia los enemigos más cercanos; el rayo dura un instante y
  * daña seguido a todo lo que cruza en línea recta. Usa daño, enfriamiento, duración, área, alcance, cantidad y crítico.
  */
-export const UNIBEAM_LEVELS = ['+1 rayo', 'Dispara más seguido', 'El rayo dura más', '+40 % de daño y rayo más ancho'];
+export const UNIBEAM_LEVELS = ['+1 rayo', 'Dispara más seguido', 'El rayo dura más', '+40 % de daño y rayo más ancho', '+1 rayo', 'Más daño y rayo más ancho'];
 export class Unibeam extends LeveledWeapon {
   protected readonly table = {
     2: { amount: 1 },
     3: { cooldown: 0.8 },
     4: { duration: 1.4 },
     5: { damage: 1.4, area: 1.3 },
+    6: { amount: 1 },
+    7: { damage: 1.3, area: 1.2 },
   };
   private nextShot = 0;
   private readonly beams: Beam[] = [];

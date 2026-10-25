@@ -5,22 +5,22 @@ Reglas de diseño que el equipo decidió y que el código tiene que respetar. Si
 
 ## 1. Niveles fijos de las armas especiales (estilo Vampire Survivors)
 
-Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir de nivel) que llega hasta el **nivel 5**.
+Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir de nivel) que llega hasta el **nivel 7**.
 
 - **Nivel 1:** desbloquea el arma con sus valores base.
-- **Niveles 2 a 5:** cada nivel da un bono **fijo y específico** (ver tabla). Nada más sube solo.
+- **Niveles 2 a 7:** cada nivel da un bono **fijo y específico** (ver tabla). Nada más sube solo.
 - **Cadencia, daño, duración, área, etc. NO aumentan por defecto al subir de nivel el arma.** Solo suben por la tabla de abajo o por las mejoras comunes (pasivas de la ronda y mejoras permanentes de la tienda), que valen para todas las armas.
 - Los bonos de la tabla se suman a las mejoras comunes.
 - En el código, cada arma tiene su tabla `table` (`LevelBonus`: cantidad, cadencia, daño, área, duración, giro, empuje) y sus textos `*_LEVELS` para la tarjeta de mejora.
 
-| Arma (héroe) | Nv 1 | Nv 2 | Nv 3 | Nv 4 | Nv 5 |
-|---|---|---|---|---|---|
-| Unibeam (Iron Man) | 1 rayo del reactor | +1 rayo | Dispara más seguido (−20 %) | El rayo dura más (+40 %) | +40 % de daño, rayo más ancho (+30 %) |
-| Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño |
-| Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área |
-| Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño |
-| Tormenta (Thor) | 3 rayos | +1 rayo | Tormenta más seguida (−20 %) | +1 rayo | +30 % de daño, +25 % de área |
-| Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje |
+| Arma (héroe) | Nv 1 | Nv 2 | Nv 3 | Nv 4 | Nv 5 | Nv 6 | Nv 7 |
+|---|---|---|---|---|---|---|---|
+| Unibeam (Iron Man) | 1 rayo del reactor | +1 rayo | Dispara más seguido (−20 %) | El rayo dura más (+40 %) | +40 % de daño, rayo más ancho (+30 %) | +1 rayo | +30 % de daño, rayo más ancho (+20 %) |
+| Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño | +1 portal | +30 % de daño, disparan más rápido (−15 %) |
+| Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área | +1 escudo | +30 % de daño, giran más rápido (+20 %) |
+| Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño | +1 telaraña | +40 % de daño, +20 % de área |
+| Tormenta (Thor) | 3 rayos | +1 rayo | Tormenta más seguida (−20 %) | +1 rayo | +30 % de daño, +25 % de área | +1 rayo | +30 % de daño, más seguida (−15 %) |
+| Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje | Golpea más seguido (−15 %) | +30 % de daño, +15 % de área |
 
 Los Minimisiles de Iron Man son su arma principal (no tienen niveles fijos); su arma especial es el Unibeam.
 
@@ -80,7 +80,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 
 ## Mini jefe
-- Aparece cada tercio de la ronda (a los 5 y 10 min en una ronda de 15; el jefe final sale al terminar). Es un Doombot gigante dorado, con mucha vida (escala con el avance y la Maldición) y 12 de daño por contacto. Un cartel avisa "¡MINI JEFE!".
+- Aparece cada 5 minutos (5, 10, 15, 20 y 25 en la ronda de 30; el jefe final sale al terminar). Es un Doombot gigante dorado, con mucha vida (escala con el avance y la Maldición) y 12 de daño por contacto. Un cartel avisa "¡MINI JEFE!".
 - Al derrotarlo suelta mucha experiencia, 12 monedas (2 de oro cada una), una fruta y un imán.
 
 

@@ -3,7 +3,7 @@ import type { AttackKind } from '../characters/CharacterDefinition';
 import type { Character } from '../entities/Character';
 import type { Rarity } from '../characters/CharacterDefinition';
 import { RARITY_ORDER } from '../characters/rarity';
-import { HERO_WEAPONS, HERO_WEAPON_MAX_LEVEL, type HeroWeapon } from '../systems/HeroWeapons';
+import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
 
@@ -368,7 +368,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: '+25% de ángulo del zarpazo',
     exclusiveTo: ['hulk'],
     describe: (ctx) => `+25% de ángulo del zarpazo (nv ${times(ctx, 'fan-width')} → ${times(ctx, 'fan-width') + 1})`,
-    isAvailable: (ctx) => !ctx.stats.evolved && times(ctx, 'fan-width') < HERO_WEAPON_MAX_LEVEL,
+    isAvailable: (ctx) => !ctx.stats.evolved && times(ctx, 'fan-width') < 5,
     apply: ({ stats }) => (stats.fanAngleMult *= 1.25),
   },
   {
@@ -377,7 +377,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: '+20% de alcance del zarpazo',
     exclusiveTo: ['hulk'],
     describe: (ctx) => `+20% de alcance del zarpazo (nv ${times(ctx, 'fan-reach')} → ${times(ctx, 'fan-reach') + 1})`,
-    isAvailable: (ctx) => times(ctx, 'fan-reach') < HERO_WEAPON_MAX_LEVEL,
+    isAvailable: (ctx) => times(ctx, 'fan-reach') < 5,
     apply: ({ stats }) => (stats.fanReachMult *= 1.2),
   },
 ];
