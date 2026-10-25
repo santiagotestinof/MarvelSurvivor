@@ -80,7 +80,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 
 ## Mini jefe
-- Aparece cada 5 minutos (5, 10, 15, 20 y 25 en la ronda de 30; el jefe final sale al terminar). Es un Doombot gigante dorado, con mucha vida (escala con el avance y la Maldición) y 12 de daño por contacto. Un cartel avisa "¡MINI JEFE!".
+- Aparece una sola vez, a los 15 minutos de la ronda de 30 (el jefe final sale al terminar). Es un Doombot gigante dorado, con mucha vida (escala con el avance y la Maldición) y 12 de daño por contacto. Un cartel avisa "¡MINI JEFE!".
 - Al derrotarlo suelta mucha experiencia, 12 monedas (2 de oro cada una), una fruta y un imán.
 
 

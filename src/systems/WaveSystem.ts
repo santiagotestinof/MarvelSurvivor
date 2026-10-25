@@ -58,13 +58,13 @@ export class WaveSystem {
     }
   }
 
-  /** Mini jefe: aparece cada 5 minutos (5, 10, 15, 20 y 25 en una ronda de 30), fuera de pantalla, sin contar para el tope de enemigos. */
+  /** Mini jefe: aparece una sola vez, a mitad de la ronda (a los 15 min de 30), fuera de pantalla, sin contar para el tope de enemigos. */
   private updateMiniBoss(progress: number): void {
     const elapsed = progress * ROUND.durationMs;
-    const every = this.quickMiniBoss ? 30_000 : 5 * 60_000;
-    if (this.nextMiniBossAtMs < 0) this.nextMiniBossAtMs = this.quickMiniBoss ? 8_000 : every;
+    if (this.nextMiniBossAtMs < 0) this.nextMiniBossAtMs = this.quickMiniBoss ? 8_000 : ROUND.durationMs / 2;
     if (elapsed < this.nextMiniBossAtMs || progress >= 0.999) return;
-    this.nextMiniBossAtMs += every;
+    // Con `?minijefe` se repite cada 30 s para probar; en una ronda normal sale una sola vez.
+    this.nextMiniBossAtMs = this.quickMiniBoss ? this.nextMiniBossAtMs + 30_000 : Number.POSITIVE_INFINITY;
     const { x, y } = this.pickSpawnPoint();
     this.spawnEnemyAt(MINIBOSS, this.getScaling(progress), x, y);
     this.scene.events.emit('special-wave', '¡MINI JEFE!');
