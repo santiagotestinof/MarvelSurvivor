@@ -6,5 +6,6 @@ export const SCENE_KEYS = {
   shop: 'ShopScene',
   characters: 'CharacterScene',
   maps: 'MapScene',
+  achievements: 'AchievementScene',
 } as const;
 

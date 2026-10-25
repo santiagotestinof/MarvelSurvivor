@@ -101,3 +101,9 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 | Spider-Man | Red gigante | 25 de daño y casi inmóviles 4 s a todos los de la pantalla (al jefe lo frena a la mitad) | 36 s |
 | Thor | Trueno | 4 s de 2 rayos cada 140 ms sobre enemigos de la pantalla (40 de daño) | 40 s |
 | Hulk | Aplastar | Onda de radio 190, 110 de daño y mucho empuje | 42 s |
+
+
+## Cofres y logros
+- El mini jefe suelta un cofre: al juntarlo da 2 subidas de nivel gratis (se eligen 2 mejoras).
+- Cada logro desbloquea una mejora pasiva; hasta cumplirlo esa pasiva no sale al subir de nivel. Las pasivas bloqueadas y sus logros: Armadura (aguantar 10 min en una ronda), Imán (juntar 300 de oro en total), Crítico (derrotar a un mini jefe), Suerte (llegar al nivel 15 en una ronda), Crecimiento (ganar una ronda), Codicia (juntar 2000 de oro en total) y Maldición (aguantar 25 min en una ronda). El progreso se guarda en el navegador junto con el oro.
+- Idea aprobada para más adelante: que los logros también desbloqueen mapas nuevos.

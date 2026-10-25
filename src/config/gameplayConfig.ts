@@ -82,6 +82,8 @@ export const MINIBOSS_CONFIG = {
   xp: 60,
   coins: 12,
   coinValue: 2,
+  /** Niveles gratis (mejoras para elegir) que da el cofre del mini jefe. */
+  chestLevels: 2,
 };
 
 export const SPECIAL_WAVES = {

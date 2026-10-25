@@ -40,7 +40,7 @@ export interface GoldState {
 }
 
 /** Estado que dibuja el HUD: ronda + experiencia + oro. */
-export type HudSnapshot = HudState & ProgressState & GoldState & { passives: { id: string; count: number }[] };
+export type HudSnapshot = HudState & ProgressState & GoldState & { passives: { id: string; count: number }[]; newAchievements: string[] };
 
 /** Una ronda: oleadas de enemigos, ataque automático, jefe final y resultado. */
 export class GameScene extends Phaser.Scene {
@@ -57,6 +57,8 @@ export class GameScene extends Phaser.Scene {
   private worldRect!: WorldRect;
   private arena!: BossArena;
   private arenaEntered = false;
+  private miniBossKilled = false;
+  private newAchievements: string[] = [];
   private frozen = false;
   private stats = new PlayerStats();
   private progression = new ProgressionSystem();
@@ -120,6 +122,8 @@ export class GameScene extends Phaser.Scene {
     this.arena = new BossArena(this, map.widthPx);
     this.arena.build();
     this.arenaEntered = false;
+    this.miniBossKilled = false;
+    this.newAchievements = [];
     this.environmentObstacles = map.obstacles;
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
@@ -476,6 +480,7 @@ export class GameScene extends Phaser.Scene {
       gold: Math.floor(this.gold),
       goldPayout: this.goldPayout,
       passives: passivesTaken(this.taken),
+      newAchievements: this.newAchievements,
     };
   }
 
@@ -503,6 +508,8 @@ export class GameScene extends Phaser.Scene {
     }
     this.pickups.push(new Pickup(this, enemy.x - 10, enemy.y + 6, 'fruit', 0));
     this.pickups.push(new Pickup(this, enemy.x + 10, enemy.y + 6, 'magnet', 0));
+    this.pickups.push(new Pickup(this, enemy.x, enemy.y + 12, 'chest', 0));
+    this.miniBossKilled = true;
   }
 
   /** Al romperse una caja o roca: monedas repartidas alrededor. */
@@ -530,7 +537,10 @@ export class GameScene extends Phaser.Scene {
       if (pickup.isMagnetized && pickup.moveToward(this.player.x, targetY, delta)) {
         if (pickup.kind === 'xp') this.progression.addXp(pickup.value * this.stats.xpMult);
         else if (pickup.kind === 'gold') this.gold += pickup.value * this.stats.goldMult;
-        else if (pickup.kind === 'fruit') this.player.heal(Math.max(FRUIT.minHeal, Math.round(this.player.maxHealth * FRUIT.healFraction)));
+        else if (pickup.kind === 'chest') {
+          this.progression.pendingLevelUps += MINIBOSS_CONFIG.chestLevels;
+          this.events.emit('special-wave', '¡COFRE!');
+        } else if (pickup.kind === 'fruit') this.player.heal(Math.max(FRUIT.minHeal, Math.round(this.player.maxHealth * FRUIT.healFraction)));
         else pulledAll = true;
         pickup.destroy();
         return false;
@@ -547,6 +557,15 @@ export class GameScene extends Phaser.Scene {
     const total = won ? this.gold + GOLD.bossBonus * this.stats.goldMult : this.gold * GOLD.defeatKeepRatio;
     this.goldPayout = Math.floor(total);
     saveData.addGold(this.goldPayout);
+    const state = this.round.getHudState(this.clock);
+    this.newAchievements = saveData.recordRound({
+      kills: state.kills,
+      elapsedMs: state.elapsedMs,
+      level: this.progression.level,
+      gold: this.gold,
+      won,
+      miniBossKilled: this.miniBossKilled,
+    });
   }
 
   /** Pausa la ronda y ofrece mejoras al HUD; al elegir, se aplica y se sigue. */

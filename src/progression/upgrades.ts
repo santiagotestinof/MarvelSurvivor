@@ -6,6 +6,7 @@ import { RARITY_ORDER } from '../characters/rarity';
 import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
+import { saveData } from '../meta/saveData';
 
 export interface UpgradeContext {
   stats: PlayerStats;
@@ -411,6 +412,7 @@ export function pickUpgradeChoices(
   const pool = UPGRADES.filter(
     (upgrade) =>
       !banished.has(upgrade.id) &&
+      (!upgrade.passive || saveData.isPassiveUnlocked(upgrade.id)) &&
       (!upgrade.exclusiveTo || upgrade.exclusiveTo.includes(ctx.heroId)) &&
       hasSlot(upgrade, ctx.taken) &&
       (upgrade.isAvailable?.(ctx) ?? true),

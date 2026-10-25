@@ -53,6 +53,7 @@ export class BootScene extends Phaser.Scene {
     this.createCoinTexture();
     this.createMagnetTexture();
     this.createFruitTexture();
+    this.createChestTexture();
     registerUpgradeIcons(this);
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       registerCharacterAnimations(this, definition);
@@ -111,6 +112,19 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x5a3a12, 1).fillRect(5, 0, 1, 2);
     g.fillStyle(0x4cc04c, 1).fillRect(6, 1, 2, 1);
     g.generateTexture(TEXTURES.fruit, 10, 10);
+    g.destroy();
+  }
+
+  /** Cofre provisional: caja de madera con refuerzos dorados y cerradura. */
+  private createChestTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x3b230d, 1).fillRect(0, 2, 14, 10);
+    g.fillStyle(0x8a5a22, 1).fillRect(1, 3, 12, 8);
+    g.fillStyle(0xb57a30, 1).fillRect(1, 3, 12, 3);
+    g.fillStyle(0xf2c53d, 1).fillRect(0, 6, 14, 1).fillRect(3, 3, 1, 8).fillRect(10, 3, 1, 8);
+    g.fillStyle(0xfff0a6, 1).fillRect(6, 6, 2, 3);
+    g.fillStyle(0x3b230d, 1).fillRect(7, 7, 1, 1);
+    g.generateTexture(TEXTURES.chest, 14, 12);
     g.destroy();
   }
 
