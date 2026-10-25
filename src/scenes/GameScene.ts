@@ -2,7 +2,7 @@ import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { FRUIT, GOLD, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
+import { ENEMY_MAGNET_CHANCE, FRUIT, GOLD, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -456,6 +456,7 @@ export class GameScene extends Phaser.Scene {
       this.pickups.push(new Pickup(this, enemy.x + 4, enemy.y - 2, 'gold', gold.value));
     }
     if (Math.random() < FRUIT.chance) this.pickups.push(new Pickup(this, enemy.x - 4, enemy.y - 2, 'fruit', 0));
+    if (Math.random() < ENEMY_MAGNET_CHANCE) this.pickups.push(new Pickup(this, enemy.x, enemy.y - 6, 'magnet', 0));
   }
 
   /** Al romperse una caja o roca: monedas repartidas alrededor. */

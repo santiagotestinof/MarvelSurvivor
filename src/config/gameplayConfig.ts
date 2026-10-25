@@ -131,9 +131,12 @@ export const BREAKABLE_PROPS = {
 /** Probabilidad de que una caja o roca rota suelte un imán que atrae toda la experiencia (y las frutas) del mapa. */
 export const PROP_MAGNET_CHANCE = 0.08;
 
+/** Probabilidad (muy baja) de que un enemigo suelte un imán al morir; hay cientos por ronda. */
+export const ENEMY_MAGNET_CHANCE = 0.002;
+
 /** Fruta que curan: algunos enemigos la sueltan al morir. Cura una parte de la vida máxima (con un mínimo). */
 export const FRUIT = {
-  chance: 0.03,
+  chance: 0.015,
   healFraction: 0.12,
   minHeal: 8,
 };
