@@ -38,7 +38,7 @@ export const capitanDefinition: CharacterDefinition = {
     maxHealth: 130,
     attack: {
       kind: 'shield',
-      cooldownMs: 1000,
+      cooldownMs: 1300,
       damage: 14,
       projectileTexture: TEXTURES.shield,
       projectileSpeed: 190,
@@ -63,7 +63,7 @@ export const spidermanDefinition: CharacterDefinition = {
     maxHealth: 80,
     attack: {
       kind: 'web',
-      cooldownMs: 500,
+      cooldownMs: 650,
       damage: 9,
       projectileTexture: TEXTURES.web,
       projectileSpeed: 280,
@@ -90,7 +90,7 @@ export const thorDefinition: CharacterDefinition = {
     maxHealth: 110,
     attack: {
       kind: 'thunder',
-      cooldownMs: 1000,
+      cooldownMs: 1300,
       damage: 16,
       projectileTexture: TEXTURES.thunder,
       projectileSpeed: 0,
@@ -116,7 +116,7 @@ export const hulkDefinition: CharacterDefinition = {
     maxHealth: 190,
     attack: {
       kind: 'fan',
-      cooldownMs: 700,
+      cooldownMs: 910,
       damage: 15,
       projectileTexture: TEXTURES.repulsor,
       projectileSpeed: 0,
@@ -147,7 +147,7 @@ export const strangeDefinition: CharacterDefinition = {
     maxHealth: 105,
     attack: {
       kind: 'aura',
-      cooldownMs: 400,
+      cooldownMs: 520,
       damage: 10,
       projectileTexture: TEXTURES.repulsor,
       projectileSpeed: 0,
