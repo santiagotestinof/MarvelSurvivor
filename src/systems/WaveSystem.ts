@@ -74,14 +74,24 @@ export class WaveSystem {
     const margin = WAVES.spawnMargin;
 
     if (horde) {
-      // Manada: un grupo apretado que entra por un costado.
+      // Manada: un frente ancho que cruza la pantalla en línea recta, pasa por donde está el jugador y se va por el otro lado.
       const side = Math.floor(Math.random() * 4);
       const cx = side === 2 ? view.left - margin - 30 : side === 3 ? view.right + margin + 30 : view.centerX;
       const cy = side === 0 ? view.top - margin - 30 : side === 1 ? view.bottom + margin + 30 : view.centerY;
+      const length = Math.hypot(this.player.x - cx, this.player.y - cy) || 1;
+      const dx = (this.player.x - cx) / length;
+      const dy = (this.player.y - cy) / length;
+      const px = -dy;
+      const py = dx;
+      const columns = Math.min(total, Math.max(6, Math.round(total / 3)));
+      const exit = Math.hypot(view.width, view.height) / 2 + margin + 40;
       for (let i = 0; i < total; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = Math.sqrt(Math.random()) * 38;
-        this.spawnEnemyAt(kind, scaling, cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist);
+        const col = i % columns;
+        const row = Math.floor(i / columns);
+        const across = (col - (columns - 1) / 2) * 20 + Phaser.Math.Between(-3, 3);
+        const behind = row * 20 + Phaser.Math.Between(-3, 3);
+        const enemy = this.spawnEnemyAt(kind, scaling, cx + px * across - dx * behind, cy + py * across - dy * behind, false);
+        enemy.startStampede(dx, dy, exit);
       }
     } else {
       // Círculo: todos a la vez, justo fuera de la pantalla y alrededor del jugador.
@@ -95,11 +105,11 @@ export class WaveSystem {
     this.scene.events.emit('special-wave', horde ? '¡MANADA!' : '¡TE RODEAN!');
   }
 
-  private spawnEnemyAt(kind: EnemyKind, scaling: EnemyScaling, x: number, y: number): Enemy {
+  private spawnEnemyAt(kind: EnemyKind, scaling: EnemyScaling, x: number, y: number, clampToWorld = true): Enemy {
     const enemy = new Enemy(
       this.scene,
-      Phaser.Math.Clamp(x, 10, this.world.width - 10),
-      Phaser.Math.Clamp(y, 10, this.world.height - 10),
+      clampToWorld ? Phaser.Math.Clamp(x, 10, this.world.width - 10) : x,
+      clampToWorld ? Phaser.Math.Clamp(y, 10, this.world.height - 10) : y,
       kind,
       scaling,
     );

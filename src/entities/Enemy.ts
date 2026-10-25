@@ -32,6 +32,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private slowUntil = 0;
   private slowFactor = 1;
   private knockUntil = 0;
+  /** Manada: avanza en línea recta sin perseguir y desaparece al salir de la pantalla del otro lado (ver `WaveSystem`). */
+  private stampede: { dx: number; dy: number; exit: number; expiresAt: number } | null = null;
   private aimLockUntil = 0;
   private aimTarget: { x: number; y: number } | null = null;
   private moveSpeed: number;
@@ -135,9 +137,34 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     return this.currentHealth;
   }
 
+  /** Lo convierte en parte de una manada: corre en la dirección (`dx`, `dy`, unitaria) y se va al pasar `exit` píxeles detrás del jugador. */
+  startStampede(dx: number, dy: number, exit: number): void {
+    this.stampede = { dx, dy, exit, expiresAt: this.scene.time.now + 14000 };
+    this.setCollideWorldBounds(false);
+    this.updateFacing(dx, dy);
+  }
+
+  get isStampeding(): boolean {
+    return this.stampede !== null;
+  }
+
   chase(targetX: number, targetY: number, separationX = 0, separationY = 0): void {
     if (this.frozen) {
       this.setVelocity(0, 0);
+      this.setDepth(this.y);
+      return;
+    }
+    if (this.stampede) {
+      const now = this.scene.time.now;
+      const run = this.stampede;
+      const passed = (this.x - targetX) * run.dx + (this.y - targetY) * run.dy;
+      if (passed > run.exit || now > run.expiresAt) {
+        this.destroy(); // se fue de la pantalla: desaparece sin soltar nada
+        return;
+      }
+      const speed = this.moveSpeed * 1.5 * (now < this.slowUntil ? this.slowFactor : 1);
+      this.setVelocity(run.dx * speed, run.dy * speed);
+      if (this.kind.directional) this.updateFacing(run.dx, run.dy);
       this.setDepth(this.y);
       return;
     }
