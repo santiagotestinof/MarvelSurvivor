@@ -7,7 +7,7 @@ function readRoundDurationMs(): number {
   // ?ronda=30 acorta la ronda a 30 segundos (útil para probar el jefe rápido).
   const raw = new URLSearchParams(window.location.search).get('ronda');
   const seconds = raw ? Number(raw) : NaN;
-  return Number.isFinite(seconds) && seconds >= 5 ? seconds * 1000 : 30 * 60 * 1000;
+  return Number.isFinite(seconds) && seconds >= 5 ? seconds * 1000 : 15 * 60 * 1000;
 }
 
 export const ROUND = {
@@ -84,6 +84,8 @@ export const MINIBOSS_CONFIG = {
   coinValue: 2,
   /** Niveles gratis (mejoras para elegir) que da el cofre del mini jefe. */
   chestLevels: 2,
+  /** Cuándo sale (ms de ronda); en rondas cortas de prueba sale a los 2/3. */
+  atMs: 10 * 60 * 1000,
 };
 
 export const SPECIAL_WAVES = {

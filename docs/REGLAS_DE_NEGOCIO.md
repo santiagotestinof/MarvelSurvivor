@@ -80,7 +80,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 
 ## Mini jefe
-- Aparece una sola vez, a los 15 minutos de la ronda de 30 (el jefe final sale al terminar). Es un Doombot gigante dorado, con mucha vida (escala con el avance y la Maldición) y 12 de daño por contacto. Un cartel avisa "¡MINI JEFE!".
+- Aparece una sola vez, a los 10 minutos de la ronda de 15 (el jefe final sale al terminar). Es un Doombot gigante dorado, con mucha vida (escala con el avance y la Maldición) y 12 de daño por contacto. Un cartel avisa "¡MINI JEFE!".
 - Al derrotarlo suelta mucha experiencia, 12 monedas (2 de oro cada una), una fruta y un imán.
 
 
@@ -89,7 +89,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 
 ## Arena del jefe
-- Cuando termina el tiempo de la ronda (30 min) un fundido a negro lleva al jugador a una arena cerrada, donde solo está el jefe final (y los Drones que invoca). No vuelve al mapa: se gana al derrotar al jefe. Lo que había en el piso (experiencia y oro) se suma antes de pasar.
+- Cuando termina el tiempo de la ronda (15 min) un fundido a negro lleva al jugador a una arena cerrada, donde solo está el jefe final (y los Drones que invoca). No vuelve al mapa: se gana al derrotar al jefe. Lo que había en el piso (experiencia y oro) se suma antes de pasar.
 
 
 ## Ultimates (tecla E / botón ULT)
@@ -105,5 +105,5 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Cofres y logros
 - El mini jefe suelta un cofre: al juntarlo da 2 subidas de nivel gratis (se eligen 2 mejoras).
-- Cada logro desbloquea una mejora pasiva; hasta cumplirlo esa pasiva no sale al subir de nivel. Las pasivas bloqueadas y sus logros: Armadura (aguantar 10 min en una ronda), Imán (juntar 300 de oro en total), Crítico (derrotar a un mini jefe), Suerte (llegar al nivel 15 en una ronda), Crecimiento (ganar una ronda), Codicia (juntar 2000 de oro en total) y Maldición (aguantar 25 min en una ronda). El progreso se guarda en el navegador junto con el oro.
+- Cada logro desbloquea una mejora pasiva; hasta cumplirlo esa pasiva no sale al subir de nivel. Las pasivas bloqueadas y sus logros: Armadura (aguantar 10 min en una ronda), Imán (juntar 300 de oro en total), Crítico (derrotar a un mini jefe), Suerte (llegar al nivel 15 en una ronda), Crecimiento (ganar una ronda), Codicia (juntar 2000 de oro en total) y Maldición (aguantar 14 min en una ronda). El progreso se guarda en el navegador junto con el oro.
 - Idea aprobada para más adelante: que los logros también desbloqueen mapas nuevos.

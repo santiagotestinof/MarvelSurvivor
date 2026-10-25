@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ROUND, SPECIAL_WAVES, WAVES } from '../config/gameplayConfig';
+import { MINIBOSS_CONFIG, ROUND, SPECIAL_WAVES, WAVES } from '../config/gameplayConfig';
 import { BRUTE, MINIBOSS, pickWaveEnemy, type EnemyKind } from '../enemies/enemyKinds';
 import type { Character } from '../entities/Character';
 import { Enemy, type EnemyScaling } from '../entities/Enemy';
@@ -59,10 +59,10 @@ export class WaveSystem {
     }
   }
 
-  /** Mini jefe: aparece una sola vez, a mitad de la ronda (a los 15 min de 30), fuera de pantalla, sin contar para el tope de enemigos. */
+  /** Mini jefe: aparece una sola vez, a los 10 min de una ronda de 15, fuera de pantalla, sin contar para el tope de enemigos. */
   private updateMiniBoss(progress: number): void {
     const elapsed = progress * ROUND.durationMs;
-    if (this.nextMiniBossAtMs < 0) this.nextMiniBossAtMs = this.quickMiniBoss ? 8_000 : ROUND.durationMs / 2;
+    if (this.nextMiniBossAtMs < 0) this.nextMiniBossAtMs = this.quickMiniBoss ? 8_000 : Math.min(MINIBOSS_CONFIG.atMs, (ROUND.durationMs * 2) / 3);
     if (elapsed < this.nextMiniBossAtMs || progress >= 0.999) return;
     // Con `?minijefe` se repite cada 30 s para probar; en una ronda normal sale una sola vez.
     this.nextMiniBossAtMs = this.quickMiniBoss ? this.nextMiniBossAtMs + 30_000 : Number.POSITIVE_INFINITY;

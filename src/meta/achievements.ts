@@ -45,7 +45,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'lucky', name: 'Con suerte', description: 'Llegá al nivel 15 en una ronda', passiveId: 'luck', target: 15, value: (s) => s.bestLevel },
   { id: 'apprentice', name: 'Aprendiz', description: 'Ganá una ronda', passiveId: 'growth', target: 1, value: (s) => s.wins },
   { id: 'greedy', name: 'Codicia', description: 'Juntá 2000 de oro en total', passiveId: 'greed', target: 2000, value: (s) => s.gold },
-  { id: 'brave', name: 'Valiente', description: 'Aguantá 25 minutos en una ronda', passiveId: 'curse', target: 25, value: (s) => s.bestMinutes, unit: 'min' },
+  { id: 'brave', name: 'Valiente', description: 'Aguantá 14 minutos en una ronda', passiveId: 'curse', target: 14, value: (s) => s.bestMinutes, unit: 'min' },
 ];
 
 /** Pasivas bloqueadas hasta cumplir su logro. */
