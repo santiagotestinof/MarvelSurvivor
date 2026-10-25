@@ -77,6 +77,13 @@ export const WAVES = {
  * Oleadas especiales: cada tanto entra de golpe un grupo grande, alternando una manada (todos juntos desde un costado)
  * y un círculo que rodea al jugador. Con `?oleada` en la URL salen cada 15 s para probarlas.
  */
+export const MINIBOSS_CONFIG = {
+  /** Sale cada tercio de la ronda (5 min en una ronda de 15) y suelta un premio grande. */
+  xp: 60,
+  coins: 12,
+  coinValue: 2,
+};
+
 export const SPECIAL_WAVES = {
   /** Cuándo sale la primera y cada cuánto las siguientes (tiempo de la ronda). */
   firstAtMs: 60_000,

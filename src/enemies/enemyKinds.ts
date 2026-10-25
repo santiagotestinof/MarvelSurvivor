@@ -85,6 +85,8 @@ export interface EnemyKind {
   directional?: boolean;
   /** Escala visual del sprite (por defecto 1). */
   scale?: number;
+  /** Color con el que se tiñe el sprite (por ejemplo, el mini jefe). */
+  tint?: number;
   origin: { x: number; y: number };
   /** Caja de colisión en píxeles desde la esquina superior izquierda del cuadro. */
   body: { width: number; height: number; offsetX: number; offsetY: number };
@@ -198,7 +200,22 @@ export const OVERLORD: EnemyKind = {
   xpValue: 0,
 };
 
-export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, SENTINEL, SCOUT, BRUTE, OVERLORD];
+/** Mini jefe (cada 5 min): un Doombot gigante y teñido de dorado; comparte el sprite del Doombot. Sale solo por horario, no en oleadas. */
+export const MINIBOSS: EnemyKind = {
+  ...BRUTE,
+  id: 'miniboss',
+  scale: 2.1,
+  tint: 0xffc24a,
+  body: { width: 20, height: 14, offsetX: 6, offsetY: 17 },
+  health: 350,
+  speed: 30,
+  meleeDamage: 12,
+  xpValue: 0,
+  gold: undefined,
+  spawn: undefined,
+};
+
+export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, SENTINEL, SCOUT, BRUTE, OVERLORD, MINIBOSS];
 
 /** Elige al azar (por peso) uno de los enemigos de oleada disponibles en este punto de la ronda. */
 export function pickWaveEnemy(progress: number, countByKind?: (id: string) => number): EnemyKind {
@@ -222,7 +239,10 @@ export function enemyAnimationKey(kind: EnemyKind, dir: EnemyDirection = 'down')
 
 /** Encola la carga de los spritesheets de enemigos (llamar desde preload). */
 export function loadEnemyAssets(scene: Phaser.Scene): void {
+  const loaded = new Set<string>();
   for (const kind of ENEMY_KINDS) {
+    if (loaded.has(kind.texture)) continue; // el mini jefe comparte la textura del Doombot
+    loaded.add(kind.texture);
     scene.load.spritesheet(kind.texture, `${kind.path}?v=${__BUILD_ID__}`, {
       frameWidth: kind.frame.width,
       frameHeight: kind.frame.height,

@@ -2,7 +2,7 @@ import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { ENEMY_MAGNET_CHANCE, FRUIT, GOLD, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
+import { ENEMY_MAGNET_CHANCE, FRUIT, GOLD, MINIBOSS_CONFIG, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -451,12 +451,27 @@ export class GameScene extends Phaser.Scene {
   /** Al morir un enemigo: gema de experiencia y, con cierta chance, una moneda. */
   private dropLoot(enemy: Enemy): void {
     const { xpValue, gold } = enemy.kind;
+    if (enemy.kind.id === 'miniboss') {
+      this.dropMiniBossLoot(enemy);
+      return;
+    }
     if (xpValue > 0) this.pickups.push(new Pickup(this, enemy.x, enemy.y - 4, 'xp', xpValue));
     if (gold && Math.random() < gold.chance * this.stats.goldChanceMult) {
       this.pickups.push(new Pickup(this, enemy.x + 4, enemy.y - 2, 'gold', gold.value));
     }
     if (Math.random() < FRUIT.chance) this.pickups.push(new Pickup(this, enemy.x - 4, enemy.y - 2, 'fruit', 0));
     if (Math.random() < ENEMY_MAGNET_CHANCE) this.pickups.push(new Pickup(this, enemy.x, enemy.y - 6, 'magnet', 0));
+  }
+
+  /** Premio del mini jefe: mucha experiencia, monedas, una fruta y un imán. */
+  private dropMiniBossLoot(enemy: Enemy): void {
+    this.pickups.push(new Pickup(this, enemy.x, enemy.y - 4, 'xp', MINIBOSS_CONFIG.xp));
+    for (let i = 0; i < MINIBOSS_CONFIG.coins; i++) {
+      const a = (i / MINIBOSS_CONFIG.coins) * Math.PI * 2;
+      this.pickups.push(new Pickup(this, enemy.x + Math.cos(a) * 14, enemy.y - 2 + Math.sin(a) * 9, 'gold', MINIBOSS_CONFIG.coinValue));
+    }
+    this.pickups.push(new Pickup(this, enemy.x - 10, enemy.y + 6, 'fruit', 0));
+    this.pickups.push(new Pickup(this, enemy.x + 10, enemy.y + 6, 'magnet', 0));
   }
 
   /** Al romperse una caja o roca: monedas repartidas alrededor. */

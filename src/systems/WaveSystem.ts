@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { ROUND, SPECIAL_WAVES, WAVES } from '../config/gameplayConfig';
-import { BRUTE, pickWaveEnemy, type EnemyKind } from '../enemies/enemyKinds';
+import { BRUTE, MINIBOSS, pickWaveEnemy, type EnemyKind } from '../enemies/enemyKinds';
 import type { Character } from '../entities/Character';
 import { Enemy, type EnemyScaling } from '../entities/Enemy';
 import type { PlayerStats } from '../progression/PlayerStats';
@@ -10,6 +10,8 @@ export class WaveSystem {
   private nextSpawnAt = 0;
   stopped = false;
   private nextSpecialAtMs = -1;
+  private nextMiniBossAtMs = -1;
+  private readonly quickMiniBoss = new URLSearchParams(window.location.search).has('minijefe');
   private nextSpecialIsHorde = Math.random() < 0.5;
   private readonly quickSpecials = new URLSearchParams(window.location.search).has('oleada');
 
@@ -36,6 +38,7 @@ export class WaveSystem {
   update(now: number, progress: number): void {
     if (this.stopped) return;
     this.updateSpecial(progress);
+    this.updateMiniBoss(progress);
     if (now < this.nextSpawnAt) return;
 
     // Maldición y Encanto: más enemigos, y más seguido.
@@ -53,6 +56,18 @@ export class WaveSystem {
       const kind = this.forceDoombots ? BRUTE : pickWaveEnemy(progress, (id) => this.aliveCountOfKind(id));
       this.spawnEnemy(kind, scaling);
     }
+  }
+
+  /** Mini jefe: aparece cada tercio de la ronda (cada 5 min de 15), fuera de pantalla, sin contar para el tope de enemigos. */
+  private updateMiniBoss(progress: number): void {
+    const elapsed = progress * ROUND.durationMs;
+    const every = this.quickMiniBoss ? 30_000 : ROUND.durationMs / 3;
+    if (this.nextMiniBossAtMs < 0) this.nextMiniBossAtMs = this.quickMiniBoss ? 8_000 : every;
+    if (elapsed < this.nextMiniBossAtMs || progress >= 0.999) return;
+    this.nextMiniBossAtMs += every;
+    const { x, y } = this.pickSpawnPoint();
+    this.spawnEnemyAt(MINIBOSS, this.getScaling(progress), x, y);
+    this.scene.events.emit('special-wave', '¡MINI JEFE!');
   }
 
   /** Oleada especial: cuando llega su momento, suelta una manada o un círculo y avisa en pantalla. */

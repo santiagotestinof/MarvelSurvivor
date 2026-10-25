@@ -59,6 +59,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const { width, height, offsetX, offsetY } = kind.body;
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
     this.setCollideWorldBounds(true);
+    if (kind.tint !== undefined) this.setTint(kind.tint);
     this.play(enemyAnimationKey(kind, this.currentDir));
     this.anims.timeScale = Math.min(1.6, 0.85 + scaling.speed * 0.15);
   }
@@ -82,6 +83,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   defang(): void {
     this.harmless = true;
     this.setAlpha(0.6).setTint(0xb7c4d6);
+  }
+
+  private restoreTint(): void {
+    if (this.kind.tint !== undefined) this.setTint(this.kind.tint);
+    else this.clearTint();
   }
 
   /** Lo frena: conserva `factor` de su velocidad durante `ms`. */
@@ -127,7 +133,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.frozen = false;
     if (this.anims.isPaused) this.anims.resume();
     if (this.harmless) this.setTint(0xb7c4d6);
-    else this.clearTint();
+    else this.restoreTint();
     const damage = this.frozenDamage;
     this.frozenDamage = 0;
     if (damage > 0) this.takeDamage(damage);
@@ -162,7 +168,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.destroy(); // se fue de la pantalla: desaparece sin soltar nada
         return;
       }
-      const speed = this.moveSpeed * 1.5 * (now < this.slowUntil ? this.slowFactor : 1);
+      const speed = this.moveSpeed * 2 * (now < this.slowUntil ? this.slowFactor : 1);
       this.setVelocity(run.dx * speed, run.dy * speed);
       if (this.kind.directional) this.updateFacing(run.dx, run.dy);
       this.setDepth(this.y);
@@ -268,7 +274,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.harmless) {
           this.setTint(0xb7c4d6);
         } else {
-          this.clearTint();
+          this.restoreTint();
         }
       });
     }
