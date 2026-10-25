@@ -76,7 +76,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Sobre la cabeza de cada enemigo aparece un número con el daño que se le hizo (`ui/damageNumbers.ts`, hasta 45 a la vez).
 
 ## Oleadas especiales
-- Primera al minuto 1 de la ronda y después cada 1:15 (`SPECIAL_WAVES`). Se alternan: **manada** (entre 20 y 45 enemigos del mismo tipo en un frente ancho que cruza la pantalla en línea recta, el doble de rápido que lo normal, sin perseguir: pasa por donde estaba el jugador y desaparece al salir del otro lado, sin soltar experiencia ni oro; hace daño si te toca) y **círculo** (entre 22 y 40, todos juntos alrededor del jugador, justo fuera de pantalla). Un cartel en pantalla avisa ("¡MANADA!" / "¡TE RODEAN!"). El tipo de enemigo sale del sorteo normal según el avance de la ronda.
+- Primera al minuto 1 de la ronda y después cada 1:15 (`SPECIAL_WAVES`). Se alternan: **manada** (entre 20 y 45 enemigos del mismo tipo en un frente ancho que cruza la pantalla en línea recta, el doble de rápido que lo normal, sin perseguir: pasa por donde estaba el jugador y desaparece al salir del otro lado (los que se van no sueltan nada, pero los que matás sueltan experiencia y oro como cualquier enemigo); hace daño si te toca) y **círculo** (entre 22 y 40, todos juntos alrededor del jugador, justo fuera de pantalla). Un cartel en pantalla avisa ("¡MANADA!" / "¡TE RODEAN!"). El tipo de enemigo sale del sorteo normal según el avance de la ronda.
 
 
 ## Mini jefe
