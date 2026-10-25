@@ -90,7 +90,7 @@ export const thorDefinition: CharacterDefinition = {
     maxHealth: 110,
     attack: {
       kind: 'thunder',
-      cooldownMs: 1300,
+      cooldownMs: 1800,
       damage: 16,
       projectileTexture: TEXTURES.thunder,
       projectileSpeed: 0,
