@@ -156,7 +156,7 @@ export const strangeDefinition: CharacterDefinition = {
       projectileSpeed: 0,
       aimRange: 0,
       maxDistance: 0,
-      radius: 72,
+      radius: 56,
     },
   },
   sheets: sheets(STRANGE_ID),

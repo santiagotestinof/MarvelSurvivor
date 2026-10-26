@@ -132,3 +132,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Oro al perder
 - Al terminar una ronda se guarda **todo el oro juntado**, se gane o se pierda (`GOLD.defeatKeepRatio` = 1; antes se perdía la mitad). El bono por vencer al jefe (`GOLD.bossBonus`) se suma solo si se gana.
+
+## Doctor Strange: aura y portales (ajuste)
+- Aura (arma principal): radio base **56** (antes 72). Sigue creciendo con su +15 % de área propio, la pasiva Área, Alcance y sus niveles.
+- Portales: se abre uno nuevo cada **7 s** (antes 5 s) y las chispas salen cada **0,6 s** (antes 0,42 s). Valores en `PORTAL` de `HeroWeapons.ts`; los niveles 3 y 7 siguen acelerando las chispas.
