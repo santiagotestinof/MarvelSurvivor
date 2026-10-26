@@ -139,3 +139,11 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Daño por contacto de los enemigos
 - Mientras un enemigo toca al jugador le pega cada **0,5 s** (`CONTACT_TICK_MS` en `MeleeAttackSystem.ts`; antes 0,8 s). Cada enemigo tiene su propio ritmo y no hay inmunidad entre golpes. El daño de cada golpe no cambió.
+
+## Obstáculos y enemigos (fuente del medio)
+- Los enemigos rodean los obstáculos fijos del mapa (`ObstacleAvoidance`): si el camino directo al jugador choca contra uno, eligen un lado y lo bordean en vez de quedarse trabados. No aplica a la manada de oleada especial, a los congelados ni al jefe final.
+
+## Easter egg: libro secreto de evoluciones
+- Hay un libro escondido en el mapa (`SECRET_BOOK` en `gameplayConfig.ts`), sin ninguna indicación. Al pasar cerca se guarda para siempre (`saveData.findBook`, campo `book`) y sale el cartel `¡LIBRO SECRETO!`.
+- Desde ahí aparece el botón LIBRO (tecla B) en el menú, que abre `BookScene` con la combinación de cada evolución (pasiva ×3 + arma principal nv 7 + arma exclusiva nv 7), sacada de `EVOLUTIONS`. Una vez encontrado, el libro deja de aparecer en el mapa.
+- `?libro` o `?todos` muestran el botón en esa carga sin guardarlo.

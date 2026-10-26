@@ -20,6 +20,7 @@ export const TEXTURES = {
   magnet: 'magnet-pickup',
   fruit: 'fruit-pickup',
   chest: 'chest-pickup',
+  book: 'secret-book',
 } as const;
 
 /** Animaciones de efectos (no de personajes ni enemigos). */

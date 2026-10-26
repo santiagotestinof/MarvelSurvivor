@@ -2,7 +2,7 @@ import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { ENEMY_MAGNET_CHANCE, FRUIT, GOLD, MINIBOSS_CONFIG, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
+import { ENEMY_MAGNET_CHANCE, FRUIT, GOLD, MINIBOSS_CONFIG, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND, SECRET_BOOK } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -12,6 +12,7 @@ import type { MoveInput } from '../input/MoveInput';
 import { Pickup } from '../entities/Pickup';
 import type { BreakableProp } from '../entities/BreakableProp';
 import { applyMetaUpgrades } from '../meta/metaUpgrades';
+import { TEXTURES } from '../config/assetKeys';
 import { saveData } from '../meta/saveData';
 import { PlayerStats } from '../progression/PlayerStats';
 import { ProgressionSystem, type ProgressState } from '../progression/ProgressionSystem';
@@ -21,6 +22,7 @@ import { BossAttackSystem } from '../systems/BossAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import { MissileWeapon } from '../systems/MissileWeapon';
+import { ObstacleAvoidance } from '../systems/ObstacleAvoidance';
 import { MeleeAttackSystem } from '../systems/MeleeAttackSystem';
 import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
@@ -88,6 +90,9 @@ export class GameScene extends Phaser.Scene {
   private ironManBaseScaleY = 1;
   private nextIronManCloudAt = 0;
   private environmentObstacles!: Phaser.Physics.Arcade.StaticGroup;
+  private avoidance!: ObstacleAvoidance;
+  /** Libro secreto del mapa (null si ya se encontró). */
+  private secretBook: Phaser.GameObjects.Image | null = null;
   private playerObstacleCollider!: Phaser.Physics.Arcade.Collider;
 
   constructor() {
@@ -125,6 +130,12 @@ export class GameScene extends Phaser.Scene {
     this.miniBossKilled = false;
     this.newAchievements = [];
     this.environmentObstacles = map.obstacles;
+    this.avoidance = new ObstacleAvoidance(map.obstacles);
+    this.secretBook = null;
+    if (!saveData.hasBook) {
+      this.secretBook = this.add.image(SECRET_BOOK.x, SECRET_BOOK.y, TEXTURES.book).setDepth(SECRET_BOOK.y);
+      this.tweens.add({ targets: this.secretBook, y: SECRET_BOOK.y - 2, duration: 900, yoyo: true, repeat: -1 });
+    }
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
     // Al recibir un golpe la cámara vibra más cuanto más duele.
@@ -529,6 +540,17 @@ export class GameScene extends Phaser.Scene {
     if (Math.random() < PROP_MAGNET_CHANCE) this.pickups.push(new Pickup(this, prop.x, prop.y - 4, 'magnet', 0));
   }
 
+  /** Easter egg: al pasar cerca del libro escondido se lo lleva para siempre. */
+  private updateSecretBook(): void {
+    const book = this.secretBook;
+    if (!book) return;
+    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, SECRET_BOOK.x, SECRET_BOOK.y) > SECRET_BOOK.pickupRadius) return;
+    saveData.findBook();
+    book.destroy();
+    this.secretBook = null;
+    this.events.emit('special-wave', '¡LIBRO SECRETO!');
+  }
+
   /** Mueve lo que se junta hacia el jugador cuando está cerca y suma lo que llega. */
   private updatePickups(delta: number): void {
     const radiusSq = this.stats.pickupRadius ** 2;
@@ -711,6 +733,7 @@ export class GameScene extends Phaser.Scene {
     this.missiles.update(now, delta);
     this.heroWeapon?.update(now, delta);
     this.updatePickups(delta);
+    this.updateSecretBook();
     const regenPerSecond = this.stats.regenPerSecond;
     if (regenPerSecond > 0) this.player.heal((regenPerSecond * delta) / 1000);
     const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);
@@ -743,7 +766,21 @@ export class GameScene extends Phaser.Scene {
         separationX /= separationLength;
         separationY /= separationLength;
       }
-      enemy.chase(this.player.x, this.player.y - 6, separationX, separationY);
+      let targetX = this.player.x;
+      let targetY = this.player.y - 6;
+      // Rodea los obstáculos (la fuente, edificios) en vez de empujarlos de frente.
+      if (!enemy.isStampeding && !enemy.frozen && enemy.kind.id !== 'overlord') {
+        const toX = targetX - enemy.x;
+        const toY = targetY - enemy.y;
+        const dist = Math.hypot(toX, toY);
+        if (dist > 12) {
+          const radius = enemy.kind.id === 'miniboss' ? 14 : 8;
+          const dir = this.avoidance.steer(enemy, enemy.x, enemy.y, toX / dist, toY / dist, radius, now);
+          targetX = enemy.x + dir.x * dist;
+          targetY = enemy.y + dir.y * dist;
+        }
+      }
+      enemy.chase(targetX, targetY, separationX, separationY);
     }
     this.tryRevive();
     const timeStopped = this.timeStop?.isActive(now) ?? false;

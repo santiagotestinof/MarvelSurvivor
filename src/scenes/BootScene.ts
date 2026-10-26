@@ -54,6 +54,7 @@ export class BootScene extends Phaser.Scene {
     this.createMagnetTexture();
     this.createFruitTexture();
     this.createChestTexture();
+    this.createBookTexture();
     registerUpgradeIcons(this);
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       registerCharacterAnimations(this, definition);
@@ -125,6 +126,19 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xfff0a6, 1).fillRect(6, 6, 2, 3);
     g.fillStyle(0x3b230d, 1).fillRect(7, 7, 1, 1);
     g.generateTexture(TEXTURES.chest, 14, 12);
+    g.destroy();
+  }
+
+  /** Libro secreto (easter egg): tapa azul con lomo y un destello dorado. */
+  private createBookTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x10203f, 1).fillRect(0, 1, 12, 13);
+    g.fillStyle(0x2a52a8, 1).fillRect(1, 2, 10, 11);
+    g.fillStyle(0x1b3677, 1).fillRect(1, 2, 2, 11);
+    g.fillStyle(0xf4efe0, 1).fillRect(3, 13, 8, 1);
+    g.fillStyle(0xf2c53d, 1).fillRect(5, 4, 4, 1).fillRect(5, 6, 4, 1).fillRect(6, 8, 2, 3);
+    g.fillStyle(0xfff0a6, 1).fillRect(6, 5, 2, 1);
+    g.generateTexture(TEXTURES.book, 12, 14);
     g.destroy();
   }
 

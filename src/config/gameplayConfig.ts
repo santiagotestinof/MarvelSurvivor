@@ -85,6 +85,9 @@ export const WAVES = {
  * Oleadas especiales: cada tanto entra de golpe un grupo grande, alternando una manada (todos juntos desde un costado)
  * y un círculo que rodea al jugador. Con `?oleada` en la URL salen cada 15 s para probarlas.
  */
+/** Easter egg: libro escondido en el mapa (sin ninguna indicación). Al juntarlo se guarda para siempre y aparece LIBRO en el menú. */
+export const SECRET_BOOK = { x: 110, y: 3720, pickupRadius: 18 };
+
 export const MINIBOSS_CONFIG = {
   /** Sale cada tercio de la ronda (5 min en una ronda de 15) y suelta un premio grande. */
   xp: 60,

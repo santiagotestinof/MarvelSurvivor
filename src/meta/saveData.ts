@@ -20,19 +20,22 @@ interface SaveShape {
   achievements: string[];
   /** Totales para los logros. */
   stats: LifetimeStats;
+  /** Easter egg: ya se encontró el libro escondido en el mapa (muestra las combinaciones de evolución). */
+  book: boolean;
 }
 
 /** Progreso de alguien que entra por primera vez: sin oro y con un héroe común al azar de regalo. */
 function emptySave(): SaveShape {
   const pool = COMMON_HEROES.length > 0 ? COMMON_HEROES : [STARTER_ID];
   const gift = pool[Math.floor(Math.random() * pool.length)];
-  return { gold: 0, upgrades: {}, unlocked: [gift], selected: gift, achievements: [], stats: emptyLifetimeStats() };
+  return { gold: 0, upgrades: {}, unlocked: [gift], selected: gift, achievements: [], stats: emptyLifetimeStats(), book: false };
 }
 
 function sanitize(raw: unknown): SaveShape {
   if (typeof raw !== 'object' || raw === null) return emptySave();
-  const save: SaveShape = { gold: 0, upgrades: {}, unlocked: [], selected: '', achievements: [], stats: emptyLifetimeStats() };
-  const { gold, upgrades, unlocked, selected, achievements, stats } = raw as Partial<SaveShape>;
+  const save: SaveShape = { gold: 0, upgrades: {}, unlocked: [], selected: '', achievements: [], stats: emptyLifetimeStats(), book: false };
+  const { gold, upgrades, unlocked, selected, achievements, stats, book } = raw as Partial<SaveShape>;
+  save.book = book === true;
   if (Array.isArray(achievements)) {
     for (const id of achievements) if (typeof id === 'string' && ACHIEVEMENTS.some((a) => a.id === id) && !save.achievements.includes(id)) save.achievements.push(id);
   }
@@ -75,6 +78,8 @@ class SaveData {
   /** `?todos` también deja todos los logros como cumplidos (solo en esta carga, no se guarda). */
   private readonly allAchievements = new URLSearchParams(window.location.search).has('todos');
 
+  private readonly forceBook = /[?&](todos|libro)(&|=|$)/.test(window.location.search);
+
   constructor() {
     // Primera vez en este navegador: se guarda enseguida el héroe de regalo para que no cambie al recargar.
     try {
@@ -109,6 +114,18 @@ class SaveData {
     this.data.unlocked.push(id);
     this.persist();
     return true;
+  }
+
+  /** ¿Ya se encontró el libro secreto? (`?todos` o `?libro` lo dan por encontrado solo en esa carga.) */
+  get hasBook(): boolean {
+    return this.forceBook || this.data.book;
+  }
+
+  /** Guarda para siempre que se encontró el libro. */
+  findBook(): void {
+    if (this.data.book) return;
+    this.data.book = true;
+    this.persist();
   }
 
   get lifetime(): Readonly<LifetimeStats> {

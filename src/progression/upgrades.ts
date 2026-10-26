@@ -113,7 +113,7 @@ function fireUpgrade(kind: FireUpgrade, id: string, name: string, text: string):
 }
 
 /** Evolución del arma principal de cada héroe y la pasiva que hay que haber tomado `EVOLUTION.passivePicks` veces. */
-const EVOLUTIONS = [
+export const EVOLUTIONS = [
   { hero: 'ironman', id: 'missiles-evolution', name: 'Misiles incendiarios', requires: 'fire-rate', text: 'Las explosiones de los minimisiles dejan fuego que quema' },
   { hero: 'capitan', id: 'evolution-capitan', name: 'Escudo rebotador', requires: 'amount', text: 'El escudo se lanza a un enemigo y rebota entre ellos (5 rebotes)' },
   { hero: 'spiderman', id: 'evolution-spiderman', name: 'Telaraña inmovilizadora', requires: 'duration', text: 'Las telarañas inmovilizan unos segundos al enemigo que pegan' },
