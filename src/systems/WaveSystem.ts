@@ -9,6 +9,7 @@ import type { PlayerStats } from '../progression/PlayerStats';
 /** Genera enemigos fuera de la pantalla, cada vez más seguido y más fuertes/rápidos a medida que avanza el tiempo. */
 export class WaveSystem {
   private nextSpawnAt = 0;
+  private nextRelocateAt = 0;
   stopped = false;
   private nextSpecialAtMs = -1;
   private nextMiniBossAtMs = -1;
@@ -40,6 +41,7 @@ export class WaveSystem {
     if (this.stopped) return;
     this.updateSpecial(progress);
     this.updateMiniBoss(progress);
+    this.relocateStragglers(now);
     if (now < this.nextSpawnAt) return;
 
     // Maldición y Encanto: más enemigos, y más seguido.
@@ -161,17 +163,58 @@ export class WaveSystem {
     return count;
   }
 
+  /** Dirección (unitaria) en la que se mueve el jugador, o null si está casi quieto. */
+  private moveDirection(): { x: number; y: number } | null {
+    const body = this.player.body as Phaser.Physics.Arcade.Body | null;
+    if (!body) return null;
+    const speed = Math.hypot(body.velocity.x, body.velocity.y);
+    return speed > 5 ? { x: body.velocity.x / speed, y: body.velocity.y / speed } : null;
+  }
+
+  /**
+   * Los enemigos que quedaron muy atrás (lejos y fuera de pantalla) reaparecen fuera de la vista, del lado
+   * hacia donde se mueve el jugador: así parece que siempre vienen de todos lados.
+   */
+  private relocateStragglers(now: number): void {
+    if (now < this.nextRelocateAt) return;
+    this.nextRelocateAt = now + WAVES.relocateCheckMs;
+    const view = this.scene.cameras.main.worldView;
+    const far = Math.hypot(view.width, view.height) / 2 + WAVES.spawnMargin + WAVES.relocateExtra;
+    let moved = 0;
+    for (const enemy of this.enemies.getChildren() as Enemy[]) {
+      if (moved >= WAVES.relocatePerCheck) break;
+      if (!enemy.active || enemy.dying || enemy.isStampeding || enemy.frozen || !enemy.kind.spawn || enemy.kind.id === MINIBOSS.id) continue;
+      if (Math.hypot(enemy.x - view.centerX, enemy.y - view.centerY) < far) continue;
+      const { x, y } = this.pickSpawnPoint();
+      enemy.setPosition(x, y);
+      enemy.setVelocity(0, 0);
+      moved++;
+    }
+  }
+
   /** Punto justo fuera de lo que se ve en pantalla, dentro de los límites del mapa. */
   private pickSpawnPoint(): { x: number; y: number } {
     const view = this.scene.cameras.main.worldView;
     const margin = WAVES.spawnMargin;
     let point = { x: this.player.x, y: this.player.y };
 
+    const dir = this.moveDirection();
+
     for (let attempt = 0; attempt < 8; attempt++) {
       const side = Math.floor(Math.random() * 4);
       let x: number;
       let y: number;
-      if (side === 0) {
+      if (dir && Math.random() < WAVES.aheadChance) {
+        // Delante del jugador: un punto del borde de la pantalla (más el margen) en un ángulo cercano a su dirección.
+        const angle = Math.atan2(dir.y, dir.x) + Phaser.Math.FloatBetween(-1, 1) * WAVES.aheadSpread;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const hw = view.width / 2 + margin;
+        const hh = view.height / 2 + margin;
+        const t = Math.min(Math.abs(cos) < 1e-6 ? Infinity : hw / Math.abs(cos), Math.abs(sin) < 1e-6 ? Infinity : hh / Math.abs(sin));
+        x = view.centerX + cos * t;
+        y = view.centerY + sin * t;
+      } else if (side === 0) {
         x = Phaser.Math.FloatBetween(view.left - margin, view.right + margin);
         y = view.top - margin;
       } else if (side === 1) {

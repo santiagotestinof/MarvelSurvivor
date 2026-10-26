@@ -120,3 +120,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - El mini jefe suelta un cofre: al juntarlo da 2 subidas de nivel gratis (se eligen 2 mejoras).
 - Cada logro desbloquea una mejora pasiva; hasta cumplirlo esa pasiva no sale al subir de nivel. Las pasivas bloqueadas y sus logros: Armadura (aguantar 10 min en una ronda), Imán (juntar 300 de oro en total), Crítico (derrotar a un mini jefe), Suerte (llegar al nivel 15 en una ronda), Crecimiento (ganar una ronda), Codicia (juntar 2000 de oro en total) y Maldición (aguantar 14 min en una ronda). El progreso se guarda en el navegador junto con el oro.
 - Idea aprobada para más adelante: que los logros también desbloqueen mapas nuevos.
+
+## Aparición de enemigos según el movimiento
+- Con el jugador en movimiento, el 70 % de los enemigos nuevos (`WAVES.aheadChance`) aparece fuera de la pantalla del lado hacia donde va (dentro de ±1 radián de su dirección); el resto, de cualquier lado. Quieto, aparecen de cualquier lado.
+- Los enemigos de oleada que quedan lejos y fuera de la pantalla (más que la media diagonal + margen + `WAVES.relocateExtra`) reaparecen fuera de la vista, con la misma regla (hasta 6 cada 0,4 s). No se reubican la manada, el mini jefe, los congelados ni el jefe. Así parece que siempre vienen de todos lados.

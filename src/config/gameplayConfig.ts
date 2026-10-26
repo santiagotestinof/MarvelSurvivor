@@ -67,6 +67,14 @@ export const WAVES = {
   maxAlive: 160,
   /** Distancia fuera de la pantalla donde aparecen. */
   spawnMargin: 28,
+  /** Con el jugador en movimiento, esta parte de los enemigos nuevos aparece del lado hacia donde va (el resto, de cualquier lado). */
+  aheadChance: 0.7,
+  /** Qué tan abierto es ese lado (radianes a cada costado de su dirección). */
+  aheadSpread: 1.0,
+  /** Los enemigos que quedan más lejos que la pantalla + esta distancia reaparecen delante del jugador. */
+  relocateExtra: 200,
+  relocateCheckMs: 400,
+  relocatePerCheck: 6,
   /** Al final de la ronda los enemigos tienen (1 + healthGrowth) veces la vida base. */
   healthGrowth: 2.4,
   /** Al final de la ronda los enemigos son (1 + speedGrowth) veces más rápidos. */
