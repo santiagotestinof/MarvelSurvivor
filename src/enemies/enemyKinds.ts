@@ -85,12 +85,16 @@ export interface EnemyKind {
   directional?: boolean;
   /** Escala visual del sprite (por defecto 1). */
   scale?: number;
+  /** Color con el que se tiñe el sprite (por ejemplo, el mini jefe). */
+  tint?: number;
   origin: { x: number; y: number };
   /** Caja de colisión en píxeles desde la esquina superior izquierda del cuadro. */
   body: { width: number; height: number; offsetX: number; offsetY: number };
   health: number;
+  /** Cuánto más rápido que el resto crece su vida con la ronda (1 = igual). Arranca débil (muere de un golpe) y llega al final con la vida de siempre. */
+  healthRamp?: number;
   speed: number;
-  contactDamage: number;
+  meleeDamage: number;
   /** Experiencia que suelta al morir (0 = nada). */
   xpValue: number;
   /** Probabilidad de soltar una moneda al morir y valor de esa moneda (sin `gold` no suelta nada). */
@@ -114,9 +118,10 @@ export const DRONE: EnemyKind = {
   directional: true,
   origin: { x: 0.5, y: 0.94 },
   body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
-  health: 30,
+  health: 9,
+  healthRamp: 4.3,
   speed: 41.8,
-  contactDamage: 13,
+  meleeDamage: 13,
   xpValue: 1,
   gold: { chance: 0.05, value: 1 },
   spawn: { fromProgress: 0, weight: 6 },
@@ -133,9 +138,10 @@ export const SENTINEL: EnemyKind = {
   directional: true,
   origin: { x: 0.5, y: 0.94 },
   body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
-  health: 12,
+  health: 9,
+  healthRamp: 1.5,
   speed: 30,
-  contactDamage: 4,
+  meleeDamage: 4,
   xpValue: 2,
   gold: { chance: 0.1, value: 1 },
   rangedAttack: { range: 145, cooldownMs: 2400, damage: 6, projectileSpeed: 165 },
@@ -153,9 +159,10 @@ export const SCOUT: EnemyKind = {
   directional: true,
   origin: { x: 0.5, y: 0.94 },
   body: { width: 13, height: 11, offsetX: 9, offsetY: 19 },
-  health: 10,
+  health: 8,
+  healthRamp: 1.35,
   speed: 64,
-  contactDamage: 5,
+  meleeDamage: 5,
   xpValue: 1,
   gold: { chance: 0.05, value: 1 },
   spawn: { fromProgress: 0.15, weight: 3 },
@@ -174,7 +181,7 @@ export const BRUTE: EnemyKind = {
   body: { width: 18, height: 12, offsetX: 7, offsetY: 18 },
   health: 110,
   speed: 25,
-  contactDamage: 8,
+  meleeDamage: 8,
   xpValue: 4,
   gold: { chance: 0.2, value: 3 },
   spawn: { fromProgress: 0.4, weight: 1.5 },
@@ -194,11 +201,26 @@ export const OVERLORD: EnemyKind = {
   body: { width: 22, height: 18, offsetX: 13, offsetY: 26 },
   health: 440,
   speed: 33,
-  contactDamage: 20,
+  meleeDamage: 20,
   xpValue: 0,
 };
 
-export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, SENTINEL, SCOUT, BRUTE, OVERLORD];
+/** Mini jefe (cada 5 min): un Doombot gigante y teñido de dorado; comparte el sprite del Doombot. Sale solo por horario, no en oleadas. */
+export const MINIBOSS: EnemyKind = {
+  ...BRUTE,
+  id: 'miniboss',
+  scale: 2.1,
+  tint: 0xffc24a,
+  body: { width: 20, height: 14, offsetX: 6, offsetY: 17 },
+  health: 350,
+  speed: 30,
+  meleeDamage: 12,
+  xpValue: 0,
+  gold: undefined,
+  spawn: undefined,
+};
+
+export const ENEMY_KINDS: readonly EnemyKind[] = [DRONE, SENTINEL, SCOUT, BRUTE, OVERLORD, MINIBOSS];
 
 /** Elige al azar (por peso) uno de los enemigos de oleada disponibles en este punto de la ronda. */
 export function pickWaveEnemy(progress: number, countByKind?: (id: string) => number): EnemyKind {
@@ -222,7 +244,10 @@ export function enemyAnimationKey(kind: EnemyKind, dir: EnemyDirection = 'down')
 
 /** Encola la carga de los spritesheets de enemigos (llamar desde preload). */
 export function loadEnemyAssets(scene: Phaser.Scene): void {
+  const loaded = new Set<string>();
   for (const kind of ENEMY_KINDS) {
+    if (loaded.has(kind.texture)) continue; // el mini jefe comparte la textura del Doombot
+    loaded.add(kind.texture);
     scene.load.spritesheet(kind.texture, `${kind.path}?v=${__BUILD_ID__}`, {
       frameWidth: kind.frame.width,
       frameHeight: kind.frame.height,

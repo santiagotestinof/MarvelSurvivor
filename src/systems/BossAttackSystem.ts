@@ -3,6 +3,7 @@ import { DRONE } from '../enemies/enemyKinds';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { WaveSystem } from './WaveSystem';
+import type { WorldRect } from '../world/BossArena';
 
 interface BossBolt {
   outer: Phaser.GameObjects.Arc;
@@ -72,7 +73,7 @@ export class BossAttackSystem {
     private readonly scene: Phaser.Scene,
     private readonly player: Character,
     private readonly waves: WaveSystem,
-    private readonly world: { width: number; height: number },
+    private readonly world: WorldRect,
   ) {}
 
   update(now: number, delta: number, boss: Enemy | null): void {
@@ -168,8 +169,8 @@ export class BossAttackSystem {
     for (let i = 0; i < count; i++) {
       const angle = baseAngle + (i * Math.PI * 2) / count;
       const dist = i === 0 ? 18 : 56;
-      const rx = Phaser.Math.Clamp(this.player.x + Math.cos(angle) * dist, 32, this.world.width - 32);
-      const ry = Phaser.Math.Clamp(this.player.y - 6 + Math.sin(angle) * dist, 32, this.world.height - 32);
+      const rx = Phaser.Math.Clamp(this.player.x + Math.cos(angle) * dist, this.world.x + 32, this.world.x + this.world.width - 32);
+      const ry = Phaser.Math.Clamp(this.player.y - 6 + Math.sin(angle) * dist, this.world.y + 32, this.world.y + this.world.height - 32);
       const radius = 30;
 
       const ring = this.scene.add
@@ -208,8 +209,8 @@ export class BossAttackSystem {
     const dy = this.player.y - 6 - boss.y;
     const angle = Math.atan2(dy, dx);
     const dashDist = 115;
-    const targetX = Phaser.Math.Clamp(boss.x + Math.cos(angle) * dashDist, 24, this.world.width - 24);
-    const targetY = Phaser.Math.Clamp(boss.y + Math.sin(angle) * dashDist, 24, this.world.height - 24);
+    const targetX = Phaser.Math.Clamp(boss.x + Math.cos(angle) * dashDist, this.world.x + 24, this.world.x + this.world.width - 24);
+    const targetY = Phaser.Math.Clamp(boss.y + Math.sin(angle) * dashDist, this.world.y + 24, this.world.y + this.world.height - 24);
 
     boss.lockForShot(telegraphMs, targetX, targetY);
 
@@ -340,7 +341,7 @@ export class BossAttackSystem {
         continue;
       }
 
-      if (nx < 0 || ny < 0 || nx > this.world.width || ny > this.world.height) {
+      if (nx < this.world.x || ny < this.world.y || nx > this.world.x + this.world.width || ny > this.world.y + this.world.height) {
         b.outer.destroy();
         b.core.destroy();
         this.bolts.splice(i, 1);

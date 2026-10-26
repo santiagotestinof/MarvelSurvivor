@@ -7,6 +7,9 @@ export class PlayerStats {
   /** Distancia a la que las gemas empiezan a ir hacia el jugador. */
   pickupRadius = 36;
 
+  /** Suerte (mejora permanente): inclina el sorteo de rareza de las mejoras hacia las raras. */
+  luck = 0;
+
   /** Multiplicador de la experiencia que dan las gemas. */
   xpMult = 1;
   /** Multiplicador del valor de cada moneda de oro. */
@@ -38,6 +41,11 @@ export class PlayerStats {
   banishes = 0;
   /** Probabilidad de que usar una de las tres anteriores no gaste el uso. */
   preserveChance = 0;
+
+  /** El arma principal del héroe ya evolucionó (cada héroe evoluciona distinto, ver `upgrades.ts`). */
+  evolved = false;
+  /** Rebotes extra del escudo evolucionado del Capitán. */
+  bounceBonus = 0;
 
   // Ataque básico (repulsor)
   /** Disparos por ataque, abiertos en abanico hacia el mismo objetivo. */

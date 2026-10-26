@@ -5,7 +5,7 @@ import { SCENE_KEYS } from '../config/sceneKeys';
 import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds';
 import { loadCharacterAssets, registerCharacterAnimations } from '../systems/AnimationSystem';
 import { loadMetaItemIcons } from '../ui/metaItemIcons';
-import { registerUpgradeIcons } from '../ui/upgradeIcons';
+import { loadImageIcons, registerUpgradeIcons } from '../ui/upgradeIcons';
 
 declare const __BUILD_ID__: string;
 
@@ -28,8 +28,13 @@ export class BootScene extends Phaser.Scene {
     this.load.image(TEXTURES.shield, ASSET_PATHS.shield);
     this.load.image(TEXTURES.web, ASSET_PATHS.web);
     this.load.image(TEXTURES.thunder, ASSET_PATHS.thunder);
+    this.load.image(TEXTURES.auraOuter, `${ASSET_PATHS.auraOuter}?v=${__BUILD_ID__}`);
+    this.load.image(TEXTURES.auraInner, `${ASSET_PATHS.auraInner}?v=${__BUILD_ID__}`);
+    this.load.image(TEXTURES.spark, `${ASSET_PATHS.spark}?v=${__BUILD_ID__}`);
+    this.load.image(TEXTURES.strangeArms, `${ASSET_PATHS.strangeArms}?v=${__BUILD_ID__}`);
     this.load.spritesheet(TEXTURES.fire, ASSET_PATHS.fire, { frameWidth: 32, frameHeight: 32 });
     loadMetaItemIcons(this);
+    loadImageIcons(this);
     loadEnemyAssets(this);
 
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
@@ -46,6 +51,9 @@ export class BootScene extends Phaser.Scene {
     this.createShadowTexture();
     this.createGemTexture();
     this.createCoinTexture();
+    this.createMagnetTexture();
+    this.createFruitTexture();
+    this.createChestTexture();
     registerUpgradeIcons(this);
     for (const { definition } of Object.values(CHARACTER_REGISTRY)) {
       registerCharacterAnimations(this, definition);
@@ -79,6 +87,44 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xffc933, 1).fillCircle(4, 4, 3);
     g.fillStyle(0xfff0a6, 1).fillRect(2, 2, 2, 2);
     g.generateTexture(TEXTURES.coin, 8, 8);
+    g.destroy();
+  }
+
+  /** Imán de experiencia provisional: herradura roja con las puntas plateadas. */
+  private createMagnetTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x5a1010, 1).fillRect(0, 0, 10, 10);
+    g.clear();
+    g.fillStyle(0x7a1414, 1).fillRect(0, 1, 4, 9).fillRect(6, 1, 4, 9).fillRect(0, 6, 10, 4);
+    g.fillStyle(0xe23b3b, 1).fillRect(1, 2, 2, 7).fillRect(7, 2, 2, 7).fillRect(1, 7, 8, 2);
+    g.fillStyle(0xdfe6ee, 1).fillRect(0, 0, 4, 3).fillRect(6, 0, 4, 3);
+    g.fillStyle(0xffffff, 1).fillRect(1, 1, 1, 1);
+    g.generateTexture(TEXTURES.magnet, 10, 10);
+    g.destroy();
+  }
+
+  /** Fruta que cura (provisional): manzana roja con hojita. */
+  private createFruitTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x6b1010, 1).fillRect(1, 3, 8, 6).fillRect(2, 2, 6, 8);
+    g.fillStyle(0xe03030, 1).fillRect(2, 3, 6, 6).fillRect(3, 2, 4, 7);
+    g.fillStyle(0xff8a8a, 1).fillRect(3, 4, 1, 2);
+    g.fillStyle(0x5a3a12, 1).fillRect(5, 0, 1, 2);
+    g.fillStyle(0x4cc04c, 1).fillRect(6, 1, 2, 1);
+    g.generateTexture(TEXTURES.fruit, 10, 10);
+    g.destroy();
+  }
+
+  /** Cofre provisional: caja de madera con refuerzos dorados y cerradura. */
+  private createChestTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x3b230d, 1).fillRect(0, 2, 14, 10);
+    g.fillStyle(0x8a5a22, 1).fillRect(1, 3, 12, 8);
+    g.fillStyle(0xb57a30, 1).fillRect(1, 3, 12, 3);
+    g.fillStyle(0xf2c53d, 1).fillRect(0, 6, 14, 1).fillRect(3, 3, 1, 8).fillRect(10, 3, 1, 8);
+    g.fillStyle(0xfff0a6, 1).fillRect(6, 6, 2, 3);
+    g.fillStyle(0x3b230d, 1).fillRect(7, 7, 1, 1);
+    g.generateTexture(TEXTURES.chest, 14, 12);
     g.destroy();
   }
 

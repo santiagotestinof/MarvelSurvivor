@@ -10,9 +10,16 @@ export const TEXTURES = {
   shield: 'shield',
   web: 'web',
   thunder: 'thunder',
+  auraOuter: 'aura-outer',
+  auraInner: 'aura-inner',
+  spark: 'spark',
+  strangeArms: 'strange-arms',
   fire: 'fire',
   gem: 'xp-gem',
   coin: 'gold-coin',
+  magnet: 'magnet-pickup',
+  fruit: 'fruit-pickup',
+  chest: 'chest-pickup',
 } as const;
 
 /** Animaciones de efectos (no de personajes ni enemigos). */
@@ -31,6 +38,10 @@ export const ASSET_PATHS = {
   shield: 'assets/projectiles/shield.png',
   web: 'assets/projectiles/web.png',
   thunder: 'assets/effects/thunder.png',
+  auraOuter: 'assets/effects/aura-outer.png',
+  auraInner: 'assets/effects/aura-inner.png',
+  spark: 'assets/effects/spark.png',
+  strangeArms: 'assets/characters/strange/strange-arms.png',
   /** Hoja de 3 cuadros de 32x32 (círculo plano). */
   fire: 'assets/effects/fire.png',
 } as const;

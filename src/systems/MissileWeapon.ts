@@ -9,9 +9,9 @@ import type { PlayerStats } from '../progression/PlayerStats';
 export type FireUpgrade = 'duration' | 'damage' | 'rate' | 'size';
 
 /**
- * Minimisiles: cada `MISSILES.cooldownMs` lanza una ráfaga de `level` misiles hacia los enemigos
+ * Minimisiles (arma principal de Iron Man): cada `MISSILES.cooldownMs` lanza una ráfaga de misiles (1 más los de Disparo múltiple y Cantidad) hacia los enemigos
  * más cercanos. Al pegar explotan y dañan también a los que estén alrededor.
- * Arranca bloqueada (nivel 0); la mejora "Minimisiles" la desbloquea y la sube de nivel.
+ * Arranca bloqueada (nivel 0) y `unlock()` la activa (Iron Man la tiene desde el principio).
  * Evolucionada (Misiles incendiarios), cada explosión deja un charco de fuego (`FIRE`).
  */
 export class MissileWeapon {
@@ -32,6 +32,8 @@ export class MissileWeapon {
     private readonly stats: PlayerStats,
     /** Daño de área a cajas y rocas cerca de una explosión. */
     private readonly splashProps: (x: number, y: number, radius: number, damage: number) => void,
+    /** Cajas y rocas: si no hay enemigos cerca, los misiles les apuntan (para sacar oro). */
+    private readonly props: () => Iterable<{ x: number; y: number; isBroken: boolean }>,
   ) {
     this.missiles = scene.physics.add.group({ allowGravity: false });
     scene.physics.add.overlap(this.missiles, enemies, (m, e) => {
@@ -41,12 +43,9 @@ export class MissileWeapon {
     });
   }
 
-  get maxed(): boolean {
-    return this.level >= MISSILES.maxLevel;
-  }
-
-  levelUp(): void {
-    this.level = Math.min(MISSILES.maxLevel, this.level + 1);
+  /** Los minimisiles son el arma principal: se activan desde el principio (Iron Man). */
+  unlock(): void {
+    this.level = 1;
   }
 
   evolve(): void {
@@ -83,23 +82,25 @@ export class MissileWeapon {
     for (const missile of this.missiles.getChildren() as HomingMissile[]) {
       if (!missile.active) continue;
       if (now >= missile.expiresAt) this.explode(missile, null);
+      else if (missile.aimPoint && !missile.target && Phaser.Math.Distance.Between(missile.x, missile.y, missile.aimPoint.x, missile.aimPoint.y) < 8) this.explode(missile, null);
       else missile.steer(deltaMs, () => this.nearestEnemies(missile.x, missile.y, 1)[0] ?? null);
     }
 
     if (this.level === 0 || now - this.lastFiredAt < MISSILES.cooldownMs * this.stats.cooldownMult) return;
-    // Cantidad: el nivel del arma más los misiles extra de la mejora permanente.
-    const count = this.level + this.stats.amountBonus;
+    // Cantidad: 1 misil más los de "Disparo múltiple" y de la pasiva Cantidad.
+    const count = this.stats.projectileCount;
     const targets = this.nearestEnemies(this.owner.x, this.owner.y, count);
-    if (targets.length === 0) return;
+    const prop = targets.length === 0 ? this.nearestProp() : null;
+    if (targets.length === 0 && !prop) return;
 
     this.lastFiredAt = now;
     const originX = this.owner.x;
     const originY = this.owner.y - 14;
     for (let i = 0; i < count; i++) {
-      const target = targets[i % targets.length];
+      const target = targets.length > 0 ? targets[i % targets.length] : null;
       // Salen abiertos en abanico hacia arriba y después giran hacia su objetivo.
       const spread = count === 1 ? 0 : (i / (count - 1) - 0.5) * 1.6;
-      const heading = -Math.PI / 2 + spread;
+      const heading = prop ? Math.atan2(prop.y - originY, prop.x - originX) + spread * 0.3 : -Math.PI / 2 + spread;
       const missile = new HomingMissile(
         this.scene,
         originX,
@@ -110,10 +111,26 @@ export class MissileWeapon {
         Phaser.Math.DegToRad(MISSILES.turnRateDeg),
         now + MISSILES.lifetimeMs * this.stats.durationMult,
       );
+      if (prop) missile.aimPoint = { x: prop.x, y: prop.y };
       this.missiles.add(missile);
       // `group.add` reinicia la velocidad del cuerpo: se vuelve a aplicar con el rumbo inicial.
       missile.steer(0, () => target);
     }
+  }
+
+  private nearestProp(): { x: number; y: number } | null {
+    const rangeSq = (MISSILES.aimRange * this.stats.rangeMult) ** 2;
+    let best: { x: number; y: number } | null = null;
+    let bestSq = rangeSq;
+    for (const prop of this.props()) {
+      if (prop.isBroken) continue;
+      const d = (prop.x - this.owner.x) ** 2 + (prop.y - this.owner.y) ** 2;
+      if (d < bestSq) {
+        bestSq = d;
+        best = { x: prop.x, y: prop.y };
+      }
+    }
+    return best;
   }
 
   /** Hasta `count` enemigos distintos dentro del alcance, del más cercano al más lejano. */
@@ -134,7 +151,8 @@ export class MissileWeapon {
     const y = missile.y;
     missile.destroy();
 
-    const damage = MISSILES.damage * this.stats.damageMult;
+    const critical = Math.random() < this.stats.critChance;
+    const damage = MISSILES.damage * this.stats.damageMult * (critical ? this.stats.critMult : 1);
     const splashRadius = MISSILES.splashRadius * this.stats.areaMult;
     const splashSq = splashRadius ** 2;
     hit?.takeDamage(damage);

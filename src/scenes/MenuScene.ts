@@ -1,13 +1,15 @@
+import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { RARITY_INFO } from '../characters/rarity';
 import { CHARACTER_REGISTRY, STARTER_ID } from '../characters/registry';
 import { TEXTURES } from '../config/assetKeys';
 import { computeZoom } from '../config/cameraConfig';
-import { RUN_ACTIVE_KEY, SCENE_KEYS } from '../config/sceneKeys';
+import { SCENE_KEYS } from '../config/sceneKeys';
 import { ROUND } from '../config/gameplayConfig';
 import { Direction } from '../core/direction';
 import { DRONE, enemyAnimationKey, enemyDirectionFromVector } from '../enemies/enemyKinds';
 import { animationKey } from '../systems/AnimationSystem';
+import { SoundPanel } from '../ui/SoundPanel';
 import { UiButton } from '../ui/UiButton';
 import { saveData } from '../meta/saveData';
 import { drawPanel, formatTime, textStyle, uiScale } from '../ui/uiLayout';
@@ -32,10 +34,12 @@ export class MenuScene extends Phaser.Scene {
   private heroName!: Phaser.GameObjects.Text;
   private heroStats!: Phaser.GameObjects.Text;
   private playButton!: UiButton;
-  private abandonButton!: UiButton;
-  private runActive = false;
   private shopButton!: UiButton;
+  private soundButton!: UiButton;
+  private soundPanel!: SoundPanel;
   private charactersButton!: UiButton;
+  private mapsButton!: UiButton;
+  private achievementsButton!: UiButton;
   private heroRarity!: Phaser.GameObjects.Text;
   private goldLabel!: Phaser.GameObjects.Text;
   private panel!: Phaser.GameObjects.Graphics;
@@ -53,6 +57,7 @@ export class MenuScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor('#0e1a12');
+    audio.play('menu');
 
     this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
     this.drones = [];
@@ -86,11 +91,13 @@ export class MenuScene extends Phaser.Scene {
       .text(0, 0, `VIDA ${stats.maxHealth}   VELOCIDAD ${stats.moveSpeed}   DAÑO ${stats.attack.damage}`, textStyle(11, '#ffd27a'))
       .setOrigin(0.5);
 
-    this.runActive = this.registry.get(RUN_ACTIVE_KEY) === true;
-    this.playButton = new UiButton(this, this.runActive ? 'CONTINUAR' : 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE'], true);
-    this.abandonButton = new UiButton(this, 'ABANDONAR RONDA', 20, () => this.abandonRun()).setVisible(this.runActive).setEnabled(this.runActive);
+    this.playButton = new UiButton(this, 'JUGAR', 20, () => this.startGame(), ['ENTER', 'SPACE'], true);
     this.shopButton = new UiButton(this, 'MEJORAS', 20, () => this.scene.start(SCENE_KEYS.shop), ['M']);
     this.charactersButton = new UiButton(this, 'PERSONAJES', 20, () => this.scene.start(SCENE_KEYS.characters), ['P']);
+    this.mapsButton = new UiButton(this, 'MAPAS', 20, () => this.scene.start(SCENE_KEYS.maps), ['A']);
+    this.achievementsButton = new UiButton(this, 'LOGROS', 20, () => this.scene.start(SCENE_KEYS.achievements), ['L']);
+    this.soundButton = new UiButton(this, 'CONFIGURACIÓN', 20, () => this.soundPanel.open(), ['C']);
+    this.soundPanel = new SoundPanel(this, 100);
     this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
 
     this.panel = this.add.graphics();
@@ -172,7 +179,7 @@ export class MenuScene extends Phaser.Scene {
     const buttonSize = Math.max(16, Math.round(5.5 * ui));
     this.playButton.setFontSize(buttonSize);
     const small = Math.max(12, Math.round(buttonSize * 0.72));
-    const secondary = [this.charactersButton, this.shopButton, ...(this.runActive ? [this.abandonButton] : [])];
+    const secondary = [this.charactersButton, this.mapsButton, this.shopButton, this.achievementsButton, this.soundButton];
     for (const button of secondary) button.setFontSize(small);
     const gap = Math.round(small * 0.8);
     const rowWidth = secondary.reduce((sum, button) => sum + button.width, 0) + gap * (secondary.length - 1);
@@ -189,6 +196,7 @@ export class MenuScene extends Phaser.Scene {
         x += button.width + gap;
       }
     });
+    this.soundPanel.layout(ui, width, height);
     this.goldLabel.setText(`ORO: ${saveData.gold}`).setFontSize(Math.max(12, Math.round(4 * ui))).setPosition(width - 3 * ui, 3 * ui);
 
     this.help.setFontSize(Math.max(10, Math.round(3 * ui)));
@@ -220,20 +228,6 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startGame(): void {
-    if (this.runActive) {
-      // La ronda quedó dormida en pausa: se despierta y el menú se cierra.
-      this.scene.wake(SCENE_KEYS.game);
-      this.scene.wake(SCENE_KEYS.hud);
-      this.scene.stop();
-      return;
-    }
     this.scene.start(SCENE_KEYS.game);
-  }
-
-  private abandonRun(): void {
-    this.registry.set(RUN_ACTIVE_KEY, false);
-    this.scene.stop(SCENE_KEYS.game);
-    this.scene.stop(SCENE_KEYS.hud);
-    this.scene.restart();
   }
 }

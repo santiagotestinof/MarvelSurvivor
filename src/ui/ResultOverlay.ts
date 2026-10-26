@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import type { HudSnapshot } from '../scenes/GameScene';
+import { ACHIEVEMENTS } from '../meta/achievements';
+import { UPGRADES } from '../progression/upgrades';
 import { UiButton } from './UiButton';
 import { formatTime, textStyle } from './uiLayout';
 
@@ -33,8 +35,14 @@ export class ResultOverlay {
     this.title.setText(won ? '¡VICTORIA!' : 'DERROTA').setColor(won ? '#f5c518' : '#ff6b6b').setVisible(true);
     const payout = state.goldPayout ?? 0;
     const goldLine = won ? `Oro ganado: +${payout}` : `Oro guardado: +${payout} (la mitad por perder)`;
+    const achievementLines = state.newAchievements.flatMap((id) => {
+      const achievement = ACHIEVEMENTS.find((a) => a.id === id);
+      if (!achievement) return [];
+      const passive = UPGRADES.find((u) => u.id === achievement.passiveId)?.name ?? achievement.passiveId;
+      return [`¡LOGRO! ${achievement.name}: desbloqueaste ${passive}`];
+    });
     this.stats
-      .setText(`Tiempo: ${formatTime(state.elapsedMs)}\nEnemigos derrotados: ${state.kills}\n${goldLine}`)
+      .setText([`Tiempo: ${formatTime(state.elapsedMs)}`, `Enemigos derrotados: ${state.kills}`, goldLine, ...achievementLines].join('\n'))
       .setVisible(true);
     this.dim.setVisible(true);
     this.button.setVisible(true).setEnabled(true);

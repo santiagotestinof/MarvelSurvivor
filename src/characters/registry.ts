@@ -6,10 +6,12 @@ import {
   CAPITAN_ID,
   HULK_ID,
   SPIDERMAN_ID,
+  STRANGE_ID,
   THOR_ID,
   capitanDefinition,
   hulkDefinition,
   spidermanDefinition,
+  strangeDefinition,
   thorDefinition,
 } from './heroDefinitions';
 import { IRON_MAN_ID, ironManDefinition } from './ironman/ironManDefinition';
@@ -28,6 +30,7 @@ export const CHARACTER_REGISTRY: Record<string, CharacterEntry> = {
   [CAPITAN_ID]: { definition: capitanDefinition, create: (scene, x, y) => new Character(scene, x, y, capitanDefinition) },
   [SPIDERMAN_ID]: { definition: spidermanDefinition, create: (scene, x, y) => new Character(scene, x, y, spidermanDefinition) },
   [THOR_ID]: { definition: thorDefinition, create: (scene, x, y) => new Character(scene, x, y, thorDefinition) },
+  [STRANGE_ID]: { definition: strangeDefinition, create: (scene, x, y) => new Character(scene, x, y, strangeDefinition) },
   [HULK_ID]: { definition: hulkDefinition, create: (scene, x, y) => new Character(scene, x, y, hulkDefinition) },
 };
 

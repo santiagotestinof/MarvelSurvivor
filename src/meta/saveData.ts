@@ -1,3 +1,4 @@
+import { ACHIEVEMENTS, LOCKED_PASSIVES, applyRound, emptyLifetimeStats, type LifetimeStats, type RoundSummary } from './achievements';
 import { CHARACTER_REGISTRY, COMMON_HEROES, STARTER_ID } from '../characters/registry';
 
 /**
@@ -15,19 +16,32 @@ interface SaveShape {
   unlocked: string[];
   /** Héroe elegido para jugar. */
   selected: string;
+  /** Logros cumplidos. */
+  achievements: string[];
+  /** Totales para los logros. */
+  stats: LifetimeStats;
 }
 
 /** Progreso de alguien que entra por primera vez: sin oro y con un héroe común al azar de regalo. */
 function emptySave(): SaveShape {
   const pool = COMMON_HEROES.length > 0 ? COMMON_HEROES : [STARTER_ID];
   const gift = pool[Math.floor(Math.random() * pool.length)];
-  return { gold: 0, upgrades: {}, unlocked: [gift], selected: gift };
+  return { gold: 0, upgrades: {}, unlocked: [gift], selected: gift, achievements: [], stats: emptyLifetimeStats() };
 }
 
 function sanitize(raw: unknown): SaveShape {
   if (typeof raw !== 'object' || raw === null) return emptySave();
-  const save: SaveShape = { gold: 0, upgrades: {}, unlocked: [], selected: '' };
-  const { gold, upgrades, unlocked, selected } = raw as Partial<SaveShape>;
+  const save: SaveShape = { gold: 0, upgrades: {}, unlocked: [], selected: '', achievements: [], stats: emptyLifetimeStats() };
+  const { gold, upgrades, unlocked, selected, achievements, stats } = raw as Partial<SaveShape>;
+  if (Array.isArray(achievements)) {
+    for (const id of achievements) if (typeof id === 'string' && ACHIEVEMENTS.some((a) => a.id === id) && !save.achievements.includes(id)) save.achievements.push(id);
+  }
+  if (typeof stats === 'object' && stats !== null) {
+    for (const key of Object.keys(save.stats) as (keyof LifetimeStats)[]) {
+      const value = (stats as Partial<LifetimeStats>)[key];
+      if (typeof value === 'number' && Number.isFinite(value) && value > 0) save.stats[key] = Math.floor(value);
+    }
+  }
   if (typeof gold === 'number' && Number.isFinite(gold) && gold > 0) save.gold = Math.floor(gold);
   if (typeof upgrades === 'object' && upgrades !== null) {
     for (const [id, level] of Object.entries(upgrades)) {
@@ -58,6 +72,8 @@ function applyTestParams(data: SaveShape): SaveShape {
 
 class SaveData {
   private data: SaveShape = this.load();
+  /** `?todos` también deja todos los logros como cumplidos (solo en esta carga, no se guarda). */
+  private readonly allAchievements = new URLSearchParams(window.location.search).has('todos');
 
   constructor() {
     // Primera vez en este navegador: se guarda enseguida el héroe de regalo para que no cambie al recargar.
@@ -93,6 +109,36 @@ class SaveData {
     this.data.unlocked.push(id);
     this.persist();
     return true;
+  }
+
+  get lifetime(): Readonly<LifetimeStats> {
+    return this.data.stats;
+  }
+
+  isAchievementDone(id: string): boolean {
+    return this.allAchievements || this.data.achievements.includes(id);
+  }
+
+  /** ¿Se puede ofrecer esta pasiva en la ronda? Algunas esperan a que se cumpla su logro. */
+  isPassiveUnlocked(passiveId: string): boolean {
+    if (!LOCKED_PASSIVES.has(passiveId)) return true;
+    const achievement = ACHIEVEMENTS.find((a) => a.passiveId === passiveId);
+    return !achievement || this.isAchievementDone(achievement.id);
+  }
+
+  /** Suma una ronda terminada a los totales y devuelve los logros que se cumplieron recién. */
+  recordRound(round: RoundSummary): string[] {
+    this.data.stats = applyRound(this.data.stats, round);
+    const fresh: string[] = [];
+    for (const achievement of ACHIEVEMENTS) {
+      if (this.data.achievements.includes(achievement.id)) continue;
+      if (achievement.value(this.data.stats) >= achievement.target) {
+        this.data.achievements.push(achievement.id);
+        fresh.push(achievement.id);
+      }
+    }
+    this.persist();
+    return fresh;
   }
 
   levelOf(id: string): number {

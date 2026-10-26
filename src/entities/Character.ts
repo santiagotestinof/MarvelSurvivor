@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import type { CharacterAction, CharacterDefinition } from '../characters/CharacterDefinition';
 import { TEXTURES } from '../config/assetKeys';
-import { PLAYER_HIT } from '../config/gameplayConfig';
 import { Direction, directionFromVector } from '../core/direction';
 import { CharacterAnimator } from '../systems/AnimationSystem';
 import { MovementSystem } from '../systems/MovementSystem';
@@ -114,28 +113,15 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     this.animator.play(this.action, this.facing);
   }
 
-  /** Aplica daño salvo durante la invulnerabilidad posterior a un golpe. Devuelve true si lo recibió. */
+  /** Aplica daño (no hay inmunidad tras un golpe; solo la protección al revivir). Devuelve true si lo recibió. */
   takeDamage(amount: number): boolean {
     const now = this.scene.time.now;
     if (this.isDead || now < this.invulnerableUntil) return false;
 
-    this.currentHealth = Math.max(0, this.currentHealth - Math.max(1, amount - this.armor));
-    this.invulnerableUntil = now + PLAYER_HIT.invulnerabilityMs;
-
-    this.setTintFill(0xff3b30);
-    this.scene.time.delayedCall(80, () => {
-      if (this.active && !this.isDead) this.clearTint();
-    });
-    this.scene.tweens.add({
-      targets: this,
-      alpha: 0.4,
-      duration: 90,
-      yoyo: true,
-      repeat: 3,
-      onComplete: () => {
-        if (this.active) this.setAlpha(1);
-      },
-    });
+    const dealt = Math.max(1, amount - this.armor);
+    this.currentHealth = Math.max(0, this.currentHealth - dealt);
+    // Aviso al juego y al HUD: viñeta roja y gotas de sangre (ver GameScene y HudScene).
+    this.scene.events.emit('player-hurt', dealt, this.maxHealth);
     return true;
   }
 

@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { HERO_ICONS } from './heroIcons';
+import { META_ITEM_SIZE, META_ITEM_TEXTURE, metaItemFrame } from './metaItemIcons';
 
 /**
  * Íconos provisionales de las mejoras, dibujados como pixel art desde texto (como los sprites
@@ -45,6 +46,54 @@ const ICONS: Record<string, string[]> = {
     '.OYY..OYY.',
     '.YY...YY..',
     '..........',
+    '..........',
+  ],
+  duration: [
+    '..CCCCCC..',
+    '.C......C.',
+    'C...WW...C',
+    'C...WW...C',
+    'C...WWW..C',
+    'C........C',
+    '.C......C.',
+    '..CCCCCC..',
+    '..........',
+    '..........',
+  ],
+  armor: [
+    '.SSSSSSSS.',
+    'SSWWSSSSSS',
+    'SWWSSSSSSS',
+    'SSSSSKSSSS',
+    'SSSSSKSSSS',
+    '.SSSKKSSS.',
+    '.SSSSSSSS.',
+    '..SSSSSS..',
+    '...SSSS...',
+    '....SS....',
+  ],
+  amount: [
+    '..........',
+    '.YY....YY.',
+    'YWWY..YWWY',
+    'YWWY..YWWY',
+    '.YY....YY.',
+    '....YY....',
+    '...YWWY...',
+    '...YWWY...',
+    '....YY....',
+    '..........',
+  ],
+  area: [
+    '.G......G.',
+    'G.G....G.G',
+    '..........',
+    '.....Y....',
+    '....YYY...',
+    '.....Y....',
+    '..........',
+    'G.G....G.G',
+    '.G......G.',
     '..........',
   ],
   speed: [
@@ -96,15 +145,15 @@ const ICONS: Record<string, string[]> = {
     '..........',
   ],
   missiles: [
-    '......SWR.',
-    '.....SWSR.',
-    '....SWS...',
-    '...SWS....',
-    '..SWS.....',
-    '.SKS......',
-    'OSKS......',
-    'YO........',
-    'OY........',
+    '..........',
+    '..R.SSSS..',
+    '.RRSWWWWSR',
+    'YOKWWRRWWR',
+    '.RRSWWWWSR',
+    '..R.SSSS..',
+    '..........',
+    '..........',
+    '..........',
     '..........',
   ],
   multishot: [
@@ -153,6 +202,42 @@ const ICONS: Record<string, string[]> = {
     '..YY.YY...',
     '.YY...YY..',
     '.Y.....Y..',
+    '..........',
+  ],
+  unibeam: [
+    '..CCCC....',
+    '.CWWWWC...',
+    'CWCCCCWC..',
+    'CWCKKCWCCC',
+    'CWCKKCWWWW',
+    'CWCCCCWCCC',
+    'CWCCCCWC..',
+    '.CWWWWC...',
+    '..CCCC....',
+    '..........',
+  ],
+  evolution: [
+    '....YY....',
+    '....YY....',
+    '...YWWY...',
+    'YYYWWWWYYY',
+    '.YYWWWWYY.',
+    '..YYWWYY..',
+    '..YYWWYY..',
+    '.YYY..YYY.',
+    '.YY....YY.',
+    '..........',
+  ],
+  'shield-bounces': [
+    '..........',
+    '.BBBB.....',
+    'BWWWWB.CC.',
+    'BWRRWB..C.',
+    'BWRRWB.C..',
+    'BWWWWB.CC.',
+    '.BBBB..C..',
+    '......CC..',
+    '..........',
     '..........',
   ],
   'missiles-evolution': [
@@ -232,8 +317,62 @@ const ICONS: Record<string, string[]> = {
 /** Lado de cada ícono en píxeles (antes de escalar). */
 export const UPGRADE_ICON_SIZE = 10;
 
+/** Pasivas de la ronda que usan el mismo ícono que su mejora permanente de la tienda (id de la pasiva → id permanente). */
+const META_ICON_OF: Record<string, string> = {
+  damage: 'might',
+  'fire-rate': 'cooldown',
+  duration: 'duration',
+  amount: 'amount',
+  area: 'area',
+  speed: 'move-speed',
+  health: 'max-health',
+  armor: 'armor',
+  repair: 'recovery',
+  magnet: 'magnet',
+  'shot-speed': 'projectile-speed',
+  luck: 'luck',
+  growth: 'growth',
+  greed: 'greed',
+  curse: 'curse',
+};
+
+/** Pasivas con un ícono propio de Santi (imagen de 32 de ancho): Alcance = visor de Cíclope, Crítico = shuriken, Perforación = cola de Scorpion, Disparo múltiple = tentáculos. */
+const IMAGE_ICONS: Record<string, { key: string; path: string }> = {
+  range: { key: 'icon-range', path: 'assets/ui/icon-range.png' },
+  crit: { key: 'icon-crit', path: 'assets/ui/icon-crit.png' },
+  pierce: { key: 'icon-pierce', path: 'assets/ui/icon-pierce.png' },
+  multishot: { key: 'icon-multishot', path: 'assets/ui/icon-multishot.png' },
+};
+
+declare const __BUILD_ID__: string;
+
+/** Encola la carga de esos íconos (llamar desde preload). */
+export function loadImageIcons(scene: Phaser.Scene): void {
+  for (const icon of Object.values(IMAGE_ICONS)) scene.load.image(icon.key, `${icon.path}?v=${__BUILD_ID__}`);
+}
+
+/**
+ * Pone el ícono de una mejora en una imagen. `scale` es el de los íconos chicos (10×10); los de la tienda
+ * (32×32) se achican para ocupar el mismo lugar.
+ */
+export function setUpgradeIcon(icon: Phaser.GameObjects.Image, id: string, scale: number): void {
+  const own = IMAGE_ICONS[id];
+  if (own && icon.scene.textures.exists(own.key)) {
+    icon.setTexture(own.key).setScale((scale * UPGRADE_ICON_SIZE) / META_ITEM_SIZE);
+    return;
+  }
+  const meta = META_ICON_OF[id];
+  if (meta && icon.scene.textures.exists(META_ITEM_TEXTURE)) {
+    icon.setTexture(META_ITEM_TEXTURE, metaItemFrame(meta)).setScale((scale * UPGRADE_ICON_SIZE) / META_ITEM_SIZE);
+  } else {
+    const key = upgradeIconKey(id);
+    icon.setTexture(icon.scene.textures.exists(key) ? key : '__WHITE').setScale(scale);
+  }
+}
+
 export function upgradeIconKey(upgradeId: string): string {
-  return `upgrade-icon:${upgradeId}`;
+  // Todas las evoluciones de héroe comparten la estrella.
+  return `upgrade-icon:${upgradeId.startsWith('evolution-') ? 'evolution' : upgradeId}`;
 }
 
 /** Genera las texturas de los íconos (llamar una vez, desde BootScene). */

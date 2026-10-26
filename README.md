@@ -69,7 +69,7 @@ Los Drones sueltan gemas de XP que se acercan al jugador (radio de imán). Al su
 
 ## Fase 2: ronda de juego
 
-Menú principal → ronda de 5 minutos (`ROUND.durationMs` en `src/config/gameplayConfig.ts`) con oleadas de un enemigo genérico (Dron) cada vez más frecuentes → aparece un jefe genérico (Overlord) → se gana al derrotarlo. Si la vida llega a 0, derrota. En ambos casos se vuelve al menú.
+Menú principal → ronda de 15 minutos (`ROUND.durationMs` en `src/config/gameplayConfig.ts`) con oleadas de un enemigo genérico (Dron) cada vez más frecuentes → aparece un jefe genérico (Overlord) → se gana al derrotarlo. Si la vida llega a 0, derrota. En ambos casos se vuelve al menú.
 
 ## Estructura
 

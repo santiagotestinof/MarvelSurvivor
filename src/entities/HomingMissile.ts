@@ -5,6 +5,8 @@ import type { Enemy } from './Enemy';
 /** Minimisil que gira de a poco hacia su objetivo; si el objetivo muere, busca otro. */
 export class HomingMissile extends Phaser.Physics.Arcade.Image {
   target: Enemy | null;
+  /** Sin enemigos, el misil va hacia este punto (una caja o roca) y explota al llegar. */
+  aimPoint: { x: number; y: number } | null = null;
 
   private heading: number;
 
@@ -34,6 +36,9 @@ export class HomingMissile extends Phaser.Physics.Arcade.Image {
     if (!this.target || !this.target.active || this.target.dying) this.target = retarget();
     if (this.target) {
       const desired = Phaser.Math.Angle.Between(this.x, this.y, this.target.x, this.target.y - 8);
+      this.heading = Phaser.Math.Angle.RotateTo(this.heading, desired, (this.turnRate * deltaMs) / 1000);
+    } else if (this.aimPoint) {
+      const desired = Phaser.Math.Angle.Between(this.x, this.y, this.aimPoint.x, this.aimPoint.y);
       this.heading = Phaser.Math.Angle.RotateTo(this.heading, desired, (this.turnRate * deltaMs) / 1000);
     }
     this.applyHeading();

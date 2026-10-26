@@ -7,6 +7,7 @@
 // Orden de filas (debe coincidir con src/core/direction.ts):
 //   0 abajo, 1 abajo-izq, 2 izquierda, 3 arriba-izq, 4 arriba, 5 arriba-der, 6 derecha, 7 abajo-der
 
+import { STRANGE_REF, STRANGE_ARMS_REF } from './hero-trace-strange.mjs';
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -617,6 +618,113 @@ function buildDrawnSheet(id, frames) {
 }
 const DRAWN_IDLE = [0, -1, -1, 0].map((bob) => ({ bob }));
 const DRAWN_WALK = [0, 2, 2, 0, -2, -2].map((stride, i) => ({ stride, bob: i % 3 === 0 ? -1 : 0 }));
+
+
+// ---------------------------------------------------------------- Doctor Strange (flota, siempre de frente) y su aura
+/**
+ * Strange usa el dibujo de Santi a tamaño original (sin achicar): cuadro de 48×56 (más alto que el resto por los brazos de la ulti).
+ * El cuerpo termina en la fila 48 y el suelo está en (24, 51): flota 3 px. Sin dibujo de espalda: las 8 filas son iguales.
+ */
+const STRANGE_W = 48;
+const STRANGE_H = 56;
+function strangeFrame(ref, { bob = 0, sway = 0, mirror = false }) {
+  const rows = ref.map((row) => row.split(' '));
+  const w = rows[0].length;
+  const cv = new Canvas(STRANGE_W, STRANGE_H);
+  const ox = Math.round((STRANGE_W - w) / 2) + sway;
+  const oy = 2 + bob;
+  rows.forEach((row, y) => row.forEach((c, x) => c !== '-' && cv.set(ox + x, oy + y, hex(`#${c}`))));
+  if (!mirror) return cv;
+  // Espejo del cuadro entero (igual que `flipX` de la capa de brazos de la ulti).
+  const flipped = new Canvas(STRANGE_W, STRANGE_H);
+  for (let y = 0; y < STRANGE_H; y++) for (let x = 0; x < STRANGE_W; x++) if (cv.opaque(x, y)) flipped.set(STRANGE_W - 1 - x, y, cv.get(x, y));
+  return flipped;
+}
+function buildStrangeSheet(frames) {
+  const sheet = new Canvas(frames.length * STRANGE_W, DIRECTIONS.length * STRANGE_H);
+  // Al ir hacia la izquierda se espeja; quieto, de frente o de espaldas queda como el dibujo original.
+  DIRECTIONS.forEach(([fx], row) =>
+    frames.forEach((f, col) => sheet.blit(strangeFrame(STRANGE_REF, { ...f, mirror: fx < 0 }), col * STRANGE_W, row * STRANGE_H)),
+  );
+  return sheet;
+}
+const STRANGE_IDLE = [0, 1, 1, 0].map((bob) => ({ bob }));
+const STRANGE_WALK = [0, 1, 1, 0, 1, 1].map((bob, i) => ({ bob, sway: [0, 1, 1, 0, -1, -1][i] }));
+
+
+function drawLine(cv, x0, y0, x1, y1, c) {
+  const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+  for (let t = 0; t <= steps; t++) cv.set(x0 + ((x1 - x0) * t) / steps, y0 + ((y1 - y0) * t) / steps, c);
+}
+function drawRing(cv, cx, cy, r, c, dash = 0) {
+  const n = Math.ceil(r * 8);
+  for (let i = 0; i < n; i++) {
+    if (dash && Math.floor((i / n) * dash * 2) % 2) continue;
+    const a = (i / n) * Math.PI * 2;
+    cv.set(cx + Math.cos(a) * r, cy + Math.sin(a) * r, c);
+  }
+}
+const AURA_GOLD = hex('#ffc24a');
+const AURA_LIGHT = hex('#fff0b8');
+const AURA_DIM = hex('#d9741a');
+/** Anillo exterior: dos círculos con runas pseudo-mágicas entre medio (como el hechizo de la película). */
+function makeAuraOuter() {
+  const S = 128;
+  const cv = new Canvas(S, S);
+  const c = S / 2 - 0.5;
+  drawRing(cv, c, c, 62, AURA_GOLD);
+  drawRing(cv, c, c, 61, AURA_DIM);
+  drawRing(cv, c, c, 49, AURA_GOLD);
+  drawRing(cv, c, c, 48, AURA_DIM);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  const runes = 16;
+  for (let k = 0; k < runes; k++) {
+    const a = (k / runes) * Math.PI * 2;
+    const ux = Math.cos(a);
+    const uy = Math.sin(a);
+    const tx = -uy;
+    const ty = ux;
+    const rc = 55.5;
+    const pts = [];
+    const n = 3 + Math.floor(rnd() * 2);
+    for (let i = 0; i < n; i++) pts.push([(rnd() - 0.5) * 7, (rnd() - 0.5) * 8]);
+    const at = ([lx, ly]) => [c + ux * (rc + ly) + tx * lx, c + uy * (rc + ly) + ty * lx];
+    drawLine(cv, ...at([0, -4]), ...at([0, 4]), AURA_GOLD);
+    for (let i = 0; i < pts.length - 1; i++) drawLine(cv, ...at(pts[i]), ...at(pts[i + 1]), AURA_LIGHT);
+    const b = (k + 0.5) / runes * Math.PI * 2;
+    cv.rect(Math.round(c + Math.cos(b) * 55.5), Math.round(c + Math.sin(b) * 55.5), 1, 1, AURA_LIGHT);
+  }
+  return cv;
+}
+/** Mandala interior: estrella de seis puntas dentro de un círculo con rayos finos. */
+/** Chispa mágica de los portales de Doctor Strange (8×8). */
+function makeSpark() {
+  const cv = new Canvas(8, 8);
+  const gold = hex('#ffb02e');
+  cv.rect(3, 0, 2, 8, gold);
+  cv.rect(0, 3, 8, 2, gold);
+  cv.rect(2, 2, 4, 4, hex('#ffd96b'));
+  cv.rect(3, 3, 2, 2, hex('#ffffff'));
+  return cv;
+}
+function makeAuraInner() {
+  const S = 128;
+  const cv = new Canvas(S, S);
+  const c = S / 2 - 0.5;
+  drawRing(cv, c, c, 40, AURA_GOLD);
+  drawRing(cv, c, c, 28, AURA_DIM, 24);
+  for (const rot of [-Math.PI / 2, -Math.PI / 2 + Math.PI / 3]) {
+    const p = [0, 1, 2].map((i) => [c + Math.cos(rot + (i * Math.PI * 2) / 3) * 40, c + Math.sin(rot + (i * Math.PI * 2) / 3) * 40]);
+    for (let i = 0; i < 3; i++) drawLine(cv, ...p[i], ...p[(i + 1) % 3], AURA_GOLD);
+  }
+  for (let k = 0; k < 12; k++) {
+    const a = (k / 12) * Math.PI * 2;
+    drawLine(cv, c + Math.cos(a) * 14, c + Math.sin(a) * 14, c + Math.cos(a) * 24, c + Math.sin(a) * 24, AURA_DIM);
+  }
+  drawRing(cv, c, c, 12, AURA_LIGHT);
+  return cv;
+}
 
 // ---------------------------------------------------------------- terreno y objetos
 
@@ -2373,6 +2481,17 @@ save(makeBolt(), 'projectiles/repulsor.png');
 save(makeShield(), 'projectiles/shield.png');
 save(makeWeb(), 'projectiles/web.png');
 save(makeThunder(), 'effects/thunder.png');
+save(makeAuraOuter(), 'effects/aura-outer.png');
+save(makeAuraInner(), 'effects/aura-inner.png');
+save(makeSpark(), 'effects/spark.png');
+{
+  const strangeIdle = buildStrangeSheet(STRANGE_IDLE);
+  const strangeWalk = buildStrangeSheet(STRANGE_WALK);
+  save(strangeIdle, 'characters/strange/strange-idle.png');
+  save(strangeWalk, 'characters/strange/strange-walk.png');
+  heroSheets.strange = { idle: strangeIdle, walk: strangeWalk };
+  save(strangeFrame(STRANGE_ARMS_REF, {}), 'characters/strange/strange-arms.png');
+}
 const missile = makeMissile();
 save(missile, 'projectiles/missile.png');
 const fire = makeFire();

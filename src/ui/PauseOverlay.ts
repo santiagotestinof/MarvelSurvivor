@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { SoundPanel } from './SoundPanel';
 import { UiButton } from './UiButton';
 import { textStyle } from './uiLayout';
 
@@ -11,6 +12,8 @@ export class PauseOverlay {
   private readonly title: Phaser.GameObjects.Text;
   private readonly resumeButton: UiButton;
   private readonly menuButton: UiButton;
+  private readonly soundButton: UiButton;
+  private readonly soundPanel: SoundPanel;
   private paused = false;
 
   constructor(scene: Phaser.Scene, onToggle: () => void, onMenu: () => void) {
@@ -19,10 +22,14 @@ export class PauseOverlay {
     this.title = scene.add.text(0, 0, 'PAUSA', textStyle(40)).setOrigin(0.5).setDepth(DEPTH + 1).setVisible(false);
     this.resumeButton = new UiButton(scene, 'SEGUIR [ESC]', 18, onToggle, [], true).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 
-    this.menuButton = new UiButton(scene, 'MENÚ PRINCIPAL', 14, onMenu).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
+    this.menuButton = new UiButton(scene, 'ABANDONAR RONDA', 14, onMenu).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
+
+    this.soundPanel = new SoundPanel(scene, DEPTH + 10, () => undefined, false);
+    this.soundButton = new UiButton(scene, 'CONFIGURACIÓN', 14, () => this.soundPanel.open()).setDepth(DEPTH + 1).setVisible(false).setEnabled(false);
 
     const keyboard = scene.input.keyboard;
-    if (keyboard) keyboard.addKey('ESC').on('down', onToggle);
+    // Con el menú de sonido abierto, ESC lo cierra en vez de seguir la partida.
+    if (keyboard) keyboard.addKey('ESC').on('down', () => (this.soundPanel.isOpen ? this.soundPanel.close() : onToggle()));
   }
 
   get isPaused(): boolean {
@@ -35,6 +42,8 @@ export class PauseOverlay {
     this.title.setVisible(paused);
     this.resumeButton.setVisible(paused).setEnabled(paused);
     this.menuButton.setVisible(paused).setEnabled(paused);
+    this.soundButton.setVisible(paused).setEnabled(paused);
+    if (!paused) this.soundPanel.close();
     this.pauseButton.setVisible(!paused);
   }
 
@@ -48,6 +57,9 @@ export class PauseOverlay {
     this.title.setFontSize(Math.max(28, Math.round(12 * ui))).setPosition(width / 2, height * 0.38);
     this.resumeButton.setFontSize(Math.max(16, Math.round(5 * ui))).setPosition(width / 2, height * 0.58);
     this.menuButton.setFontSize(Math.max(13, Math.round(4 * ui))).setPosition(width / 2, height * 0.58 + this.resumeButton.height + Math.round(3 * ui) + 6);
+    const small = Math.max(13, Math.round(4 * ui));
+    this.soundButton.setFontSize(small).setPosition(width / 2, this.menuButton.y + this.menuButton.height / 2 + Math.round(3 * ui) + this.soundButton.height / 2 + 6);
+    this.soundPanel.layout(ui, width, height);
     this.pauseButton.setFontSize(Math.max(11, Math.round(3.2 * ui)));
     // Debajo del contador de derrotados, en la esquina superior derecha.
     this.pauseButton.setPosition(width - margin - this.pauseButton.width / 2, margin + Math.max(12, Math.round(3.5 * ui)) + this.pauseButton.height / 2 + 10);

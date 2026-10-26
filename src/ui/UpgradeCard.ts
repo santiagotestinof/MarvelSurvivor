@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { UPGRADE_CATEGORIES, type UpgradeDefinition } from '../progression/upgrades';
-import { UPGRADE_ICON_SIZE, upgradeIconKey } from './upgradeIcons';
+import { RARITY_INFO } from '../characters/rarity';
+import { upgradeKind, type UpgradeDefinition } from '../progression/upgrades';
+import { UPGRADE_ICON_SIZE, setUpgradeIcon, upgradeIconKey } from './upgradeIcons';
 import { UI_FONT, drawPanel, textStyle } from './uiLayout';
 
 const CARD_FILL = 0x0a1322;
@@ -22,6 +23,7 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
   private readonly desc: Phaser.GameObjects.Text;
   private readonly keyLabel: Phaser.GameObjects.Text;
   private readonly color: number;
+  private readonly upgradeId: string;
 
   private cardW = 100;
   private cardH = 130;
@@ -32,13 +34,16 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, upgrade: UpgradeDefinition, index: number, onPick: () => void) {
     super(scene, 0, 0);
     scene.add.existing(this);
-    const category = UPGRADE_CATEGORIES[upgrade.category];
-    this.color = category.color;
+    const category = upgradeKind(upgrade);
+    // Con rareza (mejoras con valores por rareza) el marco toma el color de la rareza.
+    this.upgradeId = upgrade.id;
+    this.color = upgrade.rarity ? RARITY_INFO[upgrade.rarity].color : category.color;
+    const label = upgrade.rarity ? `${category.label} · ${RARITY_INFO[upgrade.rarity].label}` : category.label;
 
     this.bg = scene.add.graphics();
     const iconKey = upgradeIconKey(upgrade.id);
     this.icon = scene.add.image(0, 0, scene.textures.exists(iconKey) ? iconKey : '__WHITE');
-    this.category = scene.add.text(0, 0, category.label, { fontFamily: UI_FONT, fontStyle: 'bold', color: '#101010' });
+    this.category = scene.add.text(0, 0, label, { fontFamily: UI_FONT, fontStyle: 'bold', color: '#101010' });
     this.title = scene.add.text(0, 0, upgrade.name, textStyle(16));
     this.desc = scene.add.text(0, 0, upgrade.description, { fontFamily: UI_FONT, color: '#d7e6ef', lineSpacing: 2 });
     this.keyLabel = scene.add.text(0, 0, String(index + 1), { fontFamily: UI_FONT, fontStyle: 'bold', color: '#101010' }).setOrigin(0.5);
@@ -121,7 +126,8 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
 
     const iconY = top + iconOffset;
     g.fillStyle(this.color, 0.16).fillCircle(0, iconY, iconRadius);
-    this.icon.setScale(iconScale).setPosition(0, iconY);
+    setUpgradeIcon(this.icon, this.upgradeId, iconScale);
+    this.icon.setPosition(0, iconY);
 
     this.title.setOrigin(0.5, 0).setAlign('center').setWordWrapWidth(w - font).setPosition(0, iconY + iconRadius + font * 0.5);
     this.desc
@@ -144,7 +150,8 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
     const iconSize = UPGRADE_ICON_SIZE * iconScale;
     const iconX = left + stripW + font * 0.6 + iconSize * 0.7;
     g.fillStyle(this.color, 0.16).fillCircle(iconX, 0, iconSize * 0.75);
-    this.icon.setScale(iconScale).setPosition(iconX, 0);
+    setUpgradeIcon(this.icon, this.upgradeId, iconScale);
+    this.icon.setPosition(iconX, 0);
 
     const textX = iconX + iconSize * 0.75 + font * 0.7;
     const textW = left + w - textX - font * 2.2;

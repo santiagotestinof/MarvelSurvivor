@@ -18,6 +18,13 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
   private readonly boomerangSpeed: number;
   private returning = false;
   private returned = false;
+  /** Rebote (escudo evolucionado del Capitán): va hacia un enemigo, le pega y salta al siguiente más cercano. */
+  private readonly bounce: { find: (x: number, y: number, exclude: object | null) => (Phaser.GameObjects.GameObject & { x: number; y: number }) | null } | null;
+  private bouncesLeft = 0;
+  private bounceTarget: (Phaser.GameObjects.GameObject & { x: number; y: number }) | null = null;
+  private lastBounced: object | null = null;
+  private bounceDone = false;
+  private readonly bounceExpiresAt: number;
   /** Frenado que deja al enemigo (telaraña). */
   readonly slow: { ms: number; factor: number } | null;
 
@@ -35,6 +42,7 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
       critical?: boolean;
       boomerang?: { x: number; y: number };
       slow?: { ms: number; factor: number };
+      bounce?: { count: number; find: (x: number, y: number, exclude: object | null) => (Phaser.GameObjects.GameObject & { x: number; y: number }) | null };
     } = {},
   ) {
     super(scene, x, y, texture);
@@ -47,6 +55,9 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     this.boomerang = options.boomerang ?? null;
     this.boomerangSpeed = Math.hypot(velocityX, velocityY);
     this.slow = options.slow ?? null;
+    this.bounce = options.bounce ?? null;
+    this.bouncesLeft = options.bounce?.count ?? 0;
+    this.bounceExpiresAt = scene.time.now + 8000;
     // El crítico se ve más grande y dorado.
     if (this.critical) this.setScale(1.5).setTint(0xffe272);
 
@@ -80,8 +91,47 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     return false;
   }
 
-  /** Avanza un cuadro: solo los boomerang hacen algo (dar la vuelta, volver y girar). */
+  get isBouncer(): boolean {
+    return this.bounce !== null;
+  }
+
+  /** Le pegó a `target`: si quedan rebotes salta al próximo enemigo; si no, termina. */
+  rebound(target: object): void {
+    this.alreadyHit.clear();
+    this.alreadyHit.add(target);
+    this.lastBounced = target;
+    this.bounceTarget = null;
+    if (this.bouncesLeft <= 0) {
+      this.bounceDone = true;
+      this.setActive(false);
+      return;
+    }
+    this.bouncesLeft--;
+  }
+
+  private stepBounce(): void {
+    if (this.bounceDone || !this.bounce) return;
+    if (this.scene.time.now > this.bounceExpiresAt) {
+      this.bounceDone = true;
+      return;
+    }
+    const alive = (t: { active?: boolean; dying?: boolean }): boolean => !!t.active && !t.dying;
+    if (!this.bounceTarget || !alive(this.bounceTarget as never)) this.bounceTarget = this.bounce.find(this.x, this.y, this.lastBounced);
+    if (!this.bounceTarget) {
+      this.bounceDone = true;
+      return;
+    }
+    const angle = Math.atan2(this.bounceTarget.y - 8 - this.y, this.bounceTarget.x - this.x);
+    this.setVelocity(Math.cos(angle) * this.boomerangSpeed, Math.sin(angle) * this.boomerangSpeed);
+    this.rotation += 0.35;
+  }
+
+  /** Avanza un cuadro: los boomerang dan la vuelta y vuelven; los rebotadores buscan el próximo enemigo. */
   step(): void {
+    if (this.bounce) {
+      if (this.active) this.stepBounce();
+      return;
+    }
     const owner = this.boomerang;
     if (!owner || !this.active) return;
     if (!this.returning && Phaser.Math.Distance.Between(this.x, this.y, this.startX, this.startY) > this.maxDistance) {
@@ -101,6 +151,7 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
   }
 
   hasExpired(): boolean {
+    if (this.bounce) return this.bounceDone;
     if (this.boomerang) return this.returned;
     return Phaser.Math.Distance.Between(this.x, this.y, this.startX, this.startY) > this.maxDistance;
   }

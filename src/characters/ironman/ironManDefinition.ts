@@ -12,16 +12,16 @@ export const ironManDefinition: CharacterDefinition = {
   id: IRON_MAN_ID,
   displayName: 'Iron Man',
   rarity: 'common',
-  weaponText: 'Repulsores: disparan solos al enemigo más cercano',
+  weaponText: 'Minimisiles: cohetes teledirigidos que explotan en área',
   frame: { width: 48, height: 48 },
   origin: { x: 0.5, y: 41 / 48 },
   body: { width: 10, height: 8, offsetX: 19, offsetY: 37 },
   stats: {
     moveSpeed: 85.5,
     maxHealth: 100,
-    // Repulsores: disparo automático al enemigo más cercano.
+    // Arma principal: minimisiles (los maneja MissileWeapon; estos valores solo los usa el resto del sistema).
     attack: {
-      kind: 'bolt',
+      kind: 'rocket',
       cooldownMs: 450,
       damage: 10,
       projectileTexture: TEXTURES.repulsor,

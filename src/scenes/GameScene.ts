@@ -1,7 +1,8 @@
+import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
 import { createCharacter } from '../characters/registry';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { GOLD, PROGRESSION, REVIVAL, ROUND } from '../config/gameplayConfig';
+import { ENEMY_MAGNET_CHANCE, FRUIT, GOLD, MINIBOSS_CONFIG, PROGRESSION, PROP_MAGNET_CHANCE, REVIVAL, ROUND } from '../config/gameplayConfig';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
@@ -20,11 +21,16 @@ import { BossAttackSystem } from '../systems/BossAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
 import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import { MissileWeapon } from '../systems/MissileWeapon';
+import { MeleeAttackSystem } from '../systems/MeleeAttackSystem';
 import { RangedAttackSystem } from '../systems/RangedAttackSystem';
 import { RoundController, type HudState } from '../systems/RoundController';
+import { TIME_STOP, TimeStopUltimate } from '../systems/TimeStopUltimate';
 import { WaveSystem } from '../systems/WaveSystem';
 import { damageArea } from '../systems/areaDamage';
+import { OVERLORD } from '../enemies/enemyKinds';
 import { TestMap } from '../world/TestMap';
+import { createHeroUltimate, type HeroUltimate } from '../systems/HeroUltimates';
+import { BossArena, type WorldRect } from '../world/BossArena';
 import type { HudScene } from './HudScene';
 
 /** Oro de la ronda: lo juntado hasta ahora y, al terminar, lo que se guarda en el progreso. */
@@ -34,7 +40,7 @@ export interface GoldState {
 }
 
 /** Estado que dibuja el HUD: ronda + experiencia + oro. */
-export type HudSnapshot = HudState & ProgressState & GoldState & { passives: { id: string; count: number }[] };
+export type HudSnapshot = HudState & ProgressState & GoldState & { passives: { id: string; count: number }[]; newAchievements: string[] };
 
 /** Una ronda: oleadas de enemigos, ataque automático, jefe final y resultado. */
 export class GameScene extends Phaser.Scene {
@@ -44,9 +50,15 @@ export class GameScene extends Phaser.Scene {
   private attack!: AutoAttackSystem;
   private missiles!: MissileWeapon;
   private rangedAttacks!: RangedAttackSystem;
+  private meleeAttacks!: MeleeAttackSystem;
   private bossAttacks!: BossAttackSystem;
   private waves!: WaveSystem;
   private round!: RoundController;
+  private worldRect!: WorldRect;
+  private arena!: BossArena;
+  private arenaEntered = false;
+  private miniBossKilled = false;
+  private newAchievements: string[] = [];
   private frozen = false;
   private stats = new PlayerStats();
   private progression = new ProgressionSystem();
@@ -66,6 +78,8 @@ export class GameScene extends Phaser.Scene {
   private clock = 0;
   private ultimateKey: Phaser.Input.Keyboard.Key | null = null;
   private ironManFlyingUntil = 0;
+  private timeStop: TimeStopUltimate | null = null;
+  private heroUltimate: HeroUltimate | null = null;
   private nextUltimateShotAt = 0;
   private ultimateReadyAt = 0;
   private ironManFlightEffect: Phaser.GameObjects.Container | null = null;
@@ -82,9 +96,14 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.frozen = false;
-    const testMode = new URLSearchParams(window.location.search).get('test') === '1';
+    audio.play('game');
+    const testParam = new URLSearchParams(window.location.search).get('test');
+    const testMode = testParam === '1';
+    const doombotTest = testParam === 'doombots';
     this.clock = testMode ? Math.max(0, ROUND.durationMs - 60_000) : 0;
     this.ironManFlyingUntil = 0;
+    this.timeStop = null;
+    this.heroUltimate = null;
     this.nextUltimateShotAt = 0;
     this.ultimateReadyAt = 0;
     this.ironManFlightEffect?.destroy();
@@ -99,11 +118,25 @@ export class GameScene extends Phaser.Scene {
     this.goldPayout = null;
     const map = new TestMap(this);
     map.build();
+    this.worldRect = { x: 0, y: 0, width: map.widthPx, height: map.heightPx };
+    this.arena = new BossArena(this, map.widthPx);
+    this.arena.build();
+    this.arenaEntered = false;
+    this.miniBossKilled = false;
+    this.newAchievements = [];
     this.environmentObstacles = map.obstacles;
     this.physics.world.setBounds(0, 0, map.widthPx, map.heightPx);
 
+    // Al recibir un golpe la cámara vibra más cuanto más duele.
+    this.events.off('player-hurt');
+    this.events.on('player-hurt', (dealt: number, maxHealth: number) => {
+      const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
+      this.spawnBloodBurst(strength);
+    });
+
     this.player = createCharacter(this, saveData.selectedCharacter, map.spawn.x, map.spawn.y);
     this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
+    if (this.player.definition.id === 'strange') this.timeStop = new TimeStopUltimate(this, this.player);
     this.playerObstacleCollider = this.physics.add.collider(this.player, map.obstacles);
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.ironManBaseMoveSpeed = this.player.moveSpeed;
@@ -124,6 +157,15 @@ export class GameScene extends Phaser.Scene {
       () => map.breakables,
     );
 
+    this.heroUltimate = createHeroUltimate(this.player.definition.id, {
+      scene: this,
+      player: this.player,
+      enemies: this.enemies,
+      props: () => map.breakables,
+      stats: this.stats,
+      projectiles: this.attack.projectiles,
+      projectileTexture: this.player.definition.stats.attack.projectileTexture,
+    });
     this.heroWeapon =
       HERO_WEAPONS[this.player.definition.id]?.create({
         scene: this,
@@ -140,40 +182,46 @@ export class GameScene extends Phaser.Scene {
       this.stats,
       (x, y, radius, damage) =>
         map.damagePropsInRadius(x, y, radius, damage),
+      () => map.breakables,
     );
+    // Los minimisiles son el arma principal de Iron Man.
+    if (this.player.definition.stats.attack.kind === 'rocket') this.missiles.unlock();
 
     this.rangedAttacks = new RangedAttackSystem(
       this,
       this.player,
-      { width: map.widthPx, height: map.heightPx },
+      this.worldRect,
+    );
+    this.meleeAttacks = new MeleeAttackSystem(
+      this.player,
+      () => this.clock < this.ironManFlyingUntil,
     );
 
-    this.waves = new WaveSystem(this, this.enemies, this.player, { width: map.widthPx, height: map.heightPx }, (e) => {
+    this.waves = new WaveSystem(this, this.enemies, this.player, this.worldRect, (e) => {
       this.dropLoot(e);
       this.round.onEnemyKilled(e);
-    }, this.stats);
+    }, this.stats, doombotTest);
     this.bossAttacks = new BossAttackSystem(
       this,
       this.player,
       this.waves,
-      { width: map.widthPx, height: map.heightPx },
+      this.worldRect,
     );
-    this.round = new RoundController(0, this.player, this.waves, this.enemies);
+    this.round = new RoundController(0, this.player, this.waves, this.enemies, () => this.enterArena());
 
-    // Enemigos que tocan al jugador le hacen daño (con invulnerabilidad corta).
-    this.physics.add.overlap(this.player, this.enemies, (_p, e) => {
-      const enemy = e as Enemy;
-      if (this.clock < this.ironManFlyingUntil) return;
-      if (!enemy.dying && !enemy.harmless) this.player.takeDamage(enemy.contactDamage);
-    });
     // Proyectiles que tocan enemigos.
     this.physics.add.overlap(this.attack.projectiles, this.enemies, (p, e) => {
       const projectile = p as Projectile;
       const enemy = e as Enemy;
       if (enemy.dying || !projectile.canHit(enemy)) return;
       enemy.takeDamage(projectile.damage);
-      if (projectile.slow && !enemy.dying) enemy.applySlow(projectile.slow.ms, projectile.slow.factor);
-      if (projectile.registerHit(enemy)) projectile.destroy();
+      if (projectile.slow && !enemy.dying) {
+        // El jefe no queda inmóvil del todo: solo se frena mucho.
+        const factor = projectile.slow.factor === 0 && enemy.kind.id === 'overlord' ? 0.5 : projectile.slow.factor;
+        enemy.applySlow(projectile.slow.ms, factor);
+      }
+      if (projectile.isBouncer) projectile.rebound(enemy);
+      else if (projectile.registerHit(enemy)) projectile.destroy();
     });
 
     // Los disparos del repulsor también rompen cajas y rocas (las atraviesan, como a los enemigos con perforación).
@@ -196,25 +244,53 @@ export class GameScene extends Phaser.Scene {
 
     // Al volver del menú (CONTINUAR) la ronda sigue en pausa hasta que el jugador toque SEGUIR.
     this.events.on(Phaser.Scenes.Events.WAKE, () => this.scene.pause());
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop(SCENE_KEYS.hud));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scene.stop(SCENE_KEYS.hud);
+      this.meleeAttacks.destroy();
+      this.rangedAttacks.destroy();
+    });
   }
 
   isIronManSelected(): boolean {
     return this.player?.definition.id === 'ironman';
   }
 
+  /** ¿El héroe elegido tiene ultimate? (Iron Man: vuelo · Doctor Strange: tiempo detenido). */
+  hasUltimate(): boolean {
+    return this.isIronManSelected() || this.timeStop !== null || this.heroUltimate !== null;
+  }
+
   /** Estado de la ultimate para el control del HUD. */
-  getUltimateState(): { active: boolean; remainingMs: number; flightRemainingMs: number } {
-    const active = this.player?.definition.id === 'ironman' && this.clock < this.ironManFlyingUntil;
+  getUltimateState(): { active: boolean; remainingMs: number; activeRemainingMs: number; activeLabel: string } {
+    const stopActive = (this.timeStop?.isActive(this.clock) ?? false) || (this.heroUltimate?.isActive(this.clock) ?? false);
+    const active = stopActive || (this.isIronManSelected() && this.clock < this.ironManFlyingUntil);
+    const activeRemainingMs = stopActive
+      ? (this.timeStop?.remainingMs(this.clock) ?? this.heroUltimate?.remainingMs(this.clock) ?? 0)
+      : active
+        ? Math.max(0, this.ironManFlyingUntil - this.clock)
+        : 0;
     return {
       active,
       remainingMs: active ? 0 : Math.max(0, this.ultimateReadyAt - this.clock),
-      flightRemainingMs: active ? Math.max(0, this.ironManFlyingUntil - this.clock) : 0,
+      activeRemainingMs,
+      activeLabel: stopActive ? (this.heroUltimate?.label ?? 'TIEMPO') : 'VUELO',
     };
   }
 
   /** Activa el vuelo de Iron Man con E o desde el botón táctil del HUD. */
   activateUltimate(): void {
+    if (this.heroUltimate) {
+      if (this.round.ended || this.frozen || this.player.isDead) return;
+      if (this.heroUltimate.isActive(this.clock) || this.clock < this.ultimateReadyAt) return;
+      this.heroUltimate.start(this.clock);
+      return;
+    }
+    if (this.timeStop) {
+      if (this.round.ended || this.frozen || this.player.isDead) return;
+      if (this.timeStop.isActive(this.clock) || this.clock < this.ultimateReadyAt) return;
+      this.timeStop.start(this.clock);
+      return;
+    }
     if (this.player.definition.id !== 'ironman' || this.round.ended || this.frozen || this.player.isDead) return;
     if (this.clock < this.ironManFlyingUntil || this.clock < this.ultimateReadyAt) return;
     this.ironManFlyingUntil = this.clock + 5000;
@@ -249,6 +325,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateUltimate(now: number): void {
+    if (this.heroUltimate) {
+      if (this.heroUltimate.update(now)) this.ultimateReadyAt = now + this.heroUltimate.cooldownMs;
+      return;
+    }
+    if (this.timeStop) {
+      if (this.timeStop.update(now, this.enemies.getChildren() as Enemy[])) this.ultimateReadyAt = now + TIME_STOP.cooldownMs;
+      return;
+    }
     if (this.player.definition.id !== 'ironman' || now >= this.ironManFlyingUntil) {
       if (this.ironManFlyingUntil > 0 && now >= this.ironManFlyingUntil) {
         this.ironManFlyingUntil = 0;
@@ -396,16 +480,36 @@ export class GameScene extends Phaser.Scene {
       gold: Math.floor(this.gold),
       goldPayout: this.goldPayout,
       passives: passivesTaken(this.taken),
+      newAchievements: this.newAchievements,
     };
   }
 
   /** Al morir un enemigo: gema de experiencia y, con cierta chance, una moneda. */
   private dropLoot(enemy: Enemy): void {
     const { xpValue, gold } = enemy.kind;
+    if (enemy.kind.id === 'miniboss') {
+      this.dropMiniBossLoot(enemy);
+      return;
+    }
     if (xpValue > 0) this.pickups.push(new Pickup(this, enemy.x, enemy.y - 4, 'xp', xpValue));
     if (gold && Math.random() < gold.chance * this.stats.goldChanceMult) {
       this.pickups.push(new Pickup(this, enemy.x + 4, enemy.y - 2, 'gold', gold.value));
     }
+    if (Math.random() < FRUIT.chance) this.pickups.push(new Pickup(this, enemy.x - 4, enemy.y - 2, 'fruit', 0));
+    if (Math.random() < ENEMY_MAGNET_CHANCE) this.pickups.push(new Pickup(this, enemy.x, enemy.y - 6, 'magnet', 0));
+  }
+
+  /** Premio del mini jefe: mucha experiencia, monedas, una fruta y un imán. */
+  private dropMiniBossLoot(enemy: Enemy): void {
+    this.pickups.push(new Pickup(this, enemy.x, enemy.y - 4, 'xp', MINIBOSS_CONFIG.xp));
+    for (let i = 0; i < MINIBOSS_CONFIG.coins; i++) {
+      const a = (i / MINIBOSS_CONFIG.coins) * Math.PI * 2;
+      this.pickups.push(new Pickup(this, enemy.x + Math.cos(a) * 14, enemy.y - 2 + Math.sin(a) * 9, 'gold', MINIBOSS_CONFIG.coinValue));
+    }
+    this.pickups.push(new Pickup(this, enemy.x - 10, enemy.y + 6, 'fruit', 0));
+    this.pickups.push(new Pickup(this, enemy.x + 10, enemy.y + 6, 'magnet', 0));
+    this.pickups.push(new Pickup(this, enemy.x, enemy.y + 12, 'chest', 0));
+    this.miniBossKilled = true;
   }
 
   /** Al romperse una caja o roca: monedas repartidas alrededor. */
@@ -416,12 +520,14 @@ export class GameScene extends Phaser.Scene {
       const y = prop.y + Phaser.Math.Between(-6, 8);
       this.pickups.push(new Pickup(this, x, y, 'gold', 1));
     }
+    if (Math.random() < PROP_MAGNET_CHANCE) this.pickups.push(new Pickup(this, prop.x, prop.y - 4, 'magnet', 0));
   }
 
   /** Mueve lo que se junta hacia el jugador cuando está cerca y suma lo que llega. */
   private updatePickups(delta: number): void {
     const radiusSq = this.stats.pickupRadius ** 2;
     const targetY = this.player.y - 8;
+    let pulledAll = false;
     this.pickups = this.pickups.filter((pickup) => {
       if (!pickup.isMagnetized) {
         const dx = this.player.x - pickup.x;
@@ -430,12 +536,19 @@ export class GameScene extends Phaser.Scene {
       }
       if (pickup.isMagnetized && pickup.moveToward(this.player.x, targetY, delta)) {
         if (pickup.kind === 'xp') this.progression.addXp(pickup.value * this.stats.xpMult);
-        else this.gold += pickup.value * this.stats.goldMult;
+        else if (pickup.kind === 'gold') this.gold += pickup.value * this.stats.goldMult;
+        else if (pickup.kind === 'chest') {
+          this.progression.pendingLevelUps += MINIBOSS_CONFIG.chestLevels;
+          this.events.emit('special-wave', '¡COFRE!');
+        } else if (pickup.kind === 'fruit') this.player.heal(Math.max(FRUIT.minHeal, Math.round(this.player.maxHealth * FRUIT.healFraction)));
+        else pulledAll = true;
         pickup.destroy();
         return false;
       }
       return true;
     });
+    // Imán: toda la experiencia y las frutas que hay en el piso, en todo el mapa, van hacia el jugador.
+    if (pulledAll) for (const pickup of this.pickups) if (pickup.kind === 'xp' || pickup.kind === 'fruit') pickup.magnetize();
   }
 
   /** Al terminar la ronda: decide cuánto oro se guarda (todo si gana, la mitad si pierde). */
@@ -444,6 +557,15 @@ export class GameScene extends Phaser.Scene {
     const total = won ? this.gold + GOLD.bossBonus * this.stats.goldMult : this.gold * GOLD.defeatKeepRatio;
     this.goldPayout = Math.floor(total);
     saveData.addGold(this.goldPayout);
+    const state = this.round.getHudState(this.clock);
+    this.newAchievements = saveData.recordRound({
+      kills: state.kills,
+      elapsedMs: state.elapsedMs,
+      level: this.progression.level,
+      gold: this.gold,
+      won,
+      miniBossKilled: this.miniBossKilled,
+    });
   }
 
   /** Pausa la ronda y ofrece mejoras al HUD; al elegir, se aplica y se sigue. */
@@ -519,10 +641,45 @@ export class GameScene extends Phaser.Scene {
     return true;
   }
 
+  /**
+   * Al terminar las oleadas: fundido a negro, se borra todo lo que quedaba (la experiencia y el oro del piso se juntan solos),
+   * el jugador pasa a la arena del jefe y ahí aparece el Overlord.
+   */
+  private enterArena(): void {
+    if (this.arenaEntered) return;
+    this.arenaEntered = true;
+    const camera = this.cameras.main;
+    camera.fadeOut(450, 0, 0, 0);
+    camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      if (this.round.ended) return;
+      for (const enemy of [...(this.enemies.getChildren() as Enemy[])]) enemy.destroy();
+      for (const projectile of [...this.attack.projectiles.getChildren()]) projectile.destroy();
+      for (const pickup of this.pickups) {
+        if (pickup.kind === 'xp') this.progression.addXp(pickup.value * this.stats.xpMult);
+        else if (pickup.kind === 'gold') this.gold += pickup.value * this.stats.goldMult;
+        pickup.destroy();
+      }
+      this.pickups = [];
+      Object.assign(this.worldRect, this.arena.rect);
+      const { x, y, width, height } = this.arena.rect;
+      this.physics.world.setBounds(x, y, width, height);
+      camera.setBounds(x, y, width, height);
+      this.player.setPosition(this.arena.playerSpawn.x, this.arena.playerSpawn.y);
+      this.player.setVelocity(0, 0);
+      camera.centerOn(this.player.x, this.player.y);
+      this.round.setBoss(
+        this.waves.spawnAt(OVERLORD, { health: ROUND.bossHealthMultiplier, speed: ROUND.bossSpeedMultiplier }, this.arena.bossSpawn.x, this.arena.bossSpawn.y),
+      );
+      this.events.emit('special-wave', '¡EL JEFE FINAL!');
+      camera.fadeIn(450, 0, 0, 0);
+    });
+  }
+
   update(_time: number, delta: number): void {
     if (this.round.ended) {
       if (!this.frozen) {
         this.frozen = true;
+        this.timeStop?.cancel(this.enemies.getChildren() as Enemy[]);
         this.ironManFlightEffect?.destroy();
         this.ironManFlightEffect = null;
         this.ironManFlyingUntil = 0;
@@ -583,11 +740,36 @@ export class GameScene extends Phaser.Scene {
       enemy.chase(this.player.x, this.player.y - 6, separationX, separationY);
     }
     this.tryRevive();
-    this.rangedAttacks.update(now, delta, activeEnemies);
+    const timeStopped = this.timeStop?.isActive(now) ?? false;
+    if (!timeStopped) this.rangedAttacks.update(now, delta, activeEnemies);
+    this.meleeAttacks.update(now, activeEnemies);
     this.round.update(now);
-    this.bossAttacks.update(now, delta, this.round.currentBoss);
+    if (!timeStopped) this.bossAttacks.update(now, delta, this.round.currentBoss);
 
 
     if (this.progression.pendingLevelUps > 0 && !this.round.ended) this.openLevelUp();
+  }
+
+  /** Salpicadura de gotitas rojas sobre el personaje cuando lo golpean (cuadraditos de 2 px que salen, caen y se desvanecen). */
+  private spawnBloodBurst(strength: number): void {
+    if (!this.player) return;
+    const count = Math.round(5 + 5 * strength);
+    for (let i = 0; i < count; i++) {
+      const size = Phaser.Math.Between(1, 2);
+      const drop = this.add
+        .rectangle(this.player.x + Phaser.Math.Between(-3, 3), this.player.y - 14 + Phaser.Math.Between(-4, 4), size, size, i % 3 === 0 ? 0xa80000 : 0xd81414)
+        .setDepth(1_000_001);
+      const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      const dist = Phaser.Math.Between(8, 22);
+      this.tweens.add({
+        targets: drop,
+        x: drop.x + Math.cos(angle) * dist,
+        y: drop.y + Math.sin(angle) * dist * 0.7 + 8,
+        alpha: 0,
+        duration: Phaser.Math.Between(280, 460),
+        ease: 'Quad.easeOut',
+        onComplete: () => drop.destroy(),
+      });
+    }
   }
 }

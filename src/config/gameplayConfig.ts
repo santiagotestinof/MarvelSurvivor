@@ -7,7 +7,7 @@ function readRoundDurationMs(): number {
   // ?ronda=30 acorta la ronda a 30 segundos (útil para probar el jefe rápido).
   const raw = new URLSearchParams(window.location.search).get('ronda');
   const seconds = raw ? Number(raw) : NaN;
-  return Number.isFinite(seconds) && seconds >= 5 ? seconds * 1000 : 5 * 60 * 1000;
+  return Number.isFinite(seconds) && seconds >= 5 ? seconds * 1000 : 15 * 60 * 1000;
 }
 
 export const ROUND = {
@@ -18,9 +18,32 @@ export const ROUND = {
   bossMinionIntervalMs: 4500,
 };
 
-export const PLAYER_HIT = {
-  /** Tiempo sin recibir daño después de un golpe. */
-  invulnerabilityMs: 700,
+/**
+ * Rareza de las mejoras de la ronda: al ofrecer una mejora con niveles de rareza se sortea común / rara / épica / legendaria
+ * (cada una con su valor propio). La Suerte permanente (`stats.luck`) hace más probables las raras.
+ */
+export const UPGRADE_RARITY = {
+  weights: { common: 86, rare: 10, epic: 3, legendary: 1 },
+  /** Cuánto sube el peso de cada rareza por nivel de Suerte. */
+  luckBoost: { rare: 0.2, epic: 0.5, legendary: 1.4 },
+};
+
+/** Evolución del arma principal de cada héroe. */
+export const EVOLUTION = {
+  /** Veces que hay que haber tomado la pasiva asociada para que salga la evolución. */
+  passivePicks: 3,
+  /** Escudo rebotador del Capitán: rebotes de base (la mejora "Más rebotes" suma hasta `shieldMaxExtra` más). */
+  shieldBounces: 5,
+  shieldMaxExtra: 5,
+  /** Telaraña inmovilizadora de Spider-Man: cuánto queda inmóvil el enemigo (ms). */
+  webFreezeMs: 2500,
+  /** Martillo sísmico de Thor: largo y ancho de la onda en línea (px). */
+  thorLineLength: 190,
+  thorLineWidth: 22,
+  /** Dimensión lenta de Strange: cuánto se agranda el aura y cómo frena a los enemigos. */
+  strangeRadiusMult: 1.8,
+  strangeSlowMs: 900,
+  strangeSlowFactor: 0.55,
 };
 
 export const PROGRESSION = {
@@ -37,11 +60,11 @@ export const PROGRESSION = {
 };
 
 export const WAVES = {
-  startIntervalMs: 1400,
-  endIntervalMs: 450,
+  startIntervalMs: 800,
+  endIntervalMs: 220,
   /** Enemigos por aparición: crece de 1 a este valor durante la ronda. */
-  maxBatch: 2,
-  maxAlive: 60,
+  maxBatch: 3,
+  maxAlive: 160,
   /** Distancia fuera de la pantalla donde aparecen. */
   spawnMargin: 28,
   /** Al final de la ronda los enemigos tienen (1 + healthGrowth) veces la vida base. */
@@ -50,10 +73,36 @@ export const WAVES = {
   speedGrowth: 0.55,
 };
 
+/**
+ * Oleadas especiales: cada tanto entra de golpe un grupo grande, alternando una manada (todos juntos desde un costado)
+ * y un círculo que rodea al jugador. Con `?oleada` en la URL salen cada 15 s para probarlas.
+ */
+export const MINIBOSS_CONFIG = {
+  /** Sale cada tercio de la ronda (5 min en una ronda de 15) y suelta un premio grande. */
+  xp: 60,
+  coins: 12,
+  coinValue: 2,
+  /** Niveles gratis (mejoras para elegir) que da el cofre del mini jefe. */
+  chestLevels: 2,
+  /** Cuándo sale (ms de ronda); en rondas cortas de prueba sale a los 2/3. */
+  atMs: 10 * 60 * 1000,
+};
+
+export const SPECIAL_WAVES = {
+  /** Cuándo sale la primera y cada cuánto las siguientes (tiempo de la ronda). */
+  firstAtMs: 60_000,
+  everyMs: 75_000,
+  /** Enemigos de la manada y del círculo: crecen de un valor a otro durante la ronda. */
+  hordeCount: { from: 20, to: 45 },
+  ringCount: { from: 22, to: 40 },
+  /** Cuántos enemigos más que el tope normal se aceptan mientras dura la oleada. */
+  extraAlive: 60,
+};
+
 /** Minimisiles teledirigidos (se desbloquean con la mejora "Minimisiles"). */
 export const MISSILES = {
   /** Tiempo entre ráfagas (lo acorta la mejora de cadencia). */
-  cooldownMs: 2400,
+  cooldownMs: 1100,
   damage: 22,
   /** Píxeles por segundo. */
   speed: 170,
@@ -66,10 +115,6 @@ export const MISSILES = {
   /** La explosión daña a los cercanos con esta fracción del daño. */
   splashRadius: 24,
   splashDamageRatio: 0.5,
-  /** Nivel máximo = misiles por ráfaga. */
-  maxLevel: 4,
-  /** Veces que hay que haber elegido "Más daño" para que aparezca la evolución (con los misiles al máximo). */
-  evolutionDamagePicks: 3,
 };
 
 /** Fuego que dejan los misiles evolucionados (Misiles incendiarios). Las mejoras de fuego lo multiplican. */
@@ -108,6 +153,19 @@ export const BREAKABLE_PROPS = {
   crate: { health: 40, gold: { min: 3, max: 6 } },
   rock: { health: 60, gold: { min: 2, max: 5 } },
 } as const;
+
+/** Probabilidad de que una caja o roca rota suelte un imán que atrae toda la experiencia (y las frutas) del mapa. */
+export const PROP_MAGNET_CHANCE = 0.08;
+
+/** Probabilidad (muy baja) de que un enemigo suelte un imán al morir; hay cientos por ronda. */
+export const ENEMY_MAGNET_CHANCE = 0.002;
+
+/** Fruta que curan: algunos enemigos la sueltan al morir. Cura una parte de la vida máxima (con un mínimo). */
+export const FRUIT = {
+  chance: 0.015,
+  healFraction: 0.12,
+  minHeal: 8,
+};
 
 export const META = {
   /** Cada nivel cuesta esta cantidad de veces más que el anterior. */

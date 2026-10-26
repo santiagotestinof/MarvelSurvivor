@@ -22,6 +22,7 @@ export const CAPITAN_ID = 'capitan';
 export const SPIDERMAN_ID = 'spiderman';
 export const THOR_ID = 'thor';
 export const HULK_ID = 'hulk';
+export const STRANGE_ID = 'strange';
 
 /** Capitán América: el escudo sale, atraviesa a todos y vuelve a su mano. */
 export const capitanDefinition: CharacterDefinition = {
@@ -33,7 +34,7 @@ export const capitanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 76.5,
+    moveSpeed: 70.4,
     maxHealth: 130,
     attack: {
       kind: 'shield',
@@ -53,12 +54,12 @@ export const spidermanDefinition: CharacterDefinition = {
   id: SPIDERMAN_ID,
   displayName: 'Spider-Man',
   rarity: 'rare',
-  weaponText: 'Telarañas: disparo rápido que frena a los enemigos',
+  weaponText: 'Telarañas: disparo rápido que frena un poco a los enemigos',
   frame: FRAME,
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 106.2,
+    moveSpeed: 97.7,
     maxHealth: 80,
     attack: {
       kind: 'web',
@@ -68,8 +69,8 @@ export const spidermanDefinition: CharacterDefinition = {
       projectileSpeed: 280,
       aimRange: 190,
       maxDistance: 220,
-      slowMs: 1500,
-      slowFactor: 0.55,
+      slowMs: 1200,
+      slowFactor: 0.7,
     },
   },
   sheets: sheets(SPIDERMAN_ID),
@@ -85,11 +86,11 @@ export const thorDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 81,
+    moveSpeed: 74.5,
     maxHealth: 110,
     attack: {
       kind: 'thunder',
-      cooldownMs: 1000,
+      cooldownMs: 1800,
       damage: 16,
       projectileTexture: TEXTURES.thunder,
       projectileSpeed: 0,
@@ -111,7 +112,7 @@ export const hulkDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: { width: 12, height: 8, offsetX: 10, offsetY: 22 },
   stats: {
-    moveSpeed: 80,
+    moveSpeed: 73.6,
     maxHealth: 190,
     attack: {
       kind: 'fan',
@@ -125,4 +126,35 @@ export const hulkDefinition: CharacterDefinition = {
     },
   },
   sheets: sheets(HULK_ID),
+};
+
+/**
+ * Doctor Strange: flota (como Iron Man) y siempre se ve de frente, sin dibujo de espalda.
+ * Su ataque es un aura de runas que daña seguido a todo lo que se acerca; con Área / Alcance crece.
+ * Ulti: "Tiempo detenido" (ver `TimeStopUltimate`).
+ */
+export const strangeDefinition: CharacterDefinition = {
+  id: STRANGE_ID,
+  displayName: 'Doctor Strange',
+  rarity: 'epic',
+  weaponText: 'Aura de runas que daña a los cercanos. Ulti: tiempo detenido',
+  // Dibujo de Santi a tamaño original: cuadro de 48×56, suelo en (24, 51) y el cuerpo flota 3 px.
+  frame: { width: 48, height: 56 },
+  origin: { x: 0.5, y: 51 / 56 },
+  body: { width: 8, height: 6, offsetX: 20, offsetY: 48 },
+  stats: {
+    moveSpeed: 77.3,
+    maxHealth: 105,
+    attack: {
+      kind: 'aura',
+      cooldownMs: 400,
+      damage: 10,
+      projectileTexture: TEXTURES.repulsor,
+      projectileSpeed: 0,
+      aimRange: 0,
+      maxDistance: 0,
+      radius: 72,
+    },
+  },
+  sheets: sheets(STRANGE_ID),
 };

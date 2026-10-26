@@ -1,3 +1,5 @@
+import { audio } from '../audio/AudioManager';
+import { showDamageNumber } from '../ui/damageNumbers';
 import Phaser from 'phaser';
 import {
   enemyAnimationKey,
@@ -17,16 +19,21 @@ const FACING_TURN_SPEED = 8.5;
 /** Enemigo que persigue al jugador en línea recta. */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   readonly kind: EnemyKind;
-  readonly contactDamage: number;
+  readonly meleeDamage: number;
   readonly maxHealth: number;
   dying = false;
   /** Enemigo sin colmillos: está en el mapa pero no hace daño al tocar. */
   harmless = false;
+  /** Tiempo detenido: no se mueve y el daño que recibe se acumula hasta que se descongela. */
+  frozen = false;
 
   private currentHealth: number;
+  private frozenDamage = 0;
   private slowUntil = 0;
   private slowFactor = 1;
   private knockUntil = 0;
+  /** Manada: avanza en línea recta sin perseguir y desaparece al salir de la pantalla del otro lado (ver `WaveSystem`). */
+  private stampede: { dx: number; dy: number; exit: number; expiresAt: number } | null = null;
   private aimLockUntil = 0;
   private aimTarget: { x: number; y: number } | null = null;
   private moveSpeed: number;
@@ -38,11 +45,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   constructor(scene: Phaser.Scene, x: number, y: number, kind: EnemyKind, scaling: EnemyScaling) {
     super(scene, x, y, kind.texture, 0);
     this.kind = kind;
-    this.maxHealth = Math.round(kind.health * scaling.health);
+    const growth = 1 + (scaling.health - 1) * (kind.healthRamp ?? 1);
+    this.maxHealth = Math.max(1, Math.round(kind.health * growth));
     this.currentHealth = this.maxHealth;
     this.speedScale = scaling.speed;
     this.moveSpeed = kind.speed * scaling.speed;
-    this.contactDamage = kind.contactDamage;
+    this.meleeDamage = kind.meleeDamage;
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -52,6 +60,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const { width, height, offsetX, offsetY } = kind.body;
     (this.body as Phaser.Physics.Arcade.Body).setSize(width, height).setOffset(offsetX, offsetY);
     this.setCollideWorldBounds(true);
+    if (kind.tint !== undefined) this.setTint(kind.tint);
     this.play(enemyAnimationKey(kind, this.currentDir));
     this.anims.timeScale = Math.min(1.6, 0.85 + scaling.speed * 0.15);
   }
@@ -75,6 +84,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   defang(): void {
     this.harmless = true;
     this.setAlpha(0.6).setTint(0xb7c4d6);
+  }
+
+  private restoreTint(): void {
+    if (this.kind.tint !== undefined) this.setTint(this.kind.tint);
+    else this.clearTint();
   }
 
   /** Lo frena: conserva `factor` de su velocidad durante `ms`. */
@@ -104,11 +118,63 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.knockUntil = this.scene.time.now + ms;
   }
 
+  /** Lo congela en el tiempo (ulti de Doctor Strange). */
+  freeze(): void {
+    if (this.frozen || this.dying) return;
+    this.frozen = true;
+    this.frozenDamage = 0;
+    this.setVelocity(0, 0);
+    if (this.anims.isPlaying) this.anims.pause();
+    this.setTint(0x8fe6ff);
+  }
+
+  /** Lo descongela y le aplica de golpe todo el daño acumulado. */
+  thaw(): void {
+    if (!this.frozen) return;
+    this.frozen = false;
+    if (this.anims.isPaused) this.anims.resume();
+    if (this.harmless) this.setTint(0xb7c4d6);
+    else this.restoreTint();
+    const damage = this.frozenDamage;
+    this.frozenDamage = 0;
+    if (damage > 0) this.takeDamage(damage);
+  }
+
   get health(): number {
     return this.currentHealth;
   }
 
+  /** Lo convierte en parte de una manada: corre en la dirección (`dx`, `dy`, unitaria) y se va al pasar `exit` píxeles detrás del jugador. */
+  startStampede(dx: number, dy: number, exit: number): void {
+    this.stampede = { dx, dy, exit, expiresAt: this.scene.time.now + 14000 };
+    this.setCollideWorldBounds(false);
+    this.updateFacing(dx, dy);
+  }
+
+  get isStampeding(): boolean {
+    return this.stampede !== null;
+  }
+
   chase(targetX: number, targetY: number, separationX = 0, separationY = 0): void {
+    if (this.frozen) {
+      this.setVelocity(0, 0);
+      this.setDepth(this.y);
+      return;
+    }
+    if (this.stampede) {
+      const now = this.scene.time.now;
+      const run = this.stampede;
+      const passed = (this.x - targetX) * run.dx + (this.y - targetY) * run.dy;
+      if (passed > run.exit || now > run.expiresAt) {
+        this.destroy(); // se fue de la pantalla: desaparece sin soltar nada
+        return;
+      }
+      const speed = this.moveSpeed * 2 * (now < this.slowUntil ? this.slowFactor : 1);
+      this.setVelocity(run.dx * speed, run.dy * speed);
+      if (this.kind.directional) this.updateFacing(run.dx, run.dy);
+      this.setDepth(this.y);
+      return;
+    }
     const now = this.scene.time.now;
     if (now < this.knockUntil) {
       this.setDepth(this.y);
@@ -191,7 +257,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Devuelve true si el golpe se aplicó. */
   takeDamage(amount: number): boolean {
     if (this.dying) return false;
+    if (this.frozen) {
+      this.frozenDamage += amount;
+      return true;
+    }
     this.currentHealth -= amount;
+    showDamageNumber(this.scene, this.x, this.y - this.displayHeight * this.originY - 2, amount);
+    audio.playEnemyHit(this.currentHealth <= 0);
 
     if (this.currentHealth <= 0) {
       this.die();
@@ -203,7 +275,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.harmless) {
           this.setTint(0xb7c4d6);
         } else {
-          this.clearTint();
+          this.restoreTint();
         }
       });
     }

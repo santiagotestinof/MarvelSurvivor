@@ -5,7 +5,11 @@ import { BreakableProp, type BreakableKind } from '../entities/BreakableProp';
 import { buildParkDetails, createParkTrees, PARK_TREE, PARK_PINE } from './ParkDetails';
 import { nearParkPath, parkPaths } from './ParkPaths';
 import { buildParkVegetation, createParkGround, PARK_GROUND } from './ParkVegetation';
-import { drawCityPaving, drawCityCurbs } from './CityPaving';
+import { drawCityPaving, drawCityCurbs, drawCityCrosswalks } from './CityPaving';
+import { buildCityDetails, drawCityBuilding } from './CityDetails';
+import { buildParkedVehicles } from './CityVehicles';
+import { buildStreetServices, drawLandmark } from './CityLandmarks';
+import { buildBuildingSidewalks } from './BuildingSidewalks';
 
 const TILE = 16;
 const WIDTH_TILES = 160;
@@ -133,30 +137,37 @@ export class TestMap {
       }
     }
 
-    // Fachadas bajas en el borde urbano; vereda continua de más de 100 px delante.
+    drawCityCrosswalks(ground, roadXs, roadYs);
+    buildCityDetails(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.widthPx, this.heightPx,
+      (x, y, w, h) => this.addObstacle(x, y, w, h));
+
+    // Edificios en el borde urbano; vereda continua delante.
     for (let y = 112; y < this.heightPx - 112; y += 320) {
       if (roadYs.some((roadY) => y + 68 > roadY - 80 && y - 12 < roadY + 368)) continue;
+      // Las primeras manzanas se reservan para los edificios de referencia.
+      if (y === 112) continue;
       this.placeFacade(8, y);
       this.placeFacade(this.widthPx - 112, y);
     }
     for (let x = PARK.left; x < PARK.right; x += 256) {
       if (Math.abs(x + 52 - this.spawn.x) < 144) continue;
-      this.placeFacade(x, 32);
+      this.placeFacade(x, 112);
       this.placeFacade(x, this.heightPx - 80);
     }
+    const addCityObstacle = (x: number, y: number, w: number, h: number) => this.addObstacle(x, y, w, h);
+    drawLandmark(this.scene, 32, 216, 'avengers', addCityObstacle);
+    drawLandmark(this.scene, this.widthPx - 192, 216, 'bugle', addCityObstacle);
+    drawLandmark(this.scene, 32, this.heightPx - 24, 'sanctum', addCityObstacle);
+    drawLandmark(this.scene, this.widthPx - 192, this.heightPx - 24, 'baxter', addCityObstacle);
+    buildStreetServices(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), addCityObstacle);
+    buildBuildingSidewalks(this.scene, PARK, this.widthPx, this.heightPx, addCityObstacle);
+    buildParkedVehicles(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.widthPx, this.heightPx,
+      this.obstacles, (x, y, w, h) => this.addObstacle(x, y, w, h));
   }
 
   private placeFacade(x: number, y: number): void {
-      const facade = this.scene.add.graphics().setDepth(y + 64);
-      facade.fillStyle(0x343942).fillRect(x - 4, y - 12, 112, 80);
-      facade.fillStyle(0x875b4b).fillRect(x, y, 104, 64);
-      facade.fillStyle(0xb38a68).fillRect(x, y - 12, 104, 12);
-      for (let wx = x + 12; wx < x + 96; wx += 24) {
-        facade.fillStyle(0x293e50).fillRect(wx, y + 10, 12, 20);
-        facade.fillStyle(0x8bb0bb).fillRect(wx + 2, y + 12, 3, 16);
-      }
-      facade.fillStyle(0x303e43).fillRect(x + 44, y + 40, 16, 24);
-      this.addObstacle(x + 52, y + 26, 112, 84);
+    drawCityBuilding(this.scene, x, y + 64);
+    this.addObstacle(x + 52, y + 26, 112, 84);
   }
 
   private addObstacle(x: number, y: number, width: number, height: number): Phaser.GameObjects.Rectangle {

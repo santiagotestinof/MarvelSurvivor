@@ -1,13 +1,15 @@
 import Phaser from 'phaser';
-import { RUN_ACTIVE_KEY, SCENE_KEYS } from '../config/sceneKeys';
+import { SCENE_KEYS } from '../config/sceneKeys';
 import { VirtualJoystick } from '../input/VirtualJoystick';
 import { PROGRESSION } from '../config/gameplayConfig';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { ResultOverlay } from '../ui/ResultOverlay';
 import { UpgradeMenu, type UpgradePrompt } from '../ui/UpgradeMenu';
-import { formatTime, textStyle, uiScale } from '../ui/uiLayout';
-import { UPGRADE_ICON_SIZE, upgradeIconKey } from '../ui/upgradeIcons';
+import { formatTime, textStyle, uiScale, UI_FONT } from '../ui/uiLayout';
+import { UPGRADE_ICON_SIZE, setUpgradeIcon, upgradeIconKey } from '../ui/upgradeIcons';
 import type { GameScene, HudSnapshot } from './GameScene';
+
+const HURT_TEXTURE = 'hurt-vignette';
 
 /** Demora entre el final de la ronda y la pantalla de resultado. */
 const RESULT_DELAY_MS = 700;
@@ -36,6 +38,8 @@ export class HudScene extends Phaser.Scene {
   private result!: ResultOverlay;
   private pause!: PauseOverlay;
 
+  private specialText!: Phaser.GameObjects.Text;
+  private hurtVignette!: Phaser.GameObjects.Image;
   private ui = 2;
   private resultScheduled = false;
   private latest: HudSnapshot | null = null;
@@ -68,7 +72,7 @@ export class HudScene extends Phaser.Scene {
 
     this.upgradeMenu = new UpgradeMenu(this);
     this.result = new ResultOverlay(this, () => this.backToMenu());
-    this.pause = new PauseOverlay(this, () => this.togglePause(), () => this.pauseToMenu());
+    this.pause = new PauseOverlay(this, () => this.togglePause(), () => this.backToMenu());
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
@@ -84,9 +88,55 @@ export class HudScene extends Phaser.Scene {
       this.gameScene.activateUltimate();
     });
 
+    this.specialText = this.add
+      .text(0, 0, '', { fontFamily: UI_FONT, fontStyle: 'bold', fontSize: '32px', color: '#ff5a4a', stroke: '#000000', strokeThickness: 6 })
+      .setOrigin(0.5)
+      .setDepth(15)
+      .setAlpha(0);
+    this.gameScene.events.on('special-wave', this.announceSpecial, this);
+
+    // Viñeta roja en los bordes: se enciende al recibir un golpe y se desvanece.
+    this.createHurtTexture();
+    this.hurtVignette = this.add.image(0, 0, HURT_TEXTURE).setOrigin(0).setDepth(20).setAlpha(0);
+    this.gameScene.events.on('player-hurt', this.flashHurt, this);
+
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
+      this.gameScene.events.off('player-hurt', this.flashHurt, this);
+      this.gameScene.events.off('special-wave', this.announceSpecial, this);
+    });
+  }
+
+  /** Textura de la viñeta: transparente en el centro y roja hacia los bordes. */
+  private createHurtTexture(): void {
+    if (this.textures.exists(HURT_TEXTURE)) return;
+    const size = 256;
+    const canvas = this.textures.createCanvas(HURT_TEXTURE, size, size);
+    if (!canvas) return;
+    const ctx = canvas.getContext();
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, size * 0.38, size / 2, size / 2, size * 0.75);
+    gradient.addColorStop(0, 'rgba(220,0,0,0)');
+    gradient.addColorStop(1, 'rgba(200,0,0,0.6)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    canvas.refresh();
+  }
+
+  /** Cartel grande y breve cuando llega una oleada especial. */
+  private announceSpecial(text: string): void {
+    this.tweens.killTweensOf(this.specialText);
+    this.specialText.setText(text).setAlpha(1).setScale(1.4);
+    this.tweens.add({ targets: this.specialText, scale: 1, duration: 220, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: this.specialText, alpha: 0, delay: 1400, duration: 600 });
+  }
+
+  private flashHurt(dealt: number, maxHealth: number): void {
+    const strength = Phaser.Math.Clamp(dealt / (maxHealth * 0.2), 0.3, 1);
+    this.tweens.killTweensOf(this.hurtVignette);
+    this.hurtVignette.setAlpha(0.1 + 0.15 * strength);
+    this.tweens.add({ targets: this.hurtVignette, alpha: 0, duration: 380, ease: 'Quad.easeOut' });
   }
 
   update(): void {
@@ -95,12 +145,12 @@ export class HudScene extends Phaser.Scene {
 
     const state = this.gameScene.getHudState();
     const ultimate = this.gameScene.getUltimateState();
-    const playerIsIronMan = this.gameScene.isIronManSelected();
-    this.ultimateButton.setVisible(playerIsIronMan);
-    this.ultimateText.setVisible(playerIsIronMan);
-    if (playerIsIronMan) {
+    const playerHasUltimate = this.gameScene.hasUltimate();
+    this.ultimateButton.setVisible(playerHasUltimate);
+    this.ultimateText.setVisible(playerHasUltimate);
+    if (playerHasUltimate) {
       const label = ultimate.active
-        ? `VUELO ${Math.ceil(ultimate.flightRemainingMs / 1000)}s`
+        ? `${ultimate.activeLabel} ${Math.ceil(ultimate.activeRemainingMs / 1000)}s`
         : ultimate.remainingMs > 0
           ? `ULT ${Math.ceil(ultimate.remainingMs / 1000)}s`
           : 'ULT E';
@@ -127,6 +177,8 @@ export class HudScene extends Phaser.Scene {
 
   private layout(): void {
     const { width, height } = this.scale;
+    this.hurtVignette.setDisplaySize(width, height);
+    this.specialText.setFontSize(Math.max(22, Math.round(9 * uiScale(width, height)))).setPosition(width / 2, height * 0.24);
     this.ui = uiScale(width, height);
     const ui = this.ui;
 
@@ -214,7 +266,8 @@ export class HudScene extends Phaser.Scene {
       icon.setVisible(!!item);
       count.setVisible(!!item);
       if (!item) continue;
-      icon.setTexture(upgradeIconKey(item.id)).setScale(iconScale).setPosition(x + slot / 2, y + slot / 2);
+      setUpgradeIcon(icon, item.id, iconScale);
+      icon.setPosition(x + slot / 2, y + slot / 2);
       count
         .setFontSize(Math.max(10, Math.round(slot * 0.34)))
         .setText(`${item.count}`)
@@ -259,17 +312,8 @@ export class HudScene extends Phaser.Scene {
     if (!enabled) this.joystick.release();
   }
 
-  /** Desde la pausa: el menú se abre y la ronda queda dormida, lista para CONTINUAR. */
-  private pauseToMenu(): void {
-    this.registry.set(RUN_ACTIVE_KEY, true);
-    // Una escena en pausa no se puede dormir: primero se reanuda.
-    this.scene.resume(SCENE_KEYS.game);
-    this.scene.sleep(SCENE_KEYS.game);
-    this.scene.switch(SCENE_KEYS.menu);
-  }
-
+  /** Desde la pausa o el resultado: la ronda se pierde y el menú siguiente arranca de cero (no hay CONTINUAR). */
   private backToMenu(): void {
-    this.registry.set(RUN_ACTIVE_KEY, false);
     this.scene.stop(SCENE_KEYS.game);
     this.scene.start(SCENE_KEYS.menu);
   }
