@@ -41,7 +41,7 @@ export class AutoAttackSystem {
   /** Radio actual del aura: crece con Área y Alcance. */
   private auraRadius(): number {
     const evolved = this.stats.evolved ? EVOLUTION.strangeRadiusMult : 1;
-    return (this.attack.radius ?? 60) * this.stats.areaMult * this.stats.rangeMult * evolved;
+    return (this.attack.radius ?? 60) * this.stats.areaMult * this.stats.mainAreaMult * this.stats.rangeMult * evolved;
   }
 
   update(now: number): void {
@@ -107,7 +107,7 @@ export class AutoAttackSystem {
       if (!prop) return false;
       targets.push(prop);
     }
-    const radius = (this.attack.radius ?? 24) * this.stats.areaMult;
+    const radius = (this.attack.radius ?? 24) * this.stats.areaMult * this.stats.mainAreaMult;
     for (const target of targets) {
       const { damage, critical } = this.rollDamage();
       damageArea(this.enemies, this.props(), target.x, target.y, radius, damage);

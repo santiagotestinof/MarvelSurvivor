@@ -48,9 +48,22 @@ Los Minimisiles de Iron Man son su arma principal (no tienen niveles fijos); su 
 - Las tarjetas de mejora son solo ARMA o PASIVA (sin categorías de ataque/defensa/utilidad).
 - Armadura (reduce el daño de cada golpe) y Vida máxima existen como pasivas en ronda y como mejoras permanentes.
 
+## Arma principal con niveles fijos
+
+El arma principal de cada héroe empieza en nivel 1 y sube hasta el **7** con una tarjeta de ARMA propia (una por héroe, `main-<héroe>` en `upgrades.ts`, tabla en `src/progression/mainWeapon.ts`). Cada nivel da un bono fijo, sin sorteo. Reemplaza a Disparo múltiple, Abanico ancho y Brazos largos; Perforación y Velocidad del disparo quedan solo para los portales de Strange.
+
+| Héroe | Niveles 2 a 7 |
+|---|---|
+| Iron Man (Minimisiles) | +1 misil · +25% vel. · +1 misil · +15% área · +1 misil · +25% vel. y +15% área |
+| Capitán (Escudo) | +1 escudo · +25% vel. · +1 escudo · +25% vel. · +1 escudo · +25% vel. |
+| Spider-Man (Telarañas) | +1 telaraña · atraviesa +1 · +25% vel. · +1 telaraña · atraviesa +1 · +1 telaraña y atraviesa +1 |
+| Thor (Rayos) | +1 rayo · +12% área · +1 rayo · +12% área · +1 rayo · +25% área |
+| Hulk (Zarpazo) | +25% ángulo · +20% alcance · +1 zarpazo · +25% ángulo · +20% alcance · +1 zarpazo y +25% ángulo |
+| Strange (Aura) | +12% radio ×5 · +25% radio |
+
 ## Evoluciones del arma principal
 
-Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `EVOLUTION.passivePicks` (3) veces la pasiva asociada **y además tiene su arma exclusiva al nivel máximo (7)**. La evolución es una mejora más que sale en el sorteo (peso alto) y se elige una sola vez.
+Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `EVOLUTION.passivePicks` (3) veces la pasiva asociada **y además tiene el arma principal y su arma exclusiva al nivel máximo (7)**. La evolución es una mejora más que sale en el sorteo (peso alto) y se elige una sola vez.
 
 | Héroe | Arma principal | Evolución | Pasiva requerida (x3) |
 |---|---|---|---|

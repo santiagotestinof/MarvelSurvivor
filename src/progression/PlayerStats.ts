@@ -47,6 +47,11 @@ export class PlayerStats {
   /** Rebotes extra del escudo evolucionado del Capitán. */
   bounceBonus = 0;
 
+  /** Nivel del arma principal (1 al empezar, hasta 7). */
+  mainLevel = 1;
+  /** Área extra del arma principal (explosiones, rayos, aura); sube con sus niveles. */
+  mainAreaMult = 1;
+
   // Ataque básico (repulsor)
   /** Disparos por ataque, abiertos en abanico hacia el mismo objetivo. */
   projectileCount = 1;

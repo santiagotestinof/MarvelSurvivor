@@ -153,7 +153,7 @@ export class MissileWeapon {
 
     const critical = Math.random() < this.stats.critChance;
     const damage = MISSILES.damage * this.stats.damageMult * (critical ? this.stats.critMult : 1);
-    const splashRadius = MISSILES.splashRadius * this.stats.areaMult;
+    const splashRadius = MISSILES.splashRadius * this.stats.areaMult * this.stats.mainAreaMult;
     const splashSq = splashRadius ** 2;
     hit?.takeDamage(damage);
     for (const enemy of this.enemies.getChildren() as Enemy[]) {

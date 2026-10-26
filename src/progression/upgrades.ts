@@ -5,6 +5,7 @@ import type { Rarity } from '../characters/CharacterDefinition';
 import { RARITY_ORDER } from '../characters/rarity';
 import { HERO_WEAPONS, HERO_WEAPON_MAX_LEVEL, type HeroWeapon } from '../systems/HeroWeapons';
 import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
+import { MAIN_WEAPONS, MAIN_WEAPON_MAX_LEVEL, levelUpMainWeapon, mainLevelText } from './mainWeapon';
 import type { PlayerStats } from './PlayerStats';
 import { saveData } from '../meta/saveData';
 
@@ -83,6 +84,16 @@ export function rollRarity(luck: number): Rarity {
   for (let i = 0; i < w.length; i++) if ((roll -= w[i]) <= 0) return RARITY_ORDER[i];
   return 'common';
 }
+
+/** Héroe → tipo de ataque de su arma principal. */
+const MAIN_WEAPON_HEROES = [
+  ['ironman', 'rocket'],
+  ['capitan', 'shield'],
+  ['spiderman', 'web'],
+  ['thor', 'thunder'],
+  ['hulk', 'fan'],
+  ['strange', 'aura'],
+] as const;
 
 const IRON_MAN_ONLY = ['ironman'] as const;
 const times = (ctx: UpgradeContext, id: string): number => ctx.taken[id] ?? 0;
@@ -267,25 +278,28 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     },
   }),
 
-  // ---- Ataque básico (repulsor)
-  {
-    id: 'multishot',
-    name: 'Disparo múltiple',
-    description: '+1 disparo en abanico',
-    describe: ({ stats, basicKind }) =>
-      `${basicKind === 'fan' ? '+1 zarpazo en otra dirección' : basicKind === 'thunder' ? '+1 rayo por ataque' : basicKind === 'rocket' ? '+1 misil por ráfaga' : '+1 disparo en abanico'} (${stats.projectileCount} → ${stats.projectileCount + 1})`,
-    isAvailable: ({ stats, basicKind }) =>
-      basicKind !== 'aura' && !(basicKind === 'fan' && stats.evolved) && stats.projectileCount < BASIC_ATTACK_LIMITS.maxProjectiles,
-    apply: ({ stats }) => stats.projectileCount++,
-  },
+  // ---- Arma principal: niveles fijos 1–7, una tarjeta por héroe (ver `mainWeapon.ts`)
+  ...MAIN_WEAPON_HEROES.map(
+    ([heroId, kind]): UpgradeDefinition => ({
+      id: `main-${heroId}`,
+      name: MAIN_WEAPONS[kind].name,
+      description: mainLevelText(kind, 2),
+      exclusiveTo: [heroId],
+      describe: ({ stats }) => `${mainLevelText(kind, stats.mainLevel + 1)} (nv ${stats.mainLevel} → ${stats.mainLevel + 1})`,
+      isAvailable: ({ stats }) => stats.mainLevel < MAIN_WEAPON_MAX_LEVEL,
+      apply: ({ stats }) => levelUpMainWeapon(kind, stats),
+      weight: 2,
+    }),
+  ),
+
+  // ---- Ataque básico (pasivas y portales)
   {
     id: 'pierce',
     name: 'Perforación',
     description: 'El disparo atraviesa +1 enemigo',
     describe: ({ stats }) => `El disparo atraviesa +1 enemigo (${stats.pierce} → ${stats.pierce + 1})`,
     isAvailable: ({ stats, basicKind, heroWeapon }) =>
-      (basicKind === 'bolt' || basicKind === 'web' || (basicKind === 'aura' && (heroWeapon?.level ?? 0) > 0)) &&
-      stats.pierce < BASIC_ATTACK_LIMITS.maxPierce,
+      basicKind === 'aura' && (heroWeapon?.level ?? 0) > 0 && stats.pierce < BASIC_ATTACK_LIMITS.maxPierce,
     apply: ({ stats }) => stats.pierce++,
   },
   {
@@ -293,11 +307,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     name: 'Velocidad del disparo',
     description: '+25% de velocidad de los disparos',
     isAvailable: (ctx) =>
-      (ctx.basicKind === 'bolt' ||
-        ctx.basicKind === 'rocket' ||
-        ctx.basicKind === 'web' ||
-        ctx.basicKind === 'shield' ||
-        (ctx.basicKind === 'aura' && (ctx.heroWeapon?.level ?? 0) > 0)) &&
+      ctx.basicKind === 'aura' && (ctx.heroWeapon?.level ?? 0) > 0 &&
       times(ctx, 'shot-speed') < BASIC_ATTACK_LIMITS.maxSpeedUpgrades,
     apply: ({ stats }) => (stats.projectileSpeedMult *= 1.25),
   },
@@ -323,6 +333,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
       isAvailable: (ctx) =>
         !ctx.stats.evolved &&
         times(ctx, evo.requires) >= EVOLUTION.passivePicks &&
+        ctx.stats.mainLevel >= MAIN_WEAPON_MAX_LEVEL &&
         (ctx.heroWeapon?.level ?? 0) >= HERO_WEAPON_MAX_LEVEL,
       apply: (ctx) => {
         ctx.stats.evolved = true;
@@ -365,25 +376,6 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     }),
   ),
 
-  // ---- Zarpazo de Hulk (abanico)
-  {
-    id: 'fan-width',
-    name: 'Abanico ancho',
-    description: '+25% de ángulo del zarpazo',
-    exclusiveTo: ['hulk'],
-    describe: (ctx) => `+25% de ángulo del zarpazo (nv ${times(ctx, 'fan-width')} → ${times(ctx, 'fan-width') + 1})`,
-    isAvailable: (ctx) => !ctx.stats.evolved && times(ctx, 'fan-width') < 5,
-    apply: ({ stats }) => (stats.fanAngleMult *= 1.25),
-  },
-  {
-    id: 'fan-reach',
-    name: 'Brazos largos',
-    description: '+20% de alcance del zarpazo',
-    exclusiveTo: ['hulk'],
-    describe: (ctx) => `+20% de alcance del zarpazo (nv ${times(ctx, 'fan-reach')} → ${times(ctx, 'fan-reach') + 1})`,
-    isAvailable: (ctx) => times(ctx, 'fan-reach') < 5,
-    apply: ({ stats }) => (stats.fanReachMult *= 1.2),
-  },
 ];
 
 
