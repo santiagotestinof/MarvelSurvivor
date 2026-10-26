@@ -157,8 +157,8 @@ export const BASIC_ATTACK_LIMITS = {
 
 /** Oro: se junta en la ronda (props rotos y enemigos) y se gasta en mejoras permanentes del menú. */
 export const GOLD = {
-  /** Si el jugador pierde, se queda con esta parte del oro juntado. */
-  defeatKeepRatio: 0.5,
+  /** Si el jugador pierde, se queda con esta parte del oro juntado (1 = todo; el bono del jefe es solo por ganar). */
+  defeatKeepRatio: 1,
   /** Oro extra por vencer al jefe. */
   bossBonus: 20,
 };

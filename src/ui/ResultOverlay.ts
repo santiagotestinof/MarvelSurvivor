@@ -34,7 +34,7 @@ export class ResultOverlay {
     this.shown = true;
     this.title.setText(won ? '¡VICTORIA!' : 'DERROTA').setColor(won ? '#f5c518' : '#ff6b6b').setVisible(true);
     const payout = state.goldPayout ?? 0;
-    const goldLine = won ? `Oro ganado: +${payout}` : `Oro guardado: +${payout} (la mitad por perder)`;
+    const goldLine = won ? `Oro ganado: +${payout}` : `Oro guardado: +${payout}`;
     const achievementLines = state.newAchievements.flatMap((id) => {
       const achievement = ACHIEVEMENTS.find((a) => a.id === id);
       if (!achievement) return [];

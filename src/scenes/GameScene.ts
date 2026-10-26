@@ -554,7 +554,7 @@ export class GameScene extends Phaser.Scene {
     if (pulledAll) for (const pickup of this.pickups) if (pickup.kind === 'xp' || pickup.kind === 'fruit') pickup.magnetize();
   }
 
-  /** Al terminar la ronda: decide cuánto oro se guarda (todo si gana, la mitad si pierde). */
+  /** Al terminar la ronda: decide cuánto oro se guarda (si pierde conserva `GOLD.defeatKeepRatio`: hoy todo, sin el bono del jefe). */
   private bankGold(): void {
     const won = this.round.phase === 'won';
     const total = won ? this.gold + GOLD.bossBonus * this.stats.goldMult : this.gold * GOLD.defeatKeepRatio;

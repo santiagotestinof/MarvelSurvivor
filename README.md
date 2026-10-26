@@ -61,7 +61,7 @@ Las mejoras de daño, cadencia y alcance afectan a todas las armas (el daño tam
 
 ## Fase 6: oro y mejoras permanentes
 
-Las cajas y rocas del mapa se rompen con los disparos y sueltan monedas; algunos enemigos también. Al terminar la ronda el oro se guarda en el navegador (`localStorage`, por dispositivo): todo si se gana, la mitad si se pierde. En el menú, **MEJORAS** abre la tienda con 8 mejoras permanentes de hasta 5 niveles que valen para todos los héroes. Para sumar una mejora: agregar una entrada en `src/meta/metaUpgrades.ts`. Los números (oro de props, costos, bono del jefe) están en `src/config/gameplayConfig.ts`.
+Las cajas y rocas del mapa se rompen con los disparos y sueltan monedas; algunos enemigos también. Al terminar la ronda el oro se guarda en el navegador (`localStorage`, por dispositivo): todo el oro juntado se guarda, se gane o se pierda (el bono del jefe es solo si se gana). En el menú, **MEJORAS** abre la tienda con 8 mejoras permanentes de hasta 5 niveles que valen para todos los héroes. Para sumar una mejora: agregar una entrada en `src/meta/metaUpgrades.ts`. Los números (oro de props, costos, bono del jefe) están en `src/config/gameplayConfig.ts`.
 
 ## Fase 3: experiencia y mejoras
 

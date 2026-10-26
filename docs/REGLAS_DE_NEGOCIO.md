@@ -129,3 +129,6 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Todos los héroes tienen las **mismas estadísticas base**: vida 120 y velocidad 80 (`HERO_BASE` en `gameplayConfig.ts`). Lo que los diferencia es su arma, su ulti y un bono propio (`statBonus` en `CharacterDefinition`).
 - Bonos propios: **Doctor Strange** +15 % de área (se multiplica con la pasiva Área y la mejora permanente); **Hulk** +0,2 de vida por segundo.
 - El daño y la cadencia del ataque principal siguen siendo de cada arma (no son estadísticas del héroe).
+
+## Oro al perder
+- Al terminar una ronda se guarda **todo el oro juntado**, se gane o se pierda (`GOLD.defeatKeepRatio` = 1; antes se perdía la mitad). El bono por vencer al jefe (`GOLD.bossBonus`) se suma solo si se gana.
