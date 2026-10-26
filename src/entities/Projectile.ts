@@ -64,7 +64,10 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    (this.body as Phaser.Physics.Arcade.Body).setSize(6, 6).setOffset(1, 1);
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const bw = Math.min(14, Math.max(6, Math.round(this.width * 0.65)));
+    const bh = Math.min(14, Math.max(6, Math.round(this.height * 0.65)));
+    body.setSize(bw, bh).setOffset((this.width - bw) / 2, (this.height - bh) / 2);
     this.setVelocity(velocityX, velocityY);
     this.setRotation(Math.atan2(velocityY, velocityX));
     this.setDepth(1_000_000); // siempre por encima de personajes y enemigos
@@ -144,7 +147,7 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
       const angle = Math.atan2(targetY - this.y, owner.x - this.x);
       this.setVelocity(Math.cos(angle) * this.boomerangSpeed, Math.sin(angle) * this.boomerangSpeed);
     }
-    this.rotation += 0.35;
+    this.rotation += 0.40;
   }
 
   hasExpired(): boolean {

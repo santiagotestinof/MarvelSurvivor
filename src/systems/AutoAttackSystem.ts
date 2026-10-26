@@ -288,7 +288,8 @@ export class AutoAttackSystem {
         },
       );
       if (freeze) projectile.setTint(0x9fe8ff);
-      projectile.setScale(projectile.scaleX * stats.areaMult);
+      const baseScale = this.attack.kind === 'shield' ? 0.35 : 1;
+      projectile.setScale(projectile.scaleX * baseScale * stats.areaMult);
       this.projectiles.add(projectile);
       // `group.add` reinicia la velocidad del cuerpo: se vuelve a aplicar.
       projectile.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
