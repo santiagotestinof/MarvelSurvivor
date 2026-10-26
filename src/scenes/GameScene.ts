@@ -138,6 +138,9 @@ export class GameScene extends Phaser.Scene {
     this.ultimateKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E) ?? null;
     if (this.player.definition.id === 'strange') this.timeStop = new TimeStopUltimate(this, this.player);
     this.playerObstacleCollider = this.physics.add.collider(this.player, map.obstacles);
+    // Bono propio del héroe (las estadísticas base son iguales para todos).
+    this.stats.areaMult *= this.player.definition.statBonus?.areaMult ?? 1;
+    this.stats.regenPerSecond += this.player.definition.statBonus?.regenPerSecond ?? 0;
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.ironManBaseMoveSpeed = this.player.moveSpeed;
     this.ironManBaseScaleX = this.player.scaleX;
@@ -705,7 +708,7 @@ export class GameScene extends Phaser.Scene {
     this.missiles.update(now, delta);
     this.heroWeapon?.update(now, delta);
     this.updatePickups(delta);
-    const regenPerSecond = this.stats.regenPerSecond + (this.player.definition.id === 'hulk' ? 0.2 : 0);
+    const regenPerSecond = this.stats.regenPerSecond;
     if (regenPerSecond > 0) this.player.heal((regenPerSecond * delta) / 1000);
     const activeEnemies = (this.enemies.getChildren() as Enemy[]).filter((enemy) => enemy.active && !enemy.dying);
     const currentSpeedScale = this.waves.getScaling(now / ROUND.durationMs).speed;

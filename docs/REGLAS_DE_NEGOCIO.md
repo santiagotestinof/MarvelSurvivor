@@ -124,3 +124,8 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 ## Aparición de enemigos según el movimiento
 - Con el jugador en movimiento, el 70 % de los enemigos nuevos (`WAVES.aheadChance`) aparece fuera de la pantalla del lado hacia donde va (dentro de ±1 radián de su dirección); el resto, de cualquier lado. Quieto, aparecen de cualquier lado.
 - Los enemigos de oleada que quedan lejos y fuera de la pantalla (más que la media diagonal + margen + `WAVES.relocateExtra`) reaparecen fuera de la vista, con la misma regla (hasta 6 cada 0,4 s). No se reubican la manada, el mini jefe, los congelados ni el jefe. Así parece que siempre vienen de todos lados.
+
+## Estadísticas base de los héroes
+- Todos los héroes tienen las **mismas estadísticas base**: vida 120 y velocidad 80 (`HERO_BASE` en `gameplayConfig.ts`). Lo que los diferencia es su arma, su ulti y un bono propio (`statBonus` en `CharacterDefinition`).
+- Bonos propios: **Doctor Strange** +15 % de área (se multiplica con la pasiva Área y la mejora permanente); **Hulk** +0,2 de vida por segundo.
+- El daño y la cadencia del ataque principal siguen siendo de cada arma (no son estadísticas del héroe).

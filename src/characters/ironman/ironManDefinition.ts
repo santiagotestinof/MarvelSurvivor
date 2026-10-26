@@ -1,4 +1,5 @@
 import { TEXTURES } from '../../config/assetKeys';
+import { HERO_BASE } from '../../config/gameplayConfig';
 import type { CharacterDefinition } from '../CharacterDefinition';
 
 export const IRON_MAN_ID = 'ironman';
@@ -17,8 +18,8 @@ export const ironManDefinition: CharacterDefinition = {
   origin: { x: 0.5, y: 41 / 48 },
   body: { width: 10, height: 8, offsetX: 19, offsetY: 37 },
   stats: {
-    moveSpeed: 85.5,
-    maxHealth: 100,
+    moveSpeed: HERO_BASE.moveSpeed,
+    maxHealth: HERO_BASE.maxHealth,
     // Arma principal: repulsores. Los minimisiles son su arma exclusiva (ver `MissileWeapon`).
     attack: {
       kind: 'bolt',

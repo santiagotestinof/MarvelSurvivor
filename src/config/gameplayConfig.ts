@@ -142,6 +142,9 @@ export const FIRE = {
 };
 
 /** Mejoras del ataque básico: cuántas veces se puede elegir cada una. */
+/** Estadísticas base iguales para todos los héroes: lo que los diferencia es el arma y su bono propio (`statBonus` en `CharacterDefinition`). */
+export const HERO_BASE = { moveSpeed: 80, maxHealth: 120 } as const;
+
 export const BASIC_ATTACK_LIMITS = {
   /** Disparos por ataque como máximo. */
   maxProjectiles: 4,

@@ -1,4 +1,5 @@
 import { TEXTURES } from '../config/assetKeys';
+import { HERO_BASE } from '../config/gameplayConfig';
 import type { ActionSheet, CharacterDefinition } from './CharacterDefinition';
 
 /** Los spritesheets de todos los héroes siguen la misma convención (ver `tools/generate-sprites.mjs`). */
@@ -34,8 +35,8 @@ export const capitanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 70.4,
-    maxHealth: 130,
+    moveSpeed: HERO_BASE.moveSpeed,
+    maxHealth: HERO_BASE.maxHealth,
     attack: {
       kind: 'shield',
       cooldownMs: 1000,
@@ -59,8 +60,8 @@ export const spidermanDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 97.7,
-    maxHealth: 80,
+    moveSpeed: HERO_BASE.moveSpeed,
+    maxHealth: HERO_BASE.maxHealth,
     attack: {
       kind: 'web',
       cooldownMs: 500,
@@ -86,8 +87,8 @@ export const thorDefinition: CharacterDefinition = {
   origin: ORIGIN,
   body: BODY,
   stats: {
-    moveSpeed: 74.5,
-    maxHealth: 110,
+    moveSpeed: HERO_BASE.moveSpeed,
+    maxHealth: HERO_BASE.maxHealth,
     attack: {
       kind: 'thunder',
       cooldownMs: 1800,
@@ -107,13 +108,14 @@ export const hulkDefinition: CharacterDefinition = {
   id: HULK_ID,
   displayName: 'Hulk',
   rarity: 'legendary',
-  weaponText: 'Zarpazo: abanico fino que se ensancha y alarga con mejoras',
+  statBonus: { regenPerSecond: 0.2 },
+  weaponText: 'Zarpazo: abanico fino que se ensancha y alarga con mejoras (+0,2 de vida por segundo)',
   frame: FRAME,
   origin: ORIGIN,
   body: { width: 12, height: 8, offsetX: 10, offsetY: 22 },
   stats: {
-    moveSpeed: 73.6,
-    maxHealth: 190,
+    moveSpeed: HERO_BASE.moveSpeed,
+    maxHealth: HERO_BASE.maxHealth,
     attack: {
       kind: 'fan',
       cooldownMs: 700,
@@ -137,14 +139,15 @@ export const strangeDefinition: CharacterDefinition = {
   id: STRANGE_ID,
   displayName: 'Doctor Strange',
   rarity: 'epic',
-  weaponText: 'Aura de runas que daña a los cercanos. Ulti: tiempo detenido',
+  statBonus: { areaMult: 1.15 },
+  weaponText: 'Aura de runas que daña a los cercanos (+15% de área). Ulti: tiempo detenido',
   // Dibujo de Santi a tamaño original: cuadro de 48×56, suelo en (24, 51) y el cuerpo flota 3 px.
   frame: { width: 48, height: 56 },
   origin: { x: 0.5, y: 51 / 56 },
   body: { width: 8, height: 6, offsetX: 20, offsetY: 48 },
   stats: {
-    moveSpeed: 77.3,
-    maxHealth: 105,
+    moveSpeed: HERO_BASE.moveSpeed,
+    maxHealth: HERO_BASE.maxHealth,
     attack: {
       kind: 'aura',
       cooldownMs: 400,

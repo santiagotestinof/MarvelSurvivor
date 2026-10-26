@@ -64,5 +64,7 @@ export interface CharacterDefinition {
   /** Caja de colisión (solo los pies), en píxeles desde la esquina superior izquierda del cuadro. */
   body: { width: number; height: number; offsetX: number; offsetY: number };
   stats: { moveSpeed: number; maxHealth: number; attack: AttackDefinition };
+  /** Bono propio del héroe sobre las estadísticas base (todos tienen las mismas, ver `HERO_BASE`). */
+  statBonus?: { areaMult?: number; regenPerSecond?: number };
   sheets: Record<'idle' | 'walk', ActionSheet> & Partial<Record<CharacterAction, ActionSheet>>;
 }
