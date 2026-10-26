@@ -2267,12 +2267,12 @@ function makeBolt() {
 }
 
 
-// Escudo del Capitán América (22x22 píxeles con estrella de 5 puntas y anillos pulidos según diseño MakeBead).
+// Escudo del Capitán América en 32x32 (trazado pixel art fiel al modelo MakeBead con estrella de 5 puntas y anillos concéntricos).
 function makeShield() {
-  const cv = new Canvas(22, 22);
-  for (let y = 0; y < 22; y++) {
+  const cv = new Canvas(32, 32);
+  for (let y = 0; y < 32; y++) {
     const row = SHIELD_REF[y].split(' ');
-    for (let x = 0; x < 22; x++) {
+    for (let x = 0; x < 32; x++) {
       const c = row[x];
       if (c && c !== '-') {
         cv.set(x, y, hex('#' + c));
