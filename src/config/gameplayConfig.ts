@@ -110,7 +110,7 @@ export const SPECIAL_WAVES = {
 /** Minimisiles teledirigidos (se desbloquean con la mejora "Minimisiles"). */
 export const MISSILES = {
   /** Tiempo entre ráfagas (lo acorta la mejora de cadencia). */
-  cooldownMs: 1100,
+  cooldownMs: 1500,
   damage: 22,
   /** Píxeles por segundo. */
   speed: 170,

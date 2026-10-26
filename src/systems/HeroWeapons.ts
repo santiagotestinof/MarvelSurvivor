@@ -438,109 +438,21 @@ export class Portals extends LeveledWeapon {
   }
 }
 
-/** Valores base del Unibeam de Iron Man (solo cambian con la tabla de niveles y las mejoras comunes). */
-const UNIBEAM = { everyMs: 4200, durationMs: 650, tickMs: 130, length: 210, width: 14, damage: 7, aimRange: 200 } as const;
-
-interface Beam {
-  angle: number;
-  until: number;
-  nextTick: number;
-  width: number;
-  damage: number;
-  length: number;
-  critical: boolean;
-  g: Phaser.GameObjects.Graphics;
-}
-
-/**
- * Iron Man: dispara un rayo desde el reactor del pecho hacia los enemigos más cercanos; el rayo dura un instante y
- * daña seguido a todo lo que cruza en línea recta. Usa daño, enfriamiento, duración, área, alcance, cantidad y crítico.
- */
-export const UNIBEAM_LEVELS = ['+1 rayo', 'Dispara más seguido', 'El rayo dura más', '+40 % de daño y rayo más ancho', '+1 rayo', 'Más daño y rayo más ancho'];
-export class Unibeam extends LeveledWeapon {
-  protected readonly table = {
-    2: { amount: 1 },
-    3: { cooldown: 0.8 },
-    4: { duration: 1.4 },
-    5: { damage: 1.4, area: 1.3 },
-    6: { amount: 1 },
-    7: { damage: 1.3, area: 1.2 },
-  };
-  private nextShot = 0;
-  private readonly beams: Beam[] = [];
-
-  update(now: number): void {
-    const { owner, stats } = this.deps;
-    const ox = owner.x;
-    const oy = owner.y - 16;
-
-    for (const beam of this.beams) this.tickBeam(beam, now, ox, oy);
-    for (let i = this.beams.length - 1; i >= 0; i--) {
-      if (now >= this.beams[i].until) {
-        this.beams[i].g.destroy();
-        this.beams.splice(i, 1);
-      }
-    }
-
-    if (this.level === 0 || now < this.nextShot) return;
-    const b = this.bonus;
-    const count = 1 + b.amount + stats.amountBonus;
-    const range = UNIBEAM.aimRange * stats.rangeMult;
-    const targets = activeEnemies(this.deps.enemies)
-      .map((e) => ({ e, d: (e.x - ox) ** 2 + (e.y - oy) ** 2 }))
-      .filter(({ d }) => d <= range * range)
-      .sort((a, c) => a.d - c.d)
-      .slice(0, count);
-    if (targets.length === 0) return;
-    this.nextShot = now + UNIBEAM.everyMs * b.cooldown * stats.cooldownMult;
-
-    for (const { e } of targets) {
-      const critical = Math.random() < stats.critChance;
-      this.beams.push({
-        angle: Math.atan2(e.y - 8 - oy, e.x - ox),
-        until: now + UNIBEAM.durationMs * b.duration * stats.durationMult,
-        nextTick: now,
-        width: UNIBEAM.width * b.area * stats.areaMult,
-        damage: UNIBEAM.damage * b.damage * stats.damageMult * (critical ? stats.critMult : 1),
-        length: UNIBEAM.length * stats.rangeMult,
-        critical,
-        g: this.deps.scene.add.graphics().setDepth(999_996),
-      });
-    }
-  }
-
-  private tickBeam(beam: Beam, now: number, ox: number, oy: number): void {
-    const x2 = ox + Math.cos(beam.angle) * beam.length;
-    const y2 = oy + Math.sin(beam.angle) * beam.length;
-    const life = Math.max(0, (beam.until - now) / (UNIBEAM.durationMs * this.bonus.duration * this.deps.stats.durationMult));
-    beam.g.clear();
-    beam.g.lineStyle(beam.width, beam.critical ? 0xffe272 : 0x37d5ff, 0.45 * (0.4 + life)).lineBetween(ox, oy, x2, y2);
-    beam.g.lineStyle(Math.max(3, beam.width * 0.45), 0xffffff, 0.9).lineBetween(ox, oy, x2, y2);
-    if (now < beam.nextTick) return;
-    beam.nextTick = now + UNIBEAM.tickMs;
-
-    const dx = x2 - ox;
-    const dy = y2 - oy;
-    const near = (px: number, py: number, extra: number): boolean => {
-      const t = Phaser.Math.Clamp(((px - ox) * dx + (py - oy) * dy) / (dx * dx + dy * dy), 0, 1);
-      return Math.hypot(px - (ox + dx * t), py - (oy + dy * t)) <= beam.width / 2 + extra;
-    };
-    for (const enemy of activeEnemies(this.deps.enemies)) if (near(enemy.x, enemy.y - 6, 6)) enemy.takeDamage(beam.damage);
-    for (const prop of this.deps.props()) if (!prop.isBroken && near(prop.x, prop.y, 4)) prop.takeDamage(beam.damage);
-  }
-}
+/** Textos de los niveles 2 a 7 de los minimisiles de Iron Man (los bonos están en `MissileWeapon.ts`). */
+export const MISSILES_LEVELS = ['+1 misil por ráfaga', 'Dispara más seguido', 'Explosiones más grandes', '+35 % de daño', '+1 misil por ráfaga', '+30 % de daño y explosiones más grandes'];
 
 /** Qué arma secundaria exclusiva tiene cada héroe (por id de héroe). */
 export const HERO_WEAPONS: Record<
   string,
-  { upgradeId: string; name: string; text: string; levels: string[]; create: (deps: HeroWeaponDeps) => HeroWeapon }
+  { upgradeId: string; name: string; text: string; levels: string[]; create: (deps: HeroWeaponDeps) => HeroWeapon | null }
 > = {
   ironman: {
-    upgradeId: 'unibeam',
-    name: 'Unibeam',
-    text: 'Un rayo del reactor del pecho que atraviesa en línea a los enemigos',
-    levels: UNIBEAM_LEVELS,
-    create: (deps) => new Unibeam(deps),
+    upgradeId: 'missiles',
+    name: 'Minimisiles',
+    text: 'Cohetes teledirigidos que explotan en área',
+    levels: MISSILES_LEVELS,
+    // Los minimisiles necesitan más dependencias: los crea `GameScene` (`MissileWeapon`).
+    create: () => null,
   },
   capitan: {
     upgradeId: 'orbit-shields',

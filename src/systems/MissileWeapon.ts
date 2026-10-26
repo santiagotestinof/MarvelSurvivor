@@ -5,16 +5,27 @@ import type { Enemy } from '../entities/Enemy';
 import { FireZone } from '../entities/FireZone';
 import { HomingMissile } from '../entities/HomingMissile';
 import type { PlayerStats } from '../progression/PlayerStats';
+import { HERO_WEAPON_MAX_LEVEL, type HeroWeapon } from './HeroWeapons';
+
+/** Bonos fijos de los minimisiles por nivel (textos en `MISSILES_LEVELS` de `HeroWeapons.ts`); el nivel 1 la desbloquea. */
+const MISSILES_TABLE: Partial<Record<number, { amount?: number; cooldown?: number; area?: number; damage?: number }>> = {
+  2: { amount: 1 },
+  3: { cooldown: 0.85 },
+  4: { area: 1.25 },
+  5: { damage: 1.35 },
+  6: { amount: 1 },
+  7: { damage: 1.3, area: 1.15 },
+};
 
 export type FireUpgrade = 'duration' | 'damage' | 'rate' | 'size';
 
 /**
- * Minimisiles (arma principal de Iron Man): cada `MISSILES.cooldownMs` lanza una ráfaga de misiles (1 más los de Disparo múltiple y Cantidad) hacia los enemigos
- * más cercanos. Al pegar explotan y dañan también a los que estén alrededor.
- * Arranca bloqueada (nivel 0) y `unlock()` la activa (Iron Man la tiene desde el principio).
+ * Minimisiles (arma exclusiva de Iron Man; su principal son los repulsores): cada `MISSILES.cooldownMs` lanza una ráfaga de misiles
+ * (1 más los de sus niveles y de la pasiva Cantidad) hacia los enemigos más cercanos. Al pegar explotan y dañan también a los que estén alrededor.
+ * Arranca bloqueada (nivel 0) y sube de nivel con la tarjeta `missiles` (niveles fijos, `MISSILES_TABLE`).
  * Evolucionada (Misiles incendiarios), cada explosión deja un charco de fuego (`FIRE`).
  */
-export class MissileWeapon {
+export class MissileWeapon implements HeroWeapon {
   level = 0;
   evolved = false;
   /** Niveles de las mejoras de fuego (solo después de evolucionar). */
@@ -43,9 +54,26 @@ export class MissileWeapon {
     });
   }
 
-  /** Los minimisiles son el arma principal: se activan desde el principio (Iron Man). */
-  unlock(): void {
-    this.level = 1;
+  get maxed(): boolean {
+    return this.level >= HERO_WEAPON_MAX_LEVEL;
+  }
+
+  levelUp(): void {
+    this.level = Math.min(HERO_WEAPON_MAX_LEVEL, this.level + 1);
+  }
+
+  /** Bonos fijos acumulados hasta el nivel actual. */
+  private get bonus(): { amount: number; cooldown: number; area: number; damage: number } {
+    const total = { amount: 0, cooldown: 1, area: 1, damage: 1 };
+    for (let l = 2; l <= this.level; l++) {
+      const b = MISSILES_TABLE[l];
+      if (!b) continue;
+      total.amount += b.amount ?? 0;
+      total.cooldown *= b.cooldown ?? 1;
+      total.area *= b.area ?? 1;
+      total.damage *= b.damage ?? 1;
+    }
+    return total;
   }
 
   evolve(): void {
@@ -86,9 +114,9 @@ export class MissileWeapon {
       else missile.steer(deltaMs, () => this.nearestEnemies(missile.x, missile.y, 1)[0] ?? null);
     }
 
-    if (this.level === 0 || now - this.lastFiredAt < MISSILES.cooldownMs * this.stats.cooldownMult) return;
-    // Cantidad: 1 misil más los de "Disparo múltiple" y de la pasiva Cantidad.
-    const count = this.stats.projectileCount;
+    if (this.level === 0 || now - this.lastFiredAt < MISSILES.cooldownMs * this.bonus.cooldown * this.stats.cooldownMult) return;
+    // Cantidad: 1 misil más los de sus niveles y de la pasiva Cantidad.
+    const count = 1 + this.bonus.amount + this.stats.amountBonus;
     const targets = this.nearestEnemies(this.owner.x, this.owner.y, count);
     const prop = targets.length === 0 ? this.nearestProp() : null;
     if (targets.length === 0 && !prop) return;
@@ -152,8 +180,8 @@ export class MissileWeapon {
     missile.destroy();
 
     const critical = Math.random() < this.stats.critChance;
-    const damage = MISSILES.damage * this.stats.damageMult * (critical ? this.stats.critMult : 1);
-    const splashRadius = MISSILES.splashRadius * this.stats.areaMult * this.stats.mainAreaMult;
+    const damage = MISSILES.damage * this.bonus.damage * this.stats.damageMult * (critical ? this.stats.critMult : 1);
+    const splashRadius = MISSILES.splashRadius * this.bonus.area * this.stats.areaMult;
     const splashSq = splashRadius ** 2;
     hit?.takeDamage(damage);
     for (const enemy of this.enemies.getChildren() as Enemy[]) {

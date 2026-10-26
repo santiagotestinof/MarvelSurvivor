@@ -29,17 +29,6 @@ const AREA = 1.12;
  * Cada nivel da un bono específico, sin sorteo.
  */
 export const MAIN_WEAPONS: Record<AttackKind, MainWeaponDefinition> = {
-  rocket: {
-    name: 'Minimisiles',
-    levels: [
-      { text: '+1 misil por ráfaga', count: 1 },
-      { text: '+25% de velocidad de los misiles', speedMult: SHOT_SPEED },
-      { text: '+1 misil por ráfaga', count: 1 },
-      { text: '+15% de área de las explosiones', areaMult: 1.15 },
-      { text: '+1 misil por ráfaga', count: 1 },
-      { text: '+25% de velocidad y +15% de área', speedMult: SHOT_SPEED, areaMult: 1.15 },
-    ],
-  },
   shield: {
     name: 'Escudo',
     levels: [

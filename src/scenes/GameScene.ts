@@ -184,8 +184,8 @@ export class GameScene extends Phaser.Scene {
         map.damagePropsInRadius(x, y, radius, damage),
       () => map.breakables,
     );
-    // Los minimisiles son el arma principal de Iron Man.
-    if (this.player.definition.stats.attack.kind === 'rocket') this.missiles.unlock();
+    // Los minimisiles son el arma exclusiva de Iron Man.
+    if (this.player.definition.id === 'ironman') this.heroWeapon = this.missiles;
 
     this.rangedAttacks = new RangedAttackSystem(
       this,

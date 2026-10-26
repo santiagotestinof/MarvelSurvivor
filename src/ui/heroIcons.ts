@@ -60,6 +60,18 @@ export const HERO_ICONS: Record<string, string[]> = {
     '...GGGG...',
     '..........',
   ],
+  'main-ironman': [
+    '..........',
+    '....CC....',
+    '...CWWC...',
+    '..CWYYWC..',
+    '..CWYYWC..',
+    '...CWWC...',
+    '....CC....',
+    'C.C..C..C.',
+    '.C..CC.C..',
+    '..........',
+  ],
   'main-capitan': [
     '..BBBBBB..',
     '.BWWWWWWB.',

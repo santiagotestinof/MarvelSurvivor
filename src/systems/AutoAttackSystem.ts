@@ -49,8 +49,6 @@ export class AutoAttackSystem {
     const delta = Math.max(0, now - this.lastUpdateAt);
     this.lastUpdateAt = now;
     this.aura?.update(delta, this.auraRadius());
-    // Los minimisiles (Iron Man) los dispara MissileWeapon.
-    if (this.attack.kind === 'rocket') return;
     if (now - this.lastShotAt < this.attack.cooldownMs * this.stats.cooldownMult) return;
 
     const fired =

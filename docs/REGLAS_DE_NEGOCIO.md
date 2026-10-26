@@ -15,20 +15,20 @@ Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir d
 
 | Arma (héroe) | Nv 1 | Nv 2 | Nv 3 | Nv 4 | Nv 5 | Nv 6 | Nv 7 |
 |---|---|---|---|---|---|---|---|
-| Unibeam (Iron Man) | 1 rayo del reactor | +1 rayo | Dispara más seguido (−20 %) | El rayo dura más (+40 %) | +40 % de daño, rayo más ancho (+30 %) | +1 rayo | +30 % de daño, rayo más ancho (+20 %) |
+| Minimisiles (Iron Man) | 1 misil por ráfaga (cada 1,5 s) | +1 misil | Dispara más seguido (−15 %) | Explosiones más grandes (+25 %) | +35 % de daño | +1 misil | +30 % de daño, explosiones +15 % |
 | Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño | +1 portal | +30 % de daño, disparan más rápido (−15 %) |
 | Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área | +1 escudo | +30 % de daño, giran más rápido (+20 %) |
 | Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño | +1 telaraña | +40 % de daño, +20 % de área |
 | Tormenta (Thor) | 3 rayos | +1 rayo | Tormenta más seguida (−20 %) | +1 rayo | +30 % de daño, +25 % de área | +1 rayo | +30 % de daño, más seguida (−15 %) |
 | Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje | Golpea más seguido (−15 %) | +30 % de daño, +15 % de área |
 
-Los Minimisiles de Iron Man son su arma principal (no tienen niveles fijos); su arma especial es el Unibeam.
+El arma principal de Iron Man son los **repulsores** (disparo recto); los **Minimisiles** son su arma especial (secundaria). Los misiles se van a rediseñar más adelante (pedido de Santi).
 
 ## 2. Qué significa cada estadística
 
 - **Cadencia** (velocidad de disparo / enfriamiento): qué tan seguido pegan o disparan las armas. En Doctor Strange: la velocidad de las chispas de los portales y el ritmo del aura.
 - **Duración**: cuánto tiempo dura un efecto una vez creado (por ejemplo, cuánto quedan abiertos los portales, el fuego, las telarañas). No cambia cada cuánto se crea uno nuevo.
-- **Cantidad** (pasiva, ocupa casillero): unidades extra de las armas **especiales** (portales, escudos orbitales, trampas, tormenta de rayos, Unibeam). No afecta al ataque principal. Solo se ofrece cuando el héroe ya tiene su arma especial.
+- **Cantidad** (pasiva, ocupa casillero): unidades extra de las armas **especiales** (portales, escudos orbitales, trampas, tormenta de rayos, minimisiles). No afecta al ataque principal. Solo se ofrece cuando el héroe ya tiene su arma especial.
 - **Disparo múltiple** (mejora del arma principal, no ocupa casillero): disparos/misiles/rayos/zarpazos extra del ataque principal. No afecta a las armas especiales. Solo se ofrece si el ataque principal lo admite (no sale en el aura de Strange ni en el círculo evolucionado de Hulk).
 - **Área**: tamaño del daño o del efecto (aura, explosiones, rayos, telarañas).
 
@@ -54,7 +54,7 @@ El arma principal de cada héroe empieza en nivel 1 y sube hasta el **7** con un
 
 | Héroe | Niveles 2 a 7 |
 |---|---|
-| Iron Man (Minimisiles) | +1 misil · +25% vel. · +1 misil · +15% área · +1 misil · +25% vel. y +15% área |
+| Iron Man (Repulsor) | +1 disparo · atraviesa +1 · +1 disparo · +25% vel. · +1 disparo · atraviesa +1 y +25% vel. |
 | Capitán (Escudo) | +1 escudo · +25% vel. · +1 escudo · +25% vel. · +1 escudo · +25% vel. |
 | Spider-Man (Telarañas) | +1 telaraña · atraviesa +1 · +25% vel. · +1 telaraña · atraviesa +1 · +1 telaraña y atraviesa +1 |
 | Thor (Rayos) | +1 rayo · +12% área · +1 rayo · +12% área · +1 rayo · +25% área |
@@ -67,7 +67,7 @@ Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `E
 
 | Héroe | Arma principal | Evolución | Pasiva requerida (x3) |
 |---|---|---|---|
-| Iron Man | Minimisiles (cohetes teledirigidos; reemplazaron al repulsor) | Misiles incendiarios: las explosiones dejan fuego (+ mejoras de fuego) | Cadencia |
+| Iron Man | Repulsor (los minimisiles son su arma especial) | Misiles incendiarios: las explosiones de los minimisiles dejan fuego (+ mejoras de fuego) | Cadencia |
 | Capitán América | Escudo boomerang | Escudo rebotador: se lanza a un enemigo y rebota entre ellos (5 rebotes; mejora "Más rebotes" hasta 10) | Cantidad |
 | Spider-Man | Telarañas (frenan un poco, 30 % por 1,2 s) | Telaraña inmovilizadora: inmoviliza 2,5 s al que pega (el jefe solo se frena) | Duración |
 | Thor | Rayos en área | Martillo sísmico: además, una onda en línea larga que rompe el piso | Alcance |

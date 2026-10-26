@@ -317,8 +317,6 @@ const ICONS: Record<string, string[]> = {
 /** Lado de cada ícono en píxeles (antes de escalar). */
 export const UPGRADE_ICON_SIZE = 10;
 
-ICONS['main-ironman'] = ICONS.missiles;
-
 /** Pasivas de la ronda que usan el mismo ícono que su mejora permanente de la tienda (id de la pasiva → id permanente). */
 const META_ICON_OF: Record<string, string> = {
   damage: 'might',

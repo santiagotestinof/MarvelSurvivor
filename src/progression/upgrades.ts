@@ -87,7 +87,7 @@ export function rollRarity(luck: number): Rarity {
 
 /** Héroe → tipo de ataque de su arma principal. */
 const MAIN_WEAPON_HEROES = [
-  ['ironman', 'rocket'],
+  ['ironman', 'bolt'],
   ['capitan', 'shield'],
   ['spiderman', 'web'],
   ['thor', 'thunder'],
@@ -158,8 +158,8 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     id: 'amount',
     passive: true,
     name: 'Cantidad',
-    description: '+1 unidad en tu arma especial (portal, escudo, trampa, rayo, Unibeam)',
-    describe: ({ stats }) => `+1 unidad en tu arma especial (portal, escudo, trampa, rayo, Unibeam) (${stats.amountBonus} → ${stats.amountBonus + 1})`,
+    description: '+1 unidad en tu arma especial (portal, escudo, trampa, rayo, misil)',
+    describe: ({ stats }) => `+1 unidad en tu arma especial (portal, escudo, trampa, rayo, misil) (${stats.amountBonus} → ${stats.amountBonus + 1})`,
     // Solo suma a las armas especiales: sale una vez que el héroe ya tiene la suya.
     isAvailable: (ctx) => times(ctx, 'amount') < 3 && (ctx.heroWeapon?.level ?? 0) > 0,
     apply: ({ stats }) => stats.amountBonus++,
