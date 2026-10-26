@@ -5,7 +5,7 @@ import type { Enemy } from '../entities/Enemy';
 /** Distancia (al cuerpo del jugador) a la que un enemigo cuenta como "tocándolo". */
 const CONTACT_RANGE = 16;
 /** Mientras un enemigo lo toca, le hace daño cada tanto. No hay inmunidad: varios enemigos pegan a la vez. */
-const CONTACT_TICK_MS = 800;
+const CONTACT_TICK_MS = 500;
 
 /**
  * Daño por contacto: los enemigos no "atacan", solo lastiman al jugador cuando lo tocan.
