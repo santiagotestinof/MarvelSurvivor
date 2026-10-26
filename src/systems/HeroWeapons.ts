@@ -64,7 +64,7 @@ export class OrbitShields extends LeveledWeapon {
     const list = activeEnemies(enemies);
     this.sprites.forEach((sprite, i) => {
       const a = this.angle + (i * Math.PI * 2) / count;
-      sprite.setPosition(owner.x + Math.cos(a) * radius, owner.y - 8 + Math.sin(a) * radius * 0.8).setRotation(a * 2).setScale(scale);
+      sprite.setPosition(owner.x + Math.cos(a) * radius, owner.y - 8 + Math.sin(a) * radius * 0.8).setRotation(this.angle * 6 + i * 2).setScale(scale);
       for (const enemy of list) {
         if (enemy.dying || (this.nextHit.get(enemy) ?? 0) > now) continue;
         if ((enemy.x - sprite.x) ** 2 + (enemy.y - 6 - sprite.y) ** 2 > 14 * 14 * scale) continue;

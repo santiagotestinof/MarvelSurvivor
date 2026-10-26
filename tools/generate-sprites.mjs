@@ -17,6 +17,7 @@ import { CAPITAN_REF } from './hero-trace-capitan.mjs';
 import { THOR_REF } from './hero-trace-thor.mjs';
 import { HULK_REF } from './hero-trace-hulk.mjs';
 import { SPIDERMAN_REF } from './hero-trace-spiderman.mjs';
+import { SHIELD_REF } from './shield-reference.mjs';
 import { buildMetaIconSheet } from './meta-icons.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -2266,15 +2267,19 @@ function makeBolt() {
 }
 
 
-// Escudo del Capitán (círculo con estrella), 10x10.
+// Escudo del Capitán América (22x22 píxeles con estrella de 5 puntas y anillos pulidos según diseño MakeBead).
 function makeShield() {
-  const cv = new Canvas(10, 10);
-  fillEllipse(cv, 4.5, 4.5, 4.6, 4.6, () => hex('#c8202a'));
-  fillEllipse(cv, 4.5, 4.5, 3.4, 3.4, () => hex('#f2f2f2'));
-  fillEllipse(cv, 4.5, 4.5, 2.4, 2.4, () => hex('#2a50b8'));
-  cv.rect(4, 3, 2, 4, hex('#ffffff'));
-  cv.rect(3, 4, 4, 2, hex('#ffffff'));
-  return addOutline(cv, hex('#150909'));
+  const cv = new Canvas(22, 22);
+  for (let y = 0; y < 22; y++) {
+    const row = SHIELD_REF[y].split(' ');
+    for (let x = 0; x < 22; x++) {
+      const c = row[x];
+      if (c && c !== '-') {
+        cv.set(x, y, hex('#' + c));
+      }
+    }
+  }
+  return cv;
 }
 
 // Telaraña de Spider-Man (estrella blanca), 8x8.
