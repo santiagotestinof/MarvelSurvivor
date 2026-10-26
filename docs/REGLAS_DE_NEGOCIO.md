@@ -50,7 +50,7 @@ Los Minimisiles de Iron Man son su arma principal (no tienen niveles fijos); su 
 
 ## Evoluciones del arma principal
 
-Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `EVOLUTION.passivePicks` (3) veces la pasiva asociada. La evolución es una mejora más que sale en el sorteo (peso alto) y se elige una sola vez.
+Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `EVOLUTION.passivePicks` (3) veces la pasiva asociada **y además tiene su arma exclusiva al nivel máximo (7)**. La evolución es una mejora más que sale en el sorteo (peso alto) y se elige una sola vez.
 
 | Héroe | Arma principal | Evolución | Pasiva requerida (x3) |
 |---|---|---|---|

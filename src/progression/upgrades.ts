@@ -3,7 +3,7 @@ import type { AttackKind } from '../characters/CharacterDefinition';
 import type { Character } from '../entities/Character';
 import type { Rarity } from '../characters/CharacterDefinition';
 import { RARITY_ORDER } from '../characters/rarity';
-import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
+import { HERO_WEAPONS, HERO_WEAPON_MAX_LEVEL, type HeroWeapon } from '../systems/HeroWeapons';
 import type { FireUpgrade, MissileWeapon } from '../systems/MissileWeapon';
 import type { PlayerStats } from './PlayerStats';
 import { saveData } from '../meta/saveData';
@@ -320,7 +320,10 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
       description: evo.text,
       describe: () => `EVOLUCIÓN: ${evo.text}`,
       exclusiveTo: [evo.hero],
-      isAvailable: (ctx) => !ctx.stats.evolved && times(ctx, evo.requires) >= EVOLUTION.passivePicks,
+      isAvailable: (ctx) =>
+        !ctx.stats.evolved &&
+        times(ctx, evo.requires) >= EVOLUTION.passivePicks &&
+        (ctx.heroWeapon?.level ?? 0) >= HERO_WEAPON_MAX_LEVEL,
       apply: (ctx) => {
         ctx.stats.evolved = true;
         if (evo.hero === 'ironman') ctx.missiles.evolve();
