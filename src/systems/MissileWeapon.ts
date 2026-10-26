@@ -7,21 +7,22 @@ import { HomingMissile } from '../entities/HomingMissile';
 import type { PlayerStats } from '../progression/PlayerStats';
 import { HERO_WEAPON_MAX_LEVEL, type HeroWeapon } from './HeroWeapons';
 
-/** Bonos fijos de los minimisiles por nivel (textos en `MISSILES_LEVELS` de `HeroWeapons.ts`); el nivel 1 la desbloquea. */
+/** Bonos fijos de los minimisiles por nivel (más misiles, más daño y más área) (textos en `MISSILES_LEVELS` de `HeroWeapons.ts`); el nivel 1 la desbloquea. */
 const MISSILES_TABLE: Partial<Record<number, { amount?: number; cooldown?: number; area?: number; damage?: number }>> = {
   2: { amount: 1 },
-  3: { cooldown: 0.85 },
-  4: { area: 1.25 },
-  5: { damage: 1.35 },
-  6: { amount: 1 },
-  7: { damage: 1.3, area: 1.15 },
+  3: { damage: 1.25 },
+  4: { area: 1.2 },
+  5: { amount: 1 },
+  6: { damage: 1.3 },
+  7: { amount: 1, area: 1.25 },
 };
 
 export type FireUpgrade = 'duration' | 'damage' | 'rate' | 'size';
 
 /**
- * Minimisiles (arma exclusiva de Iron Man; su principal son los repulsores): cada `MISSILES.cooldownMs` lanza una ráfaga de misiles
- * (1 más los de sus niveles y de la pasiva Cantidad) hacia los enemigos más cercanos. Al pegar explotan y dañan también a los que estén alrededor.
+ * Minimisiles (arma exclusiva de Iron Man; su principal son los repulsores): cada `MISSILES.cooldownMs`, si hay algo cerca, lanza una ráfaga
+ * de misiles (`MISSILES.baseCount` más los de sus niveles y de la pasiva Cantidad) que cubre un área alrededor del jugador:
+ * cada misil sale en arco hacia un punto distinto del anillo de cobertura y explota al llegar (o al tocar a un enemigo) dañando en área.
  * Arranca bloqueada (nivel 0) y sube de nivel con la tarjeta `missiles` (niveles fijos, `MISSILES_TABLE`).
  * Evolucionada (Misiles incendiarios), cada explosión deja un charco de fuego (`FIRE`).
  */
@@ -110,39 +111,43 @@ export class MissileWeapon implements HeroWeapon {
     for (const missile of this.missiles.getChildren() as HomingMissile[]) {
       if (!missile.active) continue;
       if (now >= missile.expiresAt) this.explode(missile, null);
-      else if (missile.aimPoint && !missile.target && Phaser.Math.Distance.Between(missile.x, missile.y, missile.aimPoint.x, missile.aimPoint.y) < 8) this.explode(missile, null);
-      else missile.steer(deltaMs, () => this.nearestEnemies(missile.x, missile.y, 1)[0] ?? null);
+      else if (missile.aimPoint && (missile.fixedPoint || !missile.target) && Phaser.Math.Distance.Between(missile.x, missile.y, missile.aimPoint.x, missile.aimPoint.y) < 12) this.explode(missile, null);
+      else missile.steer(deltaMs, () => (missile.fixedPoint ? null : this.nearestEnemies(missile.x, missile.y, 1)[0] ?? null));
     }
 
     if (this.level === 0 || now - this.lastFiredAt < MISSILES.cooldownMs * this.bonus.cooldown * this.stats.cooldownMult) return;
-    // Cantidad: 1 misil más los de sus niveles y de la pasiva Cantidad.
-    const count = 1 + this.bonus.amount + this.stats.amountBonus;
-    const targets = this.nearestEnemies(this.owner.x, this.owner.y, count);
-    const prop = targets.length === 0 ? this.nearestProp() : null;
-    if (targets.length === 0 && !prop) return;
+    // Solo dispara si hay algo que romper cerca (un enemigo o una caja/roca).
+    if (this.nearestEnemies(this.owner.x, this.owner.y, 1).length === 0 && !this.nearestProp()) return;
 
     this.lastFiredAt = now;
+    const count = MISSILES.baseCount + this.bonus.amount + this.stats.amountBonus;
+    const cover = MISSILES.coverRadius * this.bonus.area * this.stats.areaMult;
     const originX = this.owner.x;
     const originY = this.owner.y - 14;
+    // Los misiles se reparten parejos en el anillo (con una vuelta al azar) para cubrir todo alrededor.
+    const turn = Math.random() * Math.PI * 2;
     for (let i = 0; i < count; i++) {
-      const target = targets.length > 0 ? targets[i % targets.length] : null;
-      // Salen abiertos en abanico hacia arriba y después giran hacia su objetivo.
-      const spread = count === 1 ? 0 : (i / (count - 1) - 0.5) * 1.6;
-      const heading = prop ? Math.atan2(prop.y - originY, prop.x - originX) + spread * 0.3 : -Math.PI / 2 + spread;
+      const angle = turn + (i / count) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.25, 0.25);
+      const dist = cover * Phaser.Math.FloatBetween(0.45, 1);
+      const px = this.owner.x + Math.cos(angle) * dist;
+      const py = this.owner.y + Math.sin(angle) * dist;
+      // Salen torcidos y después giran hacia su punto: el vuelo hace un arco.
+      const heading = Math.atan2(py - originY, px - originX) + Phaser.Math.FloatBetween(-1.3, 1.3);
       const missile = new HomingMissile(
         this.scene,
         originX,
         originY,
         heading,
-        target,
+        null,
         MISSILES.speed * this.stats.projectileSpeedMult,
         Phaser.Math.DegToRad(MISSILES.turnRateDeg),
         now + MISSILES.lifetimeMs * this.stats.durationMult,
       );
-      if (prop) missile.aimPoint = { x: prop.x, y: prop.y };
+      missile.aimPoint = { x: px, y: py };
+      missile.fixedPoint = true;
       this.missiles.add(missile);
       // `group.add` reinicia la velocidad del cuerpo: se vuelve a aplicar con el rumbo inicial.
-      missile.steer(0, () => target);
+      missile.steer(0, () => null);
     }
   }
 

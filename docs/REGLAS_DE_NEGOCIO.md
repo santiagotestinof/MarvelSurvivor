@@ -15,14 +15,14 @@ Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir d
 
 | Arma (héroe) | Nv 1 | Nv 2 | Nv 3 | Nv 4 | Nv 5 | Nv 6 | Nv 7 |
 |---|---|---|---|---|---|---|---|
-| Minimisiles (Iron Man) | 1 misil por ráfaga (cada 1,5 s) | +1 misil | Dispara más seguido (−15 %) | Explosiones más grandes (+25 %) | +35 % de daño | +1 misil | +30 % de daño, explosiones +15 % |
+| Minimisiles (Iron Man) | 3 misiles en anillo alrededor (cada 1,5 s) | +1 misil | +25 % de daño | +20 % de área | +1 misil | +30 % de daño | +1 misil, +25 % de área |
 | Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño | +1 portal | +30 % de daño, disparan más rápido (−15 %) |
 | Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área | +1 escudo | +30 % de daño, giran más rápido (+20 %) |
 | Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño | +1 telaraña | +40 % de daño, +20 % de área |
 | Tormenta (Thor) | 3 rayos | +1 rayo | Tormenta más seguida (−20 %) | +1 rayo | +30 % de daño, +25 % de área | +1 rayo | +30 % de daño, más seguida (−15 %) |
 | Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje | Golpea más seguido (−15 %) | +30 % de daño, +15 % de área |
 
-El arma principal de Iron Man son los **repulsores** (disparo recto); los **Minimisiles** son su arma especial (secundaria). Los misiles se van a rediseñar más adelante (pedido de Santi).
+El arma principal de Iron Man son los **repulsores** (disparo recto); los **Minimisiles** son su arma especial (secundaria). Cada ráfaga lanza los misiles en arco hacia puntos repartidos en un anillo alrededor del jugador (radio base 110, `MISSILES.coverRadius`) y explotan en área al llegar o al tocar a un enemigo; el área de los niveles y de la pasiva Área agranda tanto el anillo como las explosiones. Solo disparan si hay un enemigo o una caja cerca.
 
 ## 2. Qué significa cada estadística
 

@@ -111,6 +111,10 @@ export const SPECIAL_WAVES = {
 export const MISSILES = {
   /** Tiempo entre ráfagas (lo acorta la mejora de cadencia). */
   cooldownMs: 1500,
+  /** Misiles por ráfaga en el nivel 1 (los niveles y la pasiva Cantidad suman). */
+  baseCount: 3,
+  /** Radio del anillo alrededor del jugador que cubre una ráfaga (lo agrandan los niveles de área y la pasiva Área). */
+  coverRadius: 110,
   damage: 22,
   /** Píxeles por segundo. */
   speed: 170,
@@ -121,7 +125,7 @@ export const MISSILES = {
   /** Distancia a la que busca objetivos (la sube la mejora de alcance). */
   aimRange: 240,
   /** La explosión daña a los cercanos con esta fracción del daño. */
-  splashRadius: 24,
+  splashRadius: 30,
   splashDamageRatio: 0.5,
 };
 

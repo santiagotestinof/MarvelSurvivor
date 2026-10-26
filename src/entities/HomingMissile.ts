@@ -8,6 +8,9 @@ export class HomingMissile extends Phaser.Physics.Arcade.Image {
   /** Sin enemigos, el misil va hacia este punto (una caja o roca) y explota al llegar. */
   aimPoint: { x: number; y: number } | null = null;
 
+  /** Si es true, va siempre hacia `aimPoint` (no busca enemigos) y explota al llegar. */
+  fixedPoint = false;
+
   private heading: number;
 
   constructor(
@@ -33,8 +36,8 @@ export class HomingMissile extends Phaser.Physics.Arcade.Image {
 
   /** Gira hacia el objetivo (o el que devuelva `retarget` si el actual ya no sirve). */
   steer(deltaMs: number, retarget: () => Enemy | null): void {
-    if (!this.target || !this.target.active || this.target.dying) this.target = retarget();
-    if (this.target) {
+    if (!this.fixedPoint && (!this.target || !this.target.active || this.target.dying)) this.target = retarget();
+    if (this.target && !this.fixedPoint) {
       const desired = Phaser.Math.Angle.Between(this.x, this.y, this.target.x, this.target.y - 8);
       this.heading = Phaser.Math.Angle.RotateTo(this.heading, desired, (this.turnRate * deltaMs) / 1000);
     } else if (this.aimPoint) {

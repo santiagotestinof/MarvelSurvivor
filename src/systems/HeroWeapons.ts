@@ -439,7 +439,7 @@ export class Portals extends LeveledWeapon {
 }
 
 /** Textos de los niveles 2 a 7 de los minimisiles de Iron Man (los bonos están en `MissileWeapon.ts`). */
-export const MISSILES_LEVELS = ['+1 misil por ráfaga', 'Dispara más seguido', 'Explosiones más grandes', '+35 % de daño', '+1 misil por ráfaga', '+30 % de daño y explosiones más grandes'];
+export const MISSILES_LEVELS = ['+1 misil por ráfaga', '+25 % de daño', 'Más área: explosiones y alcance de la ráfaga +20 %', '+1 misil por ráfaga', '+30 % de daño', '+1 misil y +25 % de área'];
 
 /** Qué arma secundaria exclusiva tiene cada héroe (por id de héroe). */
 export const HERO_WEAPONS: Record<
@@ -449,7 +449,7 @@ export const HERO_WEAPONS: Record<
   ironman: {
     upgradeId: 'missiles',
     name: 'Minimisiles',
-    text: 'Cohetes teledirigidos que explotan en área',
+    text: 'Misiles que cubren el área alrededor tuyo y explotan',
     levels: MISSILES_LEVELS,
     // Los minimisiles necesitan más dependencias: los crea `GameScene` (`MissileWeapon`).
     create: () => null,
