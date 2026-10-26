@@ -141,6 +141,9 @@ export class GameScene extends Phaser.Scene {
     // Bono propio del héroe (las estadísticas base son iguales para todos).
     this.stats.areaMult *= this.player.definition.statBonus?.areaMult ?? 1;
     this.stats.regenPerSecond += this.player.definition.statBonus?.regenPerSecond ?? 0;
+    this.player.setMoveSpeed(this.player.moveSpeed * (this.player.definition.statBonus?.moveSpeedMult ?? 1));
+    const healthMult = this.player.definition.statBonus?.maxHealthMult ?? 1;
+    if (healthMult !== 1) this.player.addMaxHealth(Math.round(this.player.maxHealth * (healthMult - 1)));
     applyMetaUpgrades({ stats: this.stats, player: this.player });
     this.ironManBaseMoveSpeed = this.player.moveSpeed;
     this.ironManBaseScaleX = this.player.scaleX;

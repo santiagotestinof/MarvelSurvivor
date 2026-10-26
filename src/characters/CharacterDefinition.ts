@@ -65,6 +65,6 @@ export interface CharacterDefinition {
   body: { width: number; height: number; offsetX: number; offsetY: number };
   stats: { moveSpeed: number; maxHealth: number; attack: AttackDefinition };
   /** Bono propio del héroe sobre las estadísticas base (todos tienen las mismas, ver `HERO_BASE`). */
-  statBonus?: { areaMult?: number; regenPerSecond?: number };
+  statBonus?: { areaMult?: number; regenPerSecond?: number; moveSpeedMult?: number; maxHealthMult?: number };
   sheets: Record<'idle' | 'walk', ActionSheet> & Partial<Record<CharacterAction, ActionSheet>>;
 }
