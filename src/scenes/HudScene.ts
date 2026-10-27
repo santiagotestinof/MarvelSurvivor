@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { VirtualJoystick } from '../input/VirtualJoystick';
 import { PROGRESSION } from '../config/gameplayConfig';
+import { HERO_WEAPON_MAX_LEVEL } from '../systems/HeroWeapons';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { ResultOverlay } from '../ui/ResultOverlay';
 import { UpgradeMenu, type UpgradePrompt } from '../ui/UpgradeMenu';
@@ -32,6 +33,9 @@ export class HudScene extends Phaser.Scene {
   /** Casilleros de las mejoras pasivas de la ronda (abajo a la izquierda). */
   private passiveIcons: Phaser.GameObjects.Image[] = [];
   private passiveCounts: Phaser.GameObjects.Text[] = [];
+  /** Casilleros de las armas (principal y exclusiva), arriba de las pasivas. */
+  private weaponIcons: Phaser.GameObjects.Image[] = [];
+  private weaponLevels: Phaser.GameObjects.Text[] = [];
   private ultimateButton!: Phaser.GameObjects.Rectangle;
   private ultimateText!: Phaser.GameObjects.Text;
   private upgradeMenu!: UpgradeMenu;
@@ -68,6 +72,13 @@ export class HudScene extends Phaser.Scene {
     for (let i = 0; i < PROGRESSION.maxPassiveTypes; i++) {
       this.passiveIcons.push(this.add.image(0, 0, upgradeIconKey('damage')).setDepth(2).setVisible(false));
       this.passiveCounts.push(this.add.text(0, 0, '', textStyle(10)).setOrigin(1, 1).setDepth(3));
+    }
+
+    this.weaponIcons = [];
+    this.weaponLevels = [];
+    for (let i = 0; i < 2; i++) {
+      this.weaponIcons.push(this.add.image(0, 0, upgradeIconKey('damage')).setDepth(2).setVisible(false));
+      this.weaponLevels.push(this.add.text(0, 0, '', textStyle(10)).setOrigin(1, 1).setDepth(3));
     }
 
     this.upgradeMenu = new UpgradeMenu(this);
@@ -235,6 +246,7 @@ export class HudScene extends Phaser.Scene {
       .setPosition(width / 2, height - xpH / 2);
 
     this.drawPassives(state, g, xpH);
+    this.drawWeapons(state, g, xpH);
 
     // Vida del jefe
     const showBoss = state.phase === 'boss' && state.bossMaxHealth > 0;
@@ -271,6 +283,34 @@ export class HudScene extends Phaser.Scene {
       count
         .setFontSize(Math.max(10, Math.round(slot * 0.34)))
         .setText(`${item.count}`)
+        .setPosition(x + slot - 3, y + slot - 1);
+    }
+  }
+
+  /** Arma principal y exclusiva con su nivel, en casilleros arriba de las pasivas. */
+  private drawWeapons(state: HudSnapshot, g: Phaser.GameObjects.Graphics, xpH: number): void {
+    const iconScale = Math.max(2, Math.round((3.6 * this.ui) / UPGRADE_ICON_SIZE * 2) / 2);
+    const slot = Math.round(UPGRADE_ICON_SIZE * iconScale * 1.35);
+    const gap = Math.max(4, Math.round(slot * 0.15));
+    const y = this.scale.height - xpH - this.margin * 0.6 - slot * 2 - gap;
+    for (let i = 0; i < this.weaponIcons.length; i++) {
+      const x = this.margin + i * (slot + gap);
+      const item = state.weapons[i];
+      const owned = !!item && item.level > 0;
+      const maxed = owned && item.level >= HERO_WEAPON_MAX_LEVEL;
+      g.fillStyle(0x000000, 0.55).fillRoundedRect(x, y, slot, slot, 5);
+      g.lineStyle(2, maxed ? 0xffe272 : owned ? 0x37d5ff : 0xffffff, owned ? 0.9 : 0.2).strokeRoundedRect(x, y, slot, slot, 5);
+      const icon = this.weaponIcons[i];
+      const level = this.weaponLevels[i];
+      icon.setVisible(owned);
+      level.setVisible(owned);
+      if (!owned) continue;
+      setUpgradeIcon(icon, item.id, iconScale);
+      icon.setPosition(x + slot / 2, y + slot / 2);
+      level
+        .setFontSize(Math.max(10, Math.round(slot * 0.34)))
+        .setColor(maxed ? '#ffe272' : '#ffffff')
+        .setText(`${item.level}`)
         .setPosition(x + slot - 3, y + slot - 1);
     }
   }

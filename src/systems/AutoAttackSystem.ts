@@ -131,7 +131,8 @@ export class AutoAttackSystem {
     for (const prop of this.props()) if (!prop.isBroken && near(prop.x, prop.y, 4)) prop.takeDamage(damage);
 
     // El piso se rompe: una grieta de pixel art (bloques negros en escalera, con ramas) que se estira a lo largo de la onda.
-    const g = this.scene.add.graphics().setDepth(999_997);
+    // A nivel del piso (como las telarañas del suelo): queda debajo de personajes, enemigos y árboles.
+    const g = this.scene.add.graphics().setDepth(2);
     const cell = 4;
     const snap = (v: number): number => Math.round(v / cell) * cell;
     const thick = Math.max(1, Math.round(width / 34));
@@ -155,13 +156,22 @@ export class AutoAttackSystem {
       }
       return path;
     };
-    const main = crack(x1, y1, angle, length, 0.35);
+    // Grieta principal: recta hacia el objetivo, con pequeños escalones a los costados (se nota la línea del ataque).
+    const main: { x: number; y: number }[] = [];
+    let side = 0;
+    for (let walked = 0; walked <= length; walked += cell * 0.8) {
+      if (Math.random() < 0.12) side = Phaser.Math.Between(-1, 1);
+      const px = x1 + Math.cos(angle) * walked - Math.sin(angle) * side * cell;
+      const py = y1 + Math.sin(angle) * walked + Math.cos(angle) * side * cell;
+      put(px, py);
+      main.push({ x: snap(px), y: snap(py) });
+    }
     // Ramas cortas que salen de la grieta, y a veces una ramita de la rama.
-    for (let k = 3; k < main.length - 1; k += Phaser.Math.Between(3, 5)) {
+    for (let k = 3; k < main.length - 1; k += Phaser.Math.Between(6, 9)) {
       const side = Math.random() < 0.5 ? -1 : 1;
-      const dir = angle + side * Phaser.Math.FloatBetween(0.7, 1.3);
-      const branch = crack(main[k].x, main[k].y, dir, Phaser.Math.Between(9, 21), 0.5);
-      if (branch.length > 4 && Math.random() < 0.5) crack(branch[3].x, branch[3].y, dir - side * Phaser.Math.FloatBetween(0.8, 1.2), Phaser.Math.Between(6, 12), 0.5);
+      const dir = angle + side * Phaser.Math.FloatBetween(0.8, 1.2);
+      const branch = crack(main[k].x, main[k].y, dir, Phaser.Math.Between(8, 16), 0.5);
+      if (branch.length > 4 && Math.random() < 0.25) crack(branch[3].x, branch[3].y, dir - side * Phaser.Math.FloatBetween(0.8, 1.2), Phaser.Math.Between(6, 12), 0.5);
     }
     g.fillStyle(0x120b06, 0.95);
     for (const key of blocks) {

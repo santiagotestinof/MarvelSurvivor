@@ -42,7 +42,7 @@ export interface GoldState {
 }
 
 /** Estado que dibuja el HUD: ronda + experiencia + oro. */
-export type HudSnapshot = HudState & ProgressState & GoldState & { passives: { id: string; count: number }[]; newAchievements: string[] };
+export type HudSnapshot = HudState & ProgressState & GoldState & { passives: { id: string; count: number }[]; weapons: { id: string; level: number }[]; newAchievements: string[] };
 
 /** Una ronda: oleadas de enemigos, ataque automático, jefe final y resultado. */
 export class GameScene extends Phaser.Scene {
@@ -490,6 +490,15 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Arma principal y arma exclusiva con su nivel (para los casilleros del HUD); el nivel 0 es un casillero vacío. */
+  private weaponSlots(): { id: string; level: number }[] {
+    const hero = this.player.definition.id;
+    const slots = [{ id: `main-${hero}`, level: this.stats.mainLevel }];
+    const exclusive = HERO_WEAPONS[hero];
+    if (exclusive) slots.push({ id: exclusive.upgradeId, level: this.heroWeapon?.level ?? 0 });
+    return slots;
+  }
+
   getHudState(): HudSnapshot {
     return {
       ...this.round.getHudState(this.clock),
@@ -497,6 +506,7 @@ export class GameScene extends Phaser.Scene {
       gold: Math.floor(this.gold),
       goldPayout: this.goldPayout,
       passives: passivesTaken(this.taken),
+      weapons: this.weaponSlots(),
       newAchievements: this.newAchievements,
     };
   }

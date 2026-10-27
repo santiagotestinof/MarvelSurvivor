@@ -152,3 +152,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Los rayos de antes pasaron a ser su **arma exclusiva** (reemplaza a la Tormenta de rayos, que se eliminó): 1 rayo de 16 de daño cada 1,8 s sobre un enemigo de la pantalla, hasta nv 7.
 - Thor ya no tiene evolución (el libro secreto lista 5).
 - La onda del martillo es corta al principio (**105 px** de largo, 22 de ancho) y crece con los niveles de área del arma (~190 px a nivel 7). Visualmente rompe el piso: una grieta de pixel art (bloques negros en escalera, con ramas) que se estira según el largo de la onda, más trozos de tierra que saltan y un leve temblor de cámara.
+- La grieta se dibuja a nivel del piso (debajo de personajes y árboles) y va en línea recta hacia el objetivo, con pocas ramas.
+
+## HUD de armas
+- Abajo a la izquierda, arriba de los 4 casilleros de pasivas, hay un casillero para el arma principal (siempre) y otro para la exclusiva (aparece al tomarla), con su nivel como número; en el nivel 7 el número y el borde se vuelven dorados.
