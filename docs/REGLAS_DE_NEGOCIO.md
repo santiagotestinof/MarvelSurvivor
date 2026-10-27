@@ -57,7 +57,7 @@ El arma principal de cada héroe empieza en nivel 1 y sube hasta el **7** con un
 | Iron Man (Repulsor) | +1 disparo · atraviesa +1 · +1 disparo · +25% vel. · +1 disparo · atraviesa +1 y +25% vel. |
 | Capitán (Escudo) | +1 escudo · +25% vel. · +1 escudo · +25% vel. · +1 escudo · +25% vel. |
 | Spider-Man (Telarañas) | +1 telaraña · atraviesa +1 · +25% vel. · +1 telaraña · atraviesa +1 · +1 telaraña y atraviesa +1 |
-| Thor (Martillo sísmico) | +1 onda · +12% ancho · +1 onda · +12% ancho · +1 onda · +25% ancho |
+| Thor (Martillo sísmico) | +1 onda · +12% largo y ancho · +1 onda · +12% largo y ancho · +1 onda · +25% largo y ancho |
 | Hulk (Zarpazo) | +25% ángulo · +20% alcance · +1 zarpazo · +25% ángulo · +20% alcance · +1 zarpazo y +25% ángulo |
 | Strange (Aura) | +12% radio ×5 · +25% radio |
 
@@ -151,3 +151,4 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - El martillo sísmico (onda de choque en línea larga que rompe el piso, 16 de daño cada 1,8 s hacia enemigos al azar de la pantalla) ya no es una evolución: es el **arma principal** de Thor, con sus 7 niveles fijos y las mejoras del arma principal (Disparo múltiple, crítico, etc.).
 - Los rayos de antes pasaron a ser su **arma exclusiva** (reemplaza a la Tormenta de rayos, que se eliminó): 1 rayo de 16 de daño cada 1,8 s sobre un enemigo de la pantalla, hasta nv 7.
 - Thor ya no tiene evolución (el libro secreto lista 5).
+- La onda del martillo es corta al principio (**105 px** de largo, 22 de ancho) y crece con los niveles de área del arma (~190 px a nivel 7). Visualmente rompe el piso: grieta con ramas, trozos de tierra que saltan y un leve temblor de cámara.

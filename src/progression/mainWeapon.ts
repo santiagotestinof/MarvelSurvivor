@@ -55,11 +55,11 @@ export const MAIN_WEAPONS: Record<AttackKind, MainWeaponDefinition> = {
     name: 'Martillo sísmico',
     levels: [
       { text: '+1 onda por ataque', count: 1 },
-      { text: '+12% de ancho de las ondas', areaMult: AREA },
+      { text: 'Ondas más largas y anchas (+12%)', areaMult: AREA },
       { text: '+1 onda por ataque', count: 1 },
-      { text: '+12% de ancho de las ondas', areaMult: AREA },
+      { text: 'Ondas más largas y anchas (+12%)', areaMult: AREA },
       { text: '+1 onda por ataque', count: 1 },
-      { text: '+25% de ancho de las ondas', areaMult: AREA * AREA },
+      { text: 'Ondas más largas y anchas (+25%)', areaMult: AREA * AREA },
     ],
   },
   fan: {

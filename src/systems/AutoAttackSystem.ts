@@ -114,7 +114,8 @@ export class AutoAttackSystem {
     const x1 = this.owner.x;
     const y1 = this.owner.y - 8;
     const angle = Math.atan2(target.y - y1, target.x - x1);
-    const length = EVOLUTION.thorLineLength;
+    // Corta al principio: crece con los niveles de área del arma (a nivel 7 llega a ~190 px).
+    const length = EVOLUTION.thorLineLength * (1 + (this.stats.mainAreaMult - 1) * 1.4);
     const width = EVOLUTION.thorLineWidth * this.stats.areaMult * this.stats.mainAreaMult;
     const x2 = x1 + Math.cos(angle) * length;
     const y2 = y1 + Math.sin(angle) * length;
@@ -129,18 +130,45 @@ export class AutoAttackSystem {
     for (const enemy of activeEnemies(this.enemies)) if (near(enemy.x, enemy.y - 6, 6)) enemy.takeDamage(damage);
     for (const prop of this.props()) if (!prop.isBroken && near(prop.x, prop.y, 4)) prop.takeDamage(damage);
 
-    // Una grieta oscura y zigzagueante con un brillo eléctrico encima.
+    // El piso se rompe: una grieta que avanza desde Thor con ramas, trozos de tierra que saltan y polvo.
     const g = this.scene.add.graphics().setDepth(999_997);
     const points: { x: number; y: number }[] = [];
-    const steps = Math.max(4, Math.round(length / 18));
+    const steps = Math.max(4, Math.round(length / 14));
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const jitter = i === 0 || i === steps ? 0 : Phaser.Math.Between(-4, 4);
+      const jitter = i === 0 ? 0 : Phaser.Math.Between(-5, 5);
       points.push({ x: x1 + (x2 - x1) * t - Math.sin(angle) * jitter, y: y1 + (y2 - y1) * t + Math.cos(angle) * jitter });
     }
-    g.lineStyle(width, 0x3a2a1c, 0.75).strokePoints(points);
-    g.lineStyle(Math.max(3, width * 0.4), critical ? 0xffe272 : 0x6fd8ff, 0.95).strokePoints(points);
-    this.scene.tweens.add({ targets: g, alpha: 0, duration: 450, onComplete: () => g.destroy() });
+    g.lineStyle(width, 0x2a1d12, 0.85).strokePoints(points);
+    g.lineStyle(Math.max(2, width * 0.45), 0x120b06, 0.95).strokePoints(points);
+    // Ramas más finas que salen de la grieta.
+    for (let i = 2; i < points.length - 1; i += 2) {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const branch = angle + side * Phaser.Math.FloatBetween(0.6, 1.1);
+      const len = Phaser.Math.Between(8, 16);
+      g.lineStyle(Math.max(2, width * 0.2), 0x120b06, 0.85)
+        .lineBetween(points[i].x, points[i].y, points[i].x + Math.cos(branch) * len, points[i].y + Math.sin(branch) * len);
+    }
+    g.lineStyle(Math.max(1.5, width * 0.15), critical ? 0xffe272 : 0xcfeeff, 0.9).strokePoints(points);
+    this.scene.tweens.add({ targets: g, alpha: 0, duration: 900, delay: 250, onComplete: () => g.destroy() });
+
+    // Trozos de tierra y piedra que saltan de la grieta.
+    for (let i = 0; i < Math.max(6, Math.round(length / 14)); i++) {
+      const p = points[Phaser.Math.Between(1, points.length - 1)];
+      const size = Phaser.Math.Between(2, 4);
+      const chunk = this.scene.add.rectangle(p.x, p.y, size, size, Phaser.Math.RND.pick([0x5b4630, 0x3a2a1c, 0x7d6a4f])).setDepth(999_998);
+      this.scene.tweens.add({
+        targets: chunk,
+        x: p.x + Phaser.Math.Between(-14, 14),
+        y: [p.y - Phaser.Math.Between(10, 22), p.y + Phaser.Math.Between(0, 6)],
+        angle: Phaser.Math.Between(-180, 180),
+        alpha: 0,
+        duration: Phaser.Math.Between(380, 620),
+        ease: 'Quad.easeOut',
+        onComplete: () => chunk.destroy(),
+      });
+    }
+    this.scene.cameras.main.shake(70, 0.002);
   }
 
   /** Hulk: zarpazo en abanico fino hacia el enemigo más cercano; con más disparos, abanicos repartidos alrededor. */
