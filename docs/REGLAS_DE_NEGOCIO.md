@@ -19,7 +19,7 @@ Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir d
 | Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño | +1 portal | +30 % de daño, disparan más rápido (−15 %) |
 | Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área | +1 escudo | +30 % de daño, giran más rápido (+20 %) |
 | Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño | +1 telaraña | +40 % de daño, +20 % de área |
-| Tormenta (Thor) | 3 rayos | +1 rayo | Tormenta más seguida (−20 %) | +1 rayo | +30 % de daño, +25 % de área | +1 rayo | +30 % de daño, más seguida (−15 %) |
+| Rayos (Thor, arma exclusiva) | 1 rayo cada 1,8 s sobre un enemigo de la pantalla | +1 rayo | Rayos más seguidos (−20 %) | +1 rayo | +30 % de daño, +25 % de área | +1 rayo | +30 % de daño, más seguida (−15 %) |
 | Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje | Golpea más seguido (−15 %) | +30 % de daño, +15 % de área |
 
 El arma principal de Iron Man son los **repulsores** (disparo recto); los **Minimisiles** son su arma especial (secundaria). Cada ráfaga lanza los misiles en arco hacia puntos repartidos en un anillo alrededor del jugador (radio base 110, `MISSILES.coverRadius`) y explotan en área al llegar o al tocar a un enemigo; el área de los niveles y de la pasiva Área agranda tanto el anillo como las explosiones. Solo disparan si hay un enemigo o una caja cerca.
@@ -57,7 +57,7 @@ El arma principal de cada héroe empieza en nivel 1 y sube hasta el **7** con un
 | Iron Man (Repulsor) | +1 disparo · atraviesa +1 · +1 disparo · +25% vel. · +1 disparo · atraviesa +1 y +25% vel. |
 | Capitán (Escudo) | +1 escudo · +25% vel. · +1 escudo · +25% vel. · +1 escudo · +25% vel. |
 | Spider-Man (Telarañas) | +1 telaraña · atraviesa +1 · +25% vel. · +1 telaraña · atraviesa +1 · +1 telaraña y atraviesa +1 |
-| Thor (Rayos) | +1 rayo · +12% área · +1 rayo · +12% área · +1 rayo · +25% área |
+| Thor (Martillo sísmico) | +1 onda · +12% ancho · +1 onda · +12% ancho · +1 onda · +25% ancho |
 | Hulk (Zarpazo) | +25% ángulo · +20% alcance · +1 zarpazo · +25% ángulo · +20% alcance · +1 zarpazo y +25% ángulo |
 | Strange (Aura) | +12% radio ×5 · +25% radio |
 
@@ -70,7 +70,6 @@ Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `E
 | Iron Man | Repulsor (los minimisiles son su arma especial) | Misiles incendiarios: las explosiones de los minimisiles dejan fuego (+ mejoras de fuego) | Cadencia |
 | Capitán América | Escudo boomerang | Escudo rebotador: se lanza a un enemigo y rebota entre ellos (5 rebotes; mejora "Más rebotes" hasta 10) | Cantidad |
 | Spider-Man | Telarañas (frenan un poco, 30 % por 1,2 s) | Telaraña inmovilizadora: inmoviliza 2,5 s al que pega (el jefe solo se frena) | Duración |
-| Thor | Rayos en área | Martillo sísmico: además, una onda en línea larga que rompe el piso | Velocidad |
 | Hulk | Zarpazo en abanico | Furia circular: el zarpazo es un círculo completo alrededor de Hulk | Más daño |
 | Doctor Strange | Aura de runas | Dimensión lenta: aura 1,8 veces más grande que ralentiza a los enemigos | Área |
 
@@ -147,3 +146,8 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Hay un libro escondido en el mapa (`SECRET_BOOK` en `gameplayConfig.ts`), sin ninguna indicación. Al pasar cerca se guarda para siempre (`saveData.findBook`, campo `book`) y sale el cartel `¡LIBRO SECRETO!`.
 - Desde ahí aparece el botón LIBRO (tecla B) en el menú, que abre `BookScene` con la combinación de cada evolución (pasiva ×3 + arma principal nv 7 + arma exclusiva nv 7), sacada de `EVOLUTIONS`. Una vez encontrado, el libro deja de aparecer en el mapa.
 - `?libro` o `?todos` muestran el botón en esa carga sin guardarlo.
+
+## Thor: martillo sísmico como arma principal
+- El martillo sísmico (onda de choque en línea larga que rompe el piso, 16 de daño cada 1,8 s hacia enemigos al azar de la pantalla) ya no es una evolución: es el **arma principal** de Thor, con sus 7 niveles fijos y las mejoras del arma principal (Disparo múltiple, crítico, etc.).
+- Los rayos de antes pasaron a ser su **arma exclusiva** (reemplaza a la Tormenta de rayos, que se eliminó): 1 rayo de 16 de daño cada 1,8 s sobre un enemigo de la pantalla, hasta nv 7.
+- Thor ya no tiene evolución (el libro secreto lista 5).

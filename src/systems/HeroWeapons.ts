@@ -201,8 +201,8 @@ export class WebTraps extends LeveledWeapon {
   }
 }
 
-/** Thor: cada tanto, una tormenta hace caer rayos sobre enemigos al azar alrededor. */
-export const THUNDER_STORM_LEVELS = ['+1 rayo', 'Tormenta más seguida', '+1 rayo', 'Más daño y área', '+1 rayo', 'Más daño y tormenta más seguida'];
+/** Thor: rayos que caen sobre enemigos al azar de la pantalla (antes era su ataque principal). */
+export const THUNDER_STORM_LEVELS = ['+1 rayo', 'Rayos más seguidos', '+1 rayo', 'Más daño y área', '+1 rayo', 'Más daño y rayos más seguidos'];
 export class ThunderStorm extends LeveledWeapon {
   protected readonly table = {
     2: { amount: 1 },
@@ -216,20 +216,21 @@ export class ThunderStorm extends LeveledWeapon {
 
   update(now: number): void {
     if (this.level === 0 || now < this.nextStorm) return;
-    const { scene, owner, enemies, stats, props } = this.deps;
+    const { scene, enemies, stats, props } = this.deps;
     const b = this.bonus;
-    this.nextStorm = now + 4000 * b.cooldown * stats.cooldownMult;
 
     const view = scene.cameras.main.worldView;
     const pool = activeEnemies(enemies).filter((e) => view.contains(e.x, e.y));
+    if (pool.length === 0) return;
+    this.nextStorm = now + 1800 * b.cooldown * stats.cooldownMult;
     Phaser.Utils.Array.Shuffle(pool);
-    const bolts = 3 + b.amount + stats.amountBonus;
-    const radius = 30 * b.area * stats.areaMult;
-    const damage = 17 * b.damage * stats.damageMult;
+    const bolts = 1 + b.amount + stats.amountBonus;
+    const radius = 26 * b.area * stats.areaMult;
+    const damage = 16 * b.damage * stats.damageMult;
     for (let i = 0; i < bolts; i++) {
-      const target = pool.length > 0 ? pool[i % pool.length] : null;
-      const x = target ? target.x : owner.x + Phaser.Math.Between(-120, 120);
-      const y = target ? target.y - 6 : owner.y + Phaser.Math.Between(-80, 80);
+      const target = pool[i % pool.length];
+      const x = target.x;
+      const y = target.y - 6;
       scene.time.delayedCall(i * 110, () => {
         damageArea(enemies, props(), x, y, radius, damage);
         drawThunder(scene, x, y, radius);
@@ -470,8 +471,8 @@ export const HERO_WEAPONS: Record<
   },
   thor: {
     upgradeId: 'thunder-storm',
-    name: 'Tormenta',
-    text: 'Una lluvia de rayos cae sobre los enemigos',
+    name: 'Rayos',
+    text: 'Rayos que caen sobre los enemigos de la pantalla',
     levels: THUNDER_STORM_LEVELS,
     create: (deps) => new ThunderStorm(deps),
   },

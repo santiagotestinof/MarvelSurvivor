@@ -25,15 +25,15 @@ export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 /**
  * Cómo ataca el héroe:
  * - bolt: disparo recto (repulsor) · shield: escudo que rebota y vuelve · web: telaraña que frena
- * - thunder: rayo instantáneo en área sobre los enemigos cercanos · fan: abanico fino cuerpo a cuerpo (Hulk)
+ * - hammer: onda de choque en línea larga que lanza el martillo de Thor sobre enemigos al azar de la pantalla · fan: abanico fino cuerpo a cuerpo (Hulk)
  * - aura: círculo de runas alrededor del héroe que daña seguido a todo lo que entra (Doctor Strange; `radius` es el radio)
  */
-export type AttackKind = 'bolt' | 'shield' | 'web' | 'thunder' | 'fan' | 'aura';
+export type AttackKind = 'bolt' | 'shield' | 'web' | 'hammer' | 'fan' | 'aura';
 
 /** Ataque automático básico: dispara al enemigo más cercano dentro de `aimRange`. */
 export interface AttackDefinition {
   kind: AttackKind;
-  /** thunder: radio del daño en área (px). */
+  /** (sin uso hoy) radio de daño en área (px). */
   radius?: number;
   /** fan: ángulo del abanico en grados (el alcance es `maxDistance`). */
   arcDegrees?: number;

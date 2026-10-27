@@ -51,15 +51,15 @@ export const MAIN_WEAPONS: Record<AttackKind, MainWeaponDefinition> = {
       { text: '+1 telaraña y atraviesa +1 enemigo', count: 1, pierce: 1 },
     ],
   },
-  thunder: {
-    name: 'Rayos',
+  hammer: {
+    name: 'Martillo sísmico',
     levels: [
-      { text: '+1 rayo por ataque', count: 1 },
-      { text: '+12% de área de los rayos', areaMult: AREA },
-      { text: '+1 rayo por ataque', count: 1 },
-      { text: '+12% de área de los rayos', areaMult: AREA },
-      { text: '+1 rayo por ataque', count: 1 },
-      { text: '+25% de área de los rayos', areaMult: AREA * AREA },
+      { text: '+1 onda por ataque', count: 1 },
+      { text: '+12% de ancho de las ondas', areaMult: AREA },
+      { text: '+1 onda por ataque', count: 1 },
+      { text: '+12% de ancho de las ondas', areaMult: AREA },
+      { text: '+1 onda por ataque', count: 1 },
+      { text: '+25% de ancho de las ondas', areaMult: AREA * AREA },
     ],
   },
   fan: {

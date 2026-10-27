@@ -5,7 +5,7 @@ import type { Character } from '../entities/Character';
 import type { BreakableProp } from '../entities/BreakableProp';
 import type { Enemy } from '../entities/Enemy';
 import { Projectile } from '../entities/Projectile';
-import { activeEnemies, damageArea, drawThunder } from './areaDamage';
+import { activeEnemies, damageArea } from './areaDamage';
 import type { PlayerStats } from '../progression/PlayerStats';
 import { AuraVisual } from './AuraVisual';
 
@@ -54,8 +54,8 @@ export class AutoAttackSystem {
     const fired =
       this.attack.kind === 'aura'
         ? this.pulseAura()
-        : this.attack.kind === 'thunder'
-          ? this.strike()
+        : this.attack.kind === 'hammer'
+          ? this.slam()
           : this.attack.kind === 'fan'
             ? this.swipe()
             : this.fireNearest();
@@ -93,36 +93,29 @@ export class AutoAttackSystem {
     return { damage, critical };
   }
 
-  /** Thor: un rayo por cada disparo disponible, sobre enemigos al azar que estén en pantalla (o una caja si no hay). */
-  private strike(): boolean {
+  /** Thor: una onda de choque por cada disparo disponible, hacia enemigos al azar que estén en pantalla (o una caja si no hay). */
+  private slam(): boolean {
     const count = this.stats.projectileCount;
     const view = this.scene.cameras.main.worldView;
     const pool = activeEnemies(this.enemies).filter((enemy) => view.contains(enemy.x, enemy.y));
     Phaser.Utils.Array.Shuffle(pool);
-    const targets: AimPoint[] = pool.slice(0, count).map((enemy) => ({ x: enemy.x, y: enemy.y - 6, d: 0 }));
+    const targets: AimPoint[] = pool.slice(0, count).map((enemy) => ({ x: enemy.x, y: enemy.y - 6 }));
     if (targets.length === 0) {
       const prop = this.findNearestProp();
       if (!prop) return false;
       targets.push(prop);
     }
-    const radius = (this.attack.radius ?? 24) * this.stats.areaMult * this.stats.mainAreaMult;
-    for (const target of targets) {
-      const { damage, critical } = this.rollDamage();
-      damageArea(this.enemies, this.props(), target.x, target.y, radius, damage);
-      drawThunder(this.scene, target.x, target.y, radius, critical);
-    }
-    // Martillo sísmico (evolución): una onda en línea larga hacia cada objetivo que rompe el piso.
-    if (this.stats.evolved) for (const target of targets) this.shockLine(target);
+    for (const target of targets) this.shockLine(target);
     return true;
   }
 
-  /** Thor evolucionado: onda de choque en línea desde Thor hacia `target`; daña a todo lo que toca. */
+  /** Thor: onda de choque en línea desde Thor hacia `target`; daña a todo lo que toca. */
   private shockLine(target: AimPoint): void {
     const x1 = this.owner.x;
     const y1 = this.owner.y - 8;
     const angle = Math.atan2(target.y - y1, target.x - x1);
-    const length = EVOLUTION.thorLineLength * this.stats.rangeMult;
-    const width = EVOLUTION.thorLineWidth * this.stats.areaMult;
+    const length = EVOLUTION.thorLineLength;
+    const width = EVOLUTION.thorLineWidth * this.stats.areaMult * this.stats.mainAreaMult;
     const x2 = x1 + Math.cos(angle) * length;
     const y2 = y1 + Math.sin(angle) * length;
     const { damage, critical } = this.rollDamage();
