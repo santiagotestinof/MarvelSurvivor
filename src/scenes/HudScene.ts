@@ -354,6 +354,7 @@ export class HudScene extends Phaser.Scene {
 
   /** Desde la pausa o el resultado: la ronda se pierde y el menú siguiente arranca de cero (no hay CONTINUAR). */
   private backToMenu(): void {
+    this.gameScene.abandonRound();
     this.scene.stop(SCENE_KEYS.game);
     this.scene.start(SCENE_KEYS.menu);
   }

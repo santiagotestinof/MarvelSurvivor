@@ -156,3 +156,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## HUD de armas
 - Abajo a la izquierda, arriba de los 4 casilleros de pasivas, hay un casillero para el arma principal (siempre) y otro para la exclusiva (aparece al tomarla), con su nivel como número; en el nivel 7 el número y el borde se vuelven dorados.
+
+## Guardado del progreso
+- Se guardan en el navegador (localStorage), en cada cambio: oro, mejoras permanentes, héroes desbloqueados y elegido, logros, totales y el libro secreto.
+- Abandonar la ronda desde la pausa o cerrar la página en plena ronda cuenta como derrota: se conserva todo el oro juntado y se suman los totales para los logros (sin bono del jefe). Solo se guarda una vez por ronda.

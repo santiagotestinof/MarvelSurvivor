@@ -121,6 +121,10 @@ export class GameScene extends Phaser.Scene {
     this.banished = new Set();
     this.gold = 0;
     this.goldPayout = null;
+    // Al cerrar la pestaña en plena ronda también se guarda lo juntado.
+    const onLeave = (): void => this.abandonRound();
+    window.addEventListener('pagehide', onLeave);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('pagehide', onLeave));
     const map = new TestMap(this);
     map.build();
     this.worldRect = { x: 0, y: 0, width: map.widthPx, height: map.heightPx };
@@ -604,6 +608,15 @@ export class GameScene extends Phaser.Scene {
       won,
       miniBossKilled: this.miniBossKilled,
     });
+  }
+
+  /**
+   * Si la ronda sigue en juego (se abandona desde la pausa o se cierra la página), guarda igual lo juntado como en una
+   * derrota: el oro y los totales para los logros no se pierden. Si ya se guardó al terminar, no hace nada.
+   */
+  abandonRound(): void {
+    if (this.goldPayout !== null) return;
+    this.bankGold();
   }
 
   /** Pausa la ronda y ofrece mejoras al HUD; al elegir, se aplica y se sigue. */
