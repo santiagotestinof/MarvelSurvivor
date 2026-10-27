@@ -38,7 +38,7 @@ export class AutoAttackSystem {
     if (this.aura) scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.aura?.destroy());
   }
 
-  /** Radio actual del aura: crece con Área y Alcance. */
+  /** Radio actual del aura: crece con Área. */
   private auraRadius(): number {
     const evolved = this.stats.evolved ? EVOLUTION.strangeRadiusMult : 1;
     return (this.attack.radius ?? 60) * this.stats.areaMult * this.stats.mainAreaMult * this.stats.rangeMult * evolved;

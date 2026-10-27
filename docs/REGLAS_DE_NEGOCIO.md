@@ -35,7 +35,7 @@ El arma principal de Iron Man son los **repulsores** (disparo recto); los **Mini
 ## 3. Mejoras de la ronda
 
 - Solo se pueden tener 4 tipos de pasivas distintas por ronda (`PROGRESSION.maxPassiveTypes`).
-- Pasivas que existen en la ronda: Más daño, Cadencia, Duración, Cantidad (máx. 3), Área, Velocidad, Vida máxima, Armadura, Imán, Alcance, Crítico, Suerte, Crecimiento, Codicia y Maldición (más "Reparación", que no ocupa lugar). Suerte/Crecimiento/Codicia/Maldición salen de las mejoras permanentes del mismo nombre y suman a lo que dé la tienda.
+- Pasivas que existen en la ronda: Más daño, Cadencia, Duración, Cantidad (máx. 3), Área, Velocidad, Vida máxima, Armadura, Imán, Crítico, Suerte, Crecimiento, Codicia y Maldición (más "Reparación", que no ocupa lugar). Suerte/Crecimiento/Codicia/Maldición salen de las mejoras permanentes del mismo nombre y suman a lo que dé la tienda.
 - **Nombres:** "Vida máxima" es la que sube la vida máxima y "Armadura" es la que reduce el daño de cada golpe (las dos existen en la ronda y en la tienda).
 - Cada pasiva de la ronda debería tener su equivalente permanente en la tienda y viceversa.
 
@@ -70,7 +70,7 @@ Cada héroe evoluciona su arma **principal** (el ataque básico) cuando tomó `E
 | Iron Man | Repulsor (los minimisiles son su arma especial) | Misiles incendiarios: las explosiones de los minimisiles dejan fuego (+ mejoras de fuego) | Cadencia |
 | Capitán América | Escudo boomerang | Escudo rebotador: se lanza a un enemigo y rebota entre ellos (5 rebotes; mejora "Más rebotes" hasta 10) | Cantidad |
 | Spider-Man | Telarañas (frenan un poco, 30 % por 1,2 s) | Telaraña inmovilizadora: inmoviliza 2,5 s al que pega (el jefe solo se frena) | Duración |
-| Thor | Rayos en área | Martillo sísmico: además, una onda en línea larga que rompe el piso | Alcance |
+| Thor | Rayos en área | Martillo sísmico: además, una onda en línea larga que rompe el piso | Velocidad |
 | Hulk | Zarpazo en abanico | Furia circular: el zarpazo es un círculo completo alrededor de Hulk | Más daño |
 | Doctor Strange | Aura de runas | Dimensión lenta: aura 1,8 veces más grande que ralentiza a los enemigos | Área |
 
@@ -134,7 +134,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Al terminar una ronda se guarda **todo el oro juntado**, se gane o se pierda (`GOLD.defeatKeepRatio` = 1; antes se perdía la mitad). El bono por vencer al jefe (`GOLD.bossBonus`) se suma solo si se gana.
 
 ## Doctor Strange: aura y portales (ajuste)
-- Aura (arma principal): radio base **56** (antes 72). Sigue creciendo con su +15 % de área propio, la pasiva Área, Alcance y sus niveles.
+- Aura (arma principal): radio base **56** (antes 72). Sigue creciendo con su +15 % de área propio, la pasiva Área y sus niveles.
 - Portales: se abre uno nuevo cada **7 s** (antes 5 s) y las chispas salen cada **0,6 s** (antes 0,42 s). Valores en `PORTAL` de `HeroWeapons.ts`; los niveles 3 y 7 siguen acelerando las chispas.
 
 ## Daño por contacto de los enemigos

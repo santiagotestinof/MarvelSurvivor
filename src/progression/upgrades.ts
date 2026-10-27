@@ -117,7 +117,7 @@ export const EVOLUTIONS = [
   { hero: 'ironman', id: 'missiles-evolution', name: 'Misiles incendiarios', requires: 'fire-rate', text: 'Las explosiones de los minimisiles dejan fuego que quema' },
   { hero: 'capitan', id: 'evolution-capitan', name: 'Escudo rebotador', requires: 'amount', text: 'El escudo se lanza a un enemigo y rebota entre ellos (5 rebotes)' },
   { hero: 'spiderman', id: 'evolution-spiderman', name: 'Telaraña inmovilizadora', requires: 'duration', text: 'Las telarañas inmovilizan unos segundos al enemigo que pegan' },
-  { hero: 'thor', id: 'evolution-thor', name: 'Martillo sísmico', requires: 'range', text: 'Además de los rayos, el martillo lanza una onda que rompe el piso en una línea larga' },
+  { hero: 'thor', id: 'evolution-thor', name: 'Martillo sísmico', requires: 'speed', text: 'Además de los rayos, el martillo lanza una onda que rompe el piso en una línea larga' },
   { hero: 'hulk', id: 'evolution-hulk', name: 'Furia circular', requires: 'damage', text: 'El zarpazo pasa a ser un círculo completo alrededor de Hulk' },
   { hero: 'strange', id: 'evolution-strange', name: 'Dimensión lenta', requires: 'area', text: 'El aura se vuelve enorme y ralentiza a los enemigos que entran' },
 ] as const;
@@ -221,16 +221,6 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
       values: [0.08, 0.16, 0.26, 0.4],
       apply: ({ stats }, v) => (stats.pickupRadius *= 1 + v),
       text: (v) => `+${pct(v)} de radio para juntar gemas`,
-    },
-  }),
-  tiered({
-    id: 'range',
-    passive: true,
-    name: 'Alcance',
-    tiers: {
-      values: [0.03, 0.07, 0.12, 0.2],
-      apply: ({ stats }, v) => (stats.rangeMult *= 1 + v),
-      text: (v) => `+${pct(v)} de alcance de disparo`,
     },
   }),
   tiered({

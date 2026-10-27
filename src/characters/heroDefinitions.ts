@@ -133,7 +133,7 @@ export const hulkDefinition: CharacterDefinition = {
 
 /**
  * Doctor Strange: flota (como Iron Man) y siempre se ve de frente, sin dibujo de espalda.
- * Su ataque es un aura de runas que daña seguido a todo lo que se acerca; con Área / Alcance crece.
+ * Su ataque es un aura de runas que daña seguido a todo lo que se acerca; con Área crece.
  * Ulti: "Tiempo detenido" (ver `TimeStopUltimate`).
  */
 export const strangeDefinition: CharacterDefinition = {
