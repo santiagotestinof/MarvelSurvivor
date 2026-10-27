@@ -130,31 +130,54 @@ export class AutoAttackSystem {
     for (const enemy of activeEnemies(this.enemies)) if (near(enemy.x, enemy.y - 6, 6)) enemy.takeDamage(damage);
     for (const prop of this.props()) if (!prop.isBroken && near(prop.x, prop.y, 4)) prop.takeDamage(damage);
 
-    // El piso se rompe: una grieta que avanza desde Thor con ramas, trozos de tierra que saltan y polvo.
+    // El piso se rompe: una grieta de pixel art (bloques negros en escalera, con ramas) que se estira a lo largo de la onda.
     const g = this.scene.add.graphics().setDepth(999_997);
-    const points: { x: number; y: number }[] = [];
-    const steps = Math.max(4, Math.round(length / 14));
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const jitter = i === 0 ? 0 : Phaser.Math.Between(-5, 5);
-      points.push({ x: x1 + (x2 - x1) * t - Math.sin(angle) * jitter, y: y1 + (y2 - y1) * t + Math.cos(angle) * jitter });
-    }
-    g.lineStyle(width, 0x2a1d12, 0.85).strokePoints(points);
-    g.lineStyle(Math.max(2, width * 0.45), 0x120b06, 0.95).strokePoints(points);
-    // Ramas más finas que salen de la grieta.
-    for (let i = 2; i < points.length - 1; i += 2) {
+    const cell = 4;
+    const snap = (v: number): number => Math.round(v / cell) * cell;
+    const thick = Math.max(1, Math.round(width / 34));
+    const blocks = new Set<string>();
+    const put = (px: number, py: number): void => {
+      for (let ox = 0; ox < thick; ox++) for (let oy = 0; oy < thick; oy++) blocks.add(`${snap(px) + ox * cell},${snap(py) + oy * cell}`);
+    };
+    /** Camino en escalera desde (sx, sy) con dirección `dir` y `len` px, con desvíos al azar; devuelve los puntos de paso. */
+    const crack = (sx: number, sy: number, dir: number, len: number, wobble: number): { x: number; y: number }[] => {
+      const path: { x: number; y: number }[] = [];
+      let cx = sx;
+      let cy = sy;
+      let heading = dir;
+      for (let walked = 0; walked < len; walked += cell * 0.8) {
+        heading += Phaser.Math.FloatBetween(-wobble, wobble);
+        // Escalera: en cada paso se avanza en un solo eje, el que más se acerque a la dirección.
+        if (Math.random() * (Math.abs(Math.cos(heading)) + Math.abs(Math.sin(heading))) < Math.abs(Math.cos(heading))) cx += Math.sign(Math.cos(heading)) * cell;
+        else cy += Math.sign(Math.sin(heading)) * cell;
+        put(cx, cy);
+        path.push({ x: cx, y: cy });
+      }
+      return path;
+    };
+    const main = crack(x1, y1, angle, length, 0.35);
+    // Ramas cortas que salen de la grieta, y a veces una ramita de la rama.
+    for (let k = 3; k < main.length - 1; k += Phaser.Math.Between(3, 5)) {
       const side = Math.random() < 0.5 ? -1 : 1;
-      const branch = angle + side * Phaser.Math.FloatBetween(0.6, 1.1);
-      const len = Phaser.Math.Between(8, 16);
-      g.lineStyle(Math.max(2, width * 0.2), 0x120b06, 0.85)
-        .lineBetween(points[i].x, points[i].y, points[i].x + Math.cos(branch) * len, points[i].y + Math.sin(branch) * len);
+      const dir = angle + side * Phaser.Math.FloatBetween(0.7, 1.3);
+      const branch = crack(main[k].x, main[k].y, dir, Phaser.Math.Between(9, 21), 0.5);
+      if (branch.length > 4 && Math.random() < 0.5) crack(branch[3].x, branch[3].y, dir - side * Phaser.Math.FloatBetween(0.8, 1.2), Phaser.Math.Between(6, 12), 0.5);
     }
-    g.lineStyle(Math.max(1.5, width * 0.15), critical ? 0xffe272 : 0xcfeeff, 0.9).strokePoints(points);
-    this.scene.tweens.add({ targets: g, alpha: 0, duration: 900, delay: 250, onComplete: () => g.destroy() });
+    g.fillStyle(0x120b06, 0.95);
+    for (const key of blocks) {
+      const [bx, by] = key.split(',').map(Number);
+      g.fillRect(bx - cell / 2, by - cell / 2, cell, cell);
+    }
+    if (critical) {
+      g.fillStyle(0xffe272, 0.9);
+      for (const p of main) if (Math.random() < 0.25) g.fillRect(p.x - 0.5, p.y - 0.5, 1.5, 1.5);
+    }
+    // La grieta queda un momento y después se desvanece.
+    this.scene.tweens.add({ targets: g, alpha: 0, duration: 900, delay: 350, onComplete: () => g.destroy() });
 
     // Trozos de tierra y piedra que saltan de la grieta.
     for (let i = 0; i < Math.max(6, Math.round(length / 14)); i++) {
-      const p = points[Phaser.Math.Between(1, points.length - 1)];
+      const p = main[Phaser.Math.Between(0, main.length - 1)];
       const size = Phaser.Math.Between(2, 4);
       const chunk = this.scene.add.rectangle(p.x, p.y, size, size, Phaser.Math.RND.pick([0x5b4630, 0x3a2a1c, 0x7d6a4f])).setDepth(999_998);
       this.scene.tweens.add({
