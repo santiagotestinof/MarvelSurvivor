@@ -13,13 +13,13 @@ function readRoundDurationMs(): number {
 export const ROUND = {
   /** Duración de las oleadas. Al terminar aparece el jefe. */
   durationMs: readRoundDurationMs(),
-  /** Vida del jefe final: 4500 (antes 1500). */
-  bossHealthMultiplier: 4500 / 440,
-  bossSpeedMultiplier: 1.15,
+  /** Vida del jefe final: 7000 (antes 1500). */
+  bossHealthMultiplier: 7000 / 440,
+  bossSpeedMultiplier: 1.3,
   /** Cada cuánto invoca refuerzos y cuántos (hasta `bossMinionCap` enemigos vivos a la vez). */
-  bossMinionIntervalMs: 2800,
-  bossMinionCount: 3,
-  bossMinionCap: 28,
+  bossMinionIntervalMs: 2200,
+  bossMinionCount: 4,
+  bossMinionCap: 34,
 };
 
 /**

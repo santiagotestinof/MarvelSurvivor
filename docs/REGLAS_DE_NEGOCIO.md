@@ -171,3 +171,8 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Trampas de telaraña (Spider-Man)
 - Daño por tic en el piso: **2,25** (antes 4,5, −50 %), cada 0,35 s mientras el enemigo está adentro; los bonos de nivel y la pasiva Más daño se multiplican sobre ese valor.
+
+## Jefe final: segunda subida de dificultad
+- Vida **7000** y velocidad ×1,3 (antes 4500 y ×1,15). Pausa entre ataques **1,2 s**.
+- El cañón dispara **5** descargas en abanico (antes 3) y abre **6** grietas del cubo (antes 4).
+- Refuerzos: **4 Drones cada 2,2 s** hasta 34 vivos, y 4 más tras cada embestida. El daño no cambió respecto de la sección anterior.

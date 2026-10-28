@@ -50,7 +50,7 @@ type PendingAction =
       targetRing: Phaser.GameObjects.Arc;
     };
 
-const ATTACK_COOLDOWN_MS = 1500;
+const ATTACK_COOLDOWN_MS = 1200;
 const FIRST_ATTACK_DELAY_MS = 1000;
 const BOLT_HIT_RADIUS = 14;
 
@@ -126,7 +126,7 @@ export class BossAttackSystem {
     boss.lockForShot(telegraphMs, targetX, targetY);
 
     const baseAngle = Phaser.Math.Angle.Between(boss.x, boss.y - 16, targetX, targetY);
-    const spreads = [-0.28, 0, 0.28];
+    const spreads = [-0.56, -0.28, 0, 0.28, 0.56];
     const lines = spreads.map((offset) => {
       const angle = baseAngle + offset;
       const endX = boss.x + Math.cos(angle) * 260;
@@ -164,7 +164,7 @@ export class BossAttackSystem {
       .setStrokeStyle(2, 0xd8f8ff, 1)
       .setDepth(boss.y + 3);
 
-    const count = 4;
+    const count = 6;
     const baseAngle = Math.random() * Math.PI * 2;
     for (let i = 0; i < count; i++) {
       const angle = baseAngle + (i * Math.PI * 2) / count;
@@ -241,7 +241,7 @@ export class BossAttackSystem {
 
     if (p.kind === 'tesseract-cannon') {
       const baseAngle = Phaser.Math.Angle.Between(boss.x, boss.y - 16, p.targetX, p.targetY);
-      const spreads = [-0.28, 0, 0.28];
+      const spreads = [-0.56, -0.28, 0, 0.28, 0.56];
       p.lines.forEach((line, idx) => {
         const angle = baseAngle + spreads[idx];
         line.setTo(boss.x, boss.y - 16, boss.x + Math.cos(angle) * 260, boss.y - 16 + Math.sin(angle) * 260);
@@ -321,7 +321,7 @@ export class BossAttackSystem {
     }
 
     // Convoca un par de escoltas al terminar la embestida si no hay demasiados enemigos en pantalla
-    for (let i = 0; i < 3; i++) this.waves.spawnEnemy(DRONE, { health: 1.5, speed: 1.15 });
+    for (let i = 0; i < 4; i++) this.waves.spawnEnemy(DRONE, { health: 1.5, speed: 1.15 });
   }
 
   private updateBolts(delta: number): void {
