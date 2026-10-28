@@ -233,6 +233,7 @@ export class TestMap {
 
     const { width, height } = PROP_BODY[kind];
     const collider = this.addObstacle(x, y - height / 2, width, height);
+    if (kind === 'tree') collider.setData('webAnchor', true);
 
     if (kind === 'crate' || kind === 'rock') this.makeBreakable(kind, image, collider);
   }
