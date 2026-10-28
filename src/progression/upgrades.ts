@@ -158,7 +158,11 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     passive: true,
     name: 'Cantidad',
     description: '+1 unidad en tu arma especial y +1 disparo en tu arma principal',
-    describe: ({ heroWeapon, stats }) => `+1 unidad en tu arma especial (${heroWeapon?.units ?? 0} → ${(heroWeapon?.units ?? 0) + 1}) y +1 disparo en tu arma principal (${stats.shotCount} → ${stats.shotCount + 1})`,
+    describe: ({ heroWeapon, stats, basicKind }) => {
+      const special = `+1 unidad en tu arma especial (${heroWeapon?.units ?? 0} → ${(heroWeapon?.units ?? 0) + 1})`;
+      // El martillo de Thor y el aura de Strange no suman disparos con Cantidad.
+      return basicKind === 'hammer' || basicKind === 'aura' ? special : `${special} y +1 disparo en tu arma principal (${stats.shotCount} → ${stats.shotCount + 1})`;
+    },
     // Solo suma a las armas especiales: sale una vez que el héroe ya tiene la suya.
     isAvailable: (ctx) => times(ctx, 'amount') < 3 && (ctx.heroWeapon?.level ?? 0) > 0,
     apply: ({ stats }) => stats.amountBonus++,

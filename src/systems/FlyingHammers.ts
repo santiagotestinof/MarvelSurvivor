@@ -9,7 +9,7 @@ import { activeEnemies } from './areaDamage';
 /** Valores del martillo volador de Thor (arma principal). */
 export const HAMMER = {
   /** Velocidad de vuelo (px/s); la pasiva Velocidad la sube. */
-  speed: 230,
+  speed: 480,
   /** Hasta dónde se aleja de Thor para ir a por un enemigo o una caja. */
   leash: 300,
   /** Radio del golpe del martillo (px, antes de Área). */
@@ -51,7 +51,8 @@ export class FlyingHammers {
   ) {}
 
   update(now: number, delta: number): void {
-    const count = this.stats.shotCount;
+    // Cantidad no suma martillos (solo agranda las armas exclusivas): hay uno por disparo propio del arma.
+    const count = this.stats.projectileCount;
     while (this.hammers.length < count) {
       const sprite = this.scene.add.image(this.owner.x, this.owner.y - 10, TEXTURES.hammer).setDepth(999_991);
       this.hammers.push({ sprite, target: null, last: null, overshootUntil: 0, vx: 0, vy: 0, hitAt: new WeakMap() });
