@@ -102,6 +102,10 @@ export class MissileWeapon implements HeroWeapon {
     return FIRE.radius * (1 + 0.2 * this.fireLevels.size) * this.stats.areaMult;
   }
 
+  get units(): number {
+    return this.level > 0 ? MISSILES.baseCount + this.bonus.amount + this.stats.amountBonus : 0;
+  }
+
   update(now: number, deltaMs: number): void {
     this.now = now;
     const enemies = this.enemies.getChildren() as Enemy[];
@@ -120,7 +124,7 @@ export class MissileWeapon implements HeroWeapon {
     if (this.nearestEnemies(this.owner.x, this.owner.y, 1).length === 0 && !this.nearestProp()) return;
 
     this.lastFiredAt = now;
-    const count = MISSILES.baseCount + this.bonus.amount + this.stats.amountBonus;
+    const count = this.units;
     const cover = MISSILES.coverRadius * this.bonus.area * this.stats.areaMult;
     const originX = this.owner.x;
     const originY = this.owner.y - 14;

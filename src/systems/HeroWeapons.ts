@@ -13,6 +13,8 @@ import type { Enemy } from '../entities/Enemy';
 export interface HeroWeapon {
   readonly level: number;
   readonly maxed: boolean;
+  /** Unidades que tiene el arma ahora (escudos, trampas, rayos, portales, misiles), con Cantidad incluida. */
+  readonly units: number;
   levelUp(): void;
   /** `now` y `delta` en ms, con el reloj de la ronda (no avanza en pausa). */
   update(now: number, delta: number): void;
@@ -64,6 +66,11 @@ function accumulate(table: Partial<Record<number, LevelBonus>>, level: number): 
 }
 
 abstract class LeveledWeapon implements HeroWeapon {
+  /** Las armas sin unidades (la onda de Hulk) no las cuentan. */
+  get units(): number {
+    return 0;
+  }
+
   level = 0;
   protected abstract readonly table: Partial<Record<number, LevelBonus>>;
 
@@ -100,10 +107,14 @@ export class OrbitShields extends LeveledWeapon {
   private angle = 0;
   private readonly nextHit = new WeakMap<Enemy, number>();
 
+  get units(): number {
+    return this.level > 0 ? 2 + this.bonus.amount + this.deps.stats.amountBonus : 0;
+  }
+
   update(now: number, delta: number): void {
     const { scene, owner, enemies, stats } = this.deps;
     const b = this.bonus;
-    const count = this.level > 0 ? 2 + b.amount + stats.amountBonus : 0;
+    const count = this.units;
     while (this.sprites.length < count) this.sprites.push(scene.add.image(0, 0, TEXTURES.shield).setDepth(999_990));
     while (this.sprites.length > count) this.sprites.pop()?.destroy();
     if (count === 0) return;
@@ -141,6 +152,10 @@ export class WebTraps extends LeveledWeapon {
   private readonly webs: { g: Phaser.GameObjects.Graphics; x: number; y: number; radius: number; until: number; nextTick: number; damage: number }[] = [];
   private nextDrop = 0;
 
+  get units(): number {
+    return this.level > 0 ? 1 + this.bonus.amount + this.deps.stats.amountBonus : 0;
+  }
+
   update(now: number): void {
     if (this.level === 0) return;
     const { scene, owner, enemies, stats, props } = this.deps;
@@ -149,7 +164,7 @@ export class WebTraps extends LeveledWeapon {
     if (now >= this.nextDrop) {
       this.nextDrop = now + 3000 * b.cooldown * stats.cooldownMult;
       const near = activeEnemies(enemies).filter((e) => (e.x - owner.x) ** 2 + (e.y - owner.y) ** 2 < 170 * 170);
-      const amount = 1 + b.amount + stats.amountBonus;
+      const amount = this.units;
       for (let i = 0; i < amount; i++) {
         const target = near.length > 0 ? near[Math.floor(Math.random() * near.length)] : null;
         const x = target ? target.x : owner.x + Phaser.Math.Between(-60, 60);
@@ -214,6 +229,10 @@ export class ThunderStorm extends LeveledWeapon {
   };
   private nextStorm = 0;
 
+  get units(): number {
+    return this.level > 0 ? 1 + this.bonus.amount + this.deps.stats.amountBonus : 0;
+  }
+
   update(now: number): void {
     if (this.level === 0 || now < this.nextStorm) return;
     const { scene, enemies, stats, props } = this.deps;
@@ -224,7 +243,7 @@ export class ThunderStorm extends LeveledWeapon {
     if (pool.length === 0) return;
     this.nextStorm = now + 1800 * b.cooldown * stats.cooldownMult;
     Phaser.Utils.Array.Shuffle(pool);
-    const bolts = 1 + b.amount + stats.amountBonus;
+    const bolts = this.units;
     const radius = 26 * b.area * stats.areaMult;
     const damage = 16 * b.damage * stats.damageMult;
     for (let i = 0; i < bolts; i++) {
@@ -314,6 +333,10 @@ export class Portals extends LeveledWeapon {
   private readonly sparks: Spark[] = [];
   private nextOpen = 0;
 
+  get units(): number {
+    return this.level > 0 ? 1 + this.bonus.amount + this.deps.stats.amountBonus : 0;
+  }
+
   update(now: number, delta: number): void {
     this.updateSparks(delta);
     if (this.level === 0) return;
@@ -322,7 +345,7 @@ export class Portals extends LeveledWeapon {
     if (now >= this.nextOpen) {
       // Cadencia = velocidad de las chispas; Duración = cuánto quedan abiertos. Cada cuánto se abre uno nuevo no depende de ninguna.
       this.nextOpen = now + PORTAL.openEveryMs;
-      const amount = 1 + this.bonus.amount + stats.amountBonus;
+      const amount = this.units;
       for (let i = 0; i < amount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = Phaser.Math.Between(40, 95) * stats.rangeMult;

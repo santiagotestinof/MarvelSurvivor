@@ -28,7 +28,7 @@ El arma principal de Iron Man son los **repulsores** (disparo recto); los **Mini
 
 - **Cadencia** (velocidad de disparo / enfriamiento): qué tan seguido pegan o disparan las armas. En Doctor Strange: la velocidad de las chispas de los portales y el ritmo del aura.
 - **Duración**: cuánto tiempo dura un efecto una vez creado (por ejemplo, cuánto quedan abiertos los portales, el fuego, las telarañas). No cambia cada cuánto se crea uno nuevo.
-- **Cantidad** (pasiva, ocupa casillero): unidades extra de las armas **especiales** (portales, escudos orbitales, trampas, tormenta de rayos, minimisiles). No afecta al ataque principal. Solo se ofrece cuando el héroe ya tiene su arma especial.
+- **Cantidad** (pasiva, ocupa casillero): unidades extra de las armas **especiales** (portales, escudos orbitales, trampas, tormenta de rayos, minimisiles). No afecta al ataque principal. Solo se ofrece cuando el héroe ya tiene su arma especial. Cada toma suma **+1 unidad** (no multiplica); la tarjeta muestra las unidades reales del arma (`HeroWeapon.units`), por ejemplo `5 → 6`.
 - **Disparo múltiple** (mejora del arma principal, no ocupa casillero): disparos/misiles/rayos/zarpazos extra del ataque principal. No afecta a las armas especiales. Solo se ofrece si el ataque principal lo admite (no sale en el aura de Strange ni en el círculo evolucionado de Hulk).
 - **Área**: tamaño del daño o del efecto (aura, explosiones, rayos, telarañas).
 
