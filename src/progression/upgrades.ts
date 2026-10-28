@@ -398,14 +398,15 @@ export function pickUpgradeChoices(
   ctx: UpgradeContext,
   banished: ReadonlySet<string> = new Set(),
 ): UpgradeDefinition[] {
-  const pool = UPGRADES.filter(
-    (upgrade) =>
-      !banished.has(upgrade.id) &&
-      (!upgrade.passive || saveData.isPassiveUnlocked(upgrade.id)) &&
-      (!upgrade.exclusiveTo || upgrade.exclusiveTo.includes(ctx.heroId)) &&
-      hasSlot(upgrade, ctx.taken) &&
-      (upgrade.isAvailable?.(ctx) ?? true),
-  );
+  const available = (upgrade: UpgradeDefinition): boolean =>
+    !banished.has(upgrade.id) &&
+    (!upgrade.passive || saveData.isPassiveUnlocked(upgrade.id)) &&
+    (!upgrade.exclusiveTo || upgrade.exclusiveTo.includes(ctx.heroId)) &&
+    hasSlot(upgrade, ctx.taken) &&
+    (upgrade.isAvailable?.(ctx) ?? true);
+  // Solo salen mejoras pasivas y de armas. Reparación queda para cuando no hay nada más (para que subir de nivel no quede vacío).
+  let pool = UPGRADES.filter((upgrade) => upgrade.id !== 'repair' && available(upgrade));
+  if (pool.length === 0) pool = UPGRADES.filter((upgrade) => upgrade.id === 'repair' && available(upgrade));
   const picked: UpgradeDefinition[] = [];
   while (picked.length < count && pool.length > 0) {
     const total = pool.reduce((sum, upgrade) => sum + (upgrade.weight ?? 1), 0);
