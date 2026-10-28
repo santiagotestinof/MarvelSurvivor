@@ -45,6 +45,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private facingAngle = Math.PI / 2;
   private facingReady = false;
   private currentDir: EnemyDirection = 'down';
+  private minibossDashUntil = 0;
+  private minibossDashReadyAt = 0;
+  private minibossDashDirection = { x: 0, y: 0 };
 
   constructor(scene: Phaser.Scene, x: number, y: number, kind: EnemyKind, scaling: EnemyScaling) {
     super(scene, x, y, kind.texture, 0);
@@ -159,7 +162,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     return this.stampede !== null;
   }
 
-  chase(targetX: number, targetY: number, separationX = 0, separationY = 0): void {
+  chase(targetX: number, targetY: number, separationX = 0, separationY = 0): boolean | void {
     if (this.frozen) {
       this.setVelocity(0, 0);
       this.setDepth(this.y);
@@ -180,6 +183,37 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       return;
     }
     const now = this.scene.time.now;
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
+    const distance = Math.hypot(dx, dy);
+
+    if (this.kind.id === 'miniboss') {
+      if (this.minibossDashUntil > now) {
+        if (distance <= 24) {
+          this.minibossDashUntil = 0;
+          this.minibossDashReadyAt = now + 3500;
+          this.setVelocity(0, 0);
+          this.setDepth(this.y);
+          return true;
+        }
+        this.setVelocity(this.minibossDashDirection.x * 360, this.minibossDashDirection.y * 360);
+        if (this.kind.directional) this.updateFacing(this.minibossDashDirection.x, this.minibossDashDirection.y);
+        this.setDepth(this.y);
+        return false;
+      }
+      if (this.minibossDashUntil !== 0) this.minibossDashUntil = 0;
+      if (now >= this.minibossDashReadyAt && distance <= 22 * 16) {
+        const length = distance || 1;
+        this.minibossDashDirection = { x: dx / length, y: dy / length };
+        this.minibossDashUntil = now + 300;
+        this.minibossDashReadyAt = now + 3500;
+        this.setVelocity(this.minibossDashDirection.x * 360, this.minibossDashDirection.y * 360);
+        if (this.kind.directional) this.updateFacing(this.minibossDashDirection.x, this.minibossDashDirection.y);
+        this.setDepth(this.y);
+        return false;
+      }
+    }
+
     if (now < this.knockUntil) {
       this.setDepth(this.y);
       return;
@@ -205,9 +239,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     const speed = this.moveSpeed * (now < this.slowUntil ? this.slowFactor : 1);
-    const dx = targetX - this.x;
-    const dy = targetY - this.y;
-    const distance = Math.hypot(dx, dy);
     let moveX = distance > 0.5 ? dx / distance : 0;
     let moveY = distance > 0.5 ? dy / distance : 0;
 
