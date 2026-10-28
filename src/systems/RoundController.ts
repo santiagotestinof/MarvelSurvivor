@@ -79,7 +79,8 @@ export class RoundController {
         this.waves.update(now, progress);
       }
     } else if (this.phase === 'boss' && this.boss && now >= this.nextBossMinionAt) {
-      this.waves.spawnEnemy(DRONE, this.waves.getScaling(progress));
+      const scaling = this.waves.getScaling(progress);
+      for (let i = 0; i < ROUND.bossMinionCount && this.waves.aliveCount() < ROUND.bossMinionCap; i++) this.waves.spawnEnemy(DRONE, scaling);
       this.nextBossMinionAt = now + ROUND.bossMinionIntervalMs;
     }
   }

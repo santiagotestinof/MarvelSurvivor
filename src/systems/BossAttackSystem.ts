@@ -50,7 +50,7 @@ type PendingAction =
       targetRing: Phaser.GameObjects.Arc;
     };
 
-const ATTACK_COOLDOWN_MS = 2300;
+const ATTACK_COOLDOWN_MS = 1800;
 const FIRST_ATTACK_DELAY_MS = 1000;
 const BOLT_HIT_RADIUS = 14;
 
@@ -190,7 +190,7 @@ export class BossAttackSystem {
         startedAt: now,
         detonateAt: now + 1050,
         radius,
-        damage: 16,
+        damage: 30,
       });
     }
 
@@ -266,7 +266,7 @@ export class BossAttackSystem {
             core,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
-            damage: 14,
+            damage: 26,
           });
         });
         this.clearPending();
@@ -317,11 +317,11 @@ export class BossAttackSystem {
     });
 
     if (Phaser.Math.Distance.Between(boss.x, boss.y - 6, this.player.x, this.player.y - 8) <= shockRadius) {
-      this.player.takeDamage(15);
+      this.player.takeDamage(30);
     }
 
     // Convoca un par de escoltas al terminar la embestida si no hay demasiados enemigos en pantalla
-    this.waves.spawnEnemy(DRONE, { health: 1.5, speed: 1.15 });
+    for (let i = 0; i < 3; i++) this.waves.spawnEnemy(DRONE, { health: 1.5, speed: 1.15 });
   }
 
   private updateBolts(delta: number): void {
