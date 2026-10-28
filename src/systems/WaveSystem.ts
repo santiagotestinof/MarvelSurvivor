@@ -74,7 +74,9 @@ export class WaveSystem {
     // Con `?minijefe` se repite cada 30 s para probar; en una ronda normal sale una sola vez.
     this.nextMiniBossAtMs = this.quickMiniBoss ? this.nextMiniBossAtMs + 30_000 : Number.POSITIVE_INFINITY;
     const { x, y } = this.pickSpawnPoint();
-    this.spawnEnemyAt(MINIBOSS, this.getScaling(progress), x, y);
+    const scaling = this.getScaling(progress);
+    scaling.health = (1 + progress * 2.4) * this.stats.curseMult;
+    this.spawnEnemyAt(MINIBOSS, scaling, x, y);
     this.scene.events.emit('special-wave', '¡MINI JEFE!');
   }
 
