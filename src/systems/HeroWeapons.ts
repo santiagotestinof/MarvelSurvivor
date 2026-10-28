@@ -196,7 +196,7 @@ export class WebTraps extends LeveledWeapon {
       radius,
       until: now + 4100 * b.duration * stats.durationMult,
       nextTick: now + 350,
-      damage: 3.4 * b.damage * stats.damageMult,
+      damage: 2.25 * b.damage * stats.damageMult,
     });
   }
 }
