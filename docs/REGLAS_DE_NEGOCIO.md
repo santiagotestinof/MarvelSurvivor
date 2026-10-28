@@ -57,7 +57,7 @@ El arma principal de cada héroe empieza en nivel 1 y sube hasta el **7** con un
 | Iron Man (Repulsor) | +1 disparo · atraviesa +1 · +1 disparo · +25% vel. · +1 disparo · atraviesa +1 y +25% vel. |
 | Capitán (Escudo) | +1 escudo · +25% vel. · +1 escudo · +25% vel. · +1 escudo · +25% vel. |
 | Spider-Man (Telarañas) | +1 telaraña · atraviesa +1 · +25% vel. · +1 telaraña · atraviesa +1 · +1 telaraña |
-| Thor (Martillo volador) | +30% de daño · +12% de tamaño · +30% de daño · +25% de velocidad de vuelo · +30% de daño · +25% de tamaño y +40% de daño |
+| Thor (Martillo volador) | +30% de daño · +12% de tamaño · +20% de daño · +25% de velocidad de vuelo · +15% de daño · +12% de tamaño y +10% de daño |
 | Hulk (Zarpazo) | +25% ángulo · +20% alcance · +1 zarpazo · +25% ángulo · +20% alcance · +1 zarpazo y +25% ángulo |
 | Strange (Aura) | +12% radio ×5 · +25% radio |
 
@@ -150,7 +150,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 ## Thor: martillo volador como arma principal
 - El arma principal de Thor es un **martillo siempre en el aire** que va de enemigo en enemigo, **sin cadencia** (la pasiva Cadencia no lo afecta). Hace **5 de daño por golpe** (antes 16 cada 1,8 s; bajado a propósito porque pega sin parar), con un respiro de 0,35 s por martillo y enemigo.
 - Cada martillo busca el enemigo más cercano a él (dentro de 300 px de Thor) que no sea el recién golpeado ni el de otro martillo; sigue de largo un instante tras el golpe y pega a todo lo que toca en el camino. Sin enemigos va a una caja o roca cercana, y sin nada da vueltas alrededor de Thor.
-- Thor tiene **siempre 1 martillo**: ni los niveles del arma ni Cantidad (pasiva o de la tienda) suman martillos; Cantidad solo afecta a su arma exclusiva (Rayos). Los niveles del arma suben su **daño** (+30 % en los niveles 2, 4 y 6, +40 % en el 7: de 5 a unos 15 por golpe), lo agrandan (3 y 7) y lo hacen volar más rápido (5). La pasiva Velocidad del proyectil también le sube la velocidad de vuelo (base 480 px/s (antes 230)). Son arma principal con 7 niveles fijos y las mejoras comunes (daño, crítico, etc.).
+- Thor tiene **siempre 1 martillo**: ni los niveles del arma ni Cantidad (pasiva o de la tienda) suman martillos; Cantidad solo afecta a su arma exclusiva (Rayos). Los niveles del arma suben su **daño** (+30 %, +20 %, +15 % y +10 % en los niveles 2, 4, 6 y 7: de 5 a unos 10 por golpe), lo agrandan (3 y 7) y lo hacen volar más rápido (5). La pasiva Velocidad del proyectil también le sube la velocidad de vuelo (base 480 px/s (antes 230)). Son arma principal con 7 niveles fijos y las mejoras comunes (daño, crítico, etc.).
 - Los rayos de antes son su **arma exclusiva** (1 rayo de 16 de daño cada 1,8 s sobre un enemigo de la pantalla, hasta nv 7).
 - Thor ya no tiene evolución (el libro secreto lista 5).
 

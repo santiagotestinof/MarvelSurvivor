@@ -59,10 +59,10 @@ export const MAIN_WEAPONS: Record<AttackKind, MainWeaponDefinition> = {
     levels: [
       { text: 'El martillo pega más fuerte (+30% de daño)', damageMult: 1.3 },
       { text: 'Martillo más grande (+12%)', areaMult: AREA },
-      { text: 'El martillo pega más fuerte (+30% de daño)', damageMult: 1.3 },
+      { text: 'El martillo pega más fuerte (+20% de daño)', damageMult: 1.2 },
       { text: 'El martillo vuela más rápido (+25%)', speedMult: SHOT_SPEED },
-      { text: 'El martillo pega más fuerte (+30% de daño)', damageMult: 1.3 },
-      { text: 'Martillo más grande (+25%) y +40% de daño', areaMult: AREA * AREA, damageMult: 1.4 },
+      { text: 'El martillo pega más fuerte (+15% de daño)', damageMult: 1.15 },
+      { text: 'Martillo más grande (+12%) y +10% de daño', areaMult: AREA, damageMult: 1.1 },
     ],
   },
   fan: {
