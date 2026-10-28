@@ -170,7 +170,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     tiers: {
       values: [0.02, 0.05, 0.09, 0.15],
       apply: ({ stats }, v) => (stats.areaMult *= 1 + v),
-      text: (v) => `+${pct(v)} de área de las armas (aura, explosiones, rayos)`,
+      text: (v) => `+${pct(v)} de área de las armas (aura, explosiones, rayos, tamaño de los escudos)`,
     },
   }),
   tiered({

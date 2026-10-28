@@ -129,7 +129,8 @@ export class ShieldStorm extends LeveledWeapon {
       const vx = Math.cos(angle) * 280;
       const vy = Math.sin(angle) * 280;
       const shield = new Projectile(scene, owner.x, owner.y - 14, projectileTexture, damage, distance, vx, vy, { pierce: 999 });
-      shield.setScale(1.2);
+      // Mismo tamaño que el escudo del arma principal base (0,35), que también crece con Área.
+      shield.setScale(0.35 * stats.areaMult);
       projectiles.add(shield);
       shield.setVelocity(vx, vy);
     }
