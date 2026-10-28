@@ -17,7 +17,7 @@ Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir d
 |---|---|---|---|---|---|---|---|
 | Minimisiles (Iron Man) | 3 misiles en anillo alrededor (cada 1,5 s) | +1 misil | +25 % de daño | +20 % de área | +1 misil | +30 % de daño | +1 misil, +25 % de área |
 | Portales (Doctor Strange) | 1 portal | +1 portal | Disparan más rápido (−22 % entre chispas) | +1 portal | +40 % de daño | +1 portal | +30 % de daño, disparan más rápido (−15 %) |
-| Escudos orbitales (Capitán América) | 2 escudos | +1 escudo | Giran más rápido (+30 %) | +1 escudo | +40 % de daño, +20 % de área | +1 escudo | +30 % de daño, giran más rápido (+20 %) |
+| Ráfaga de escudos (Capitán América): cada 5 s, si hay enemigos a menos de 260, lanza escudos en todas direcciones que atraviesan (12 de daño, alcance 170) | 4 escudos | +2 escudos | Lanza más seguido (−15 % de espera) | +2 escudos | +40 % de daño, +20 % de alcance | Lanza más seguido (−15 %) | +2 escudos y +30 % de daño |
 | Trampas de telaraña (Spider-Man) | 1 telaraña | +1 telaraña | +25 % de área | +30 % de duración | +1 telaraña, +50 % de daño | +1 telaraña | +40 % de daño, +20 % de área |
 | Rayos (Thor, arma exclusiva) | 1 rayo cada 1,8 s sobre un enemigo de la pantalla | +1 rayo | Rayos más seguidos (−20 %) | +1 rayo | +30 % de daño, +25 % de área | +1 rayo | +30 % de daño, más seguida (−15 %) |
 | Onda de choque (Hulk) | Base | +20 % de área | Golpea más seguido (−20 %) | +35 % de daño | +20 % de área, +30 % de empuje | Golpea más seguido (−15 %) | +30 % de daño, +15 % de área |
@@ -28,7 +28,7 @@ El arma principal de Iron Man son los **repulsores** (disparo recto); los **Mini
 
 - **Cadencia** (velocidad de disparo / enfriamiento): qué tan seguido pegan o disparan las armas. En Doctor Strange: la velocidad de las chispas de los portales y el ritmo del aura.
 - **Duración**: cuánto tiempo dura un efecto una vez creado (por ejemplo, cuánto quedan abiertos los portales, el fuego, las telarañas). No cambia cada cuánto se crea uno nuevo.
-- **Cantidad** (pasiva, ocupa casillero): unidades extra de las armas **especiales** (portales, escudos orbitales, trampas, tormenta de rayos, minimisiles). No afecta al ataque principal. Solo se ofrece cuando el héroe ya tiene su arma especial. Cada toma suma **+1 unidad** (no multiplica); la tarjeta muestra las unidades reales del arma (`HeroWeapon.units`), por ejemplo `5 → 6`.
+- **Cantidad** (pasiva, ocupa casillero): unidades extra de las armas **especiales** (portales, escudos de la ráfaga, trampas, tormenta de rayos, minimisiles). No afecta al ataque principal. Solo se ofrece cuando el héroe ya tiene su arma especial. Cada toma suma **+1 unidad** (no multiplica); la tarjeta muestra las unidades reales del arma (`HeroWeapon.units`), por ejemplo `5 → 6`.
 - **Disparo múltiple** (mejora del arma principal, no ocupa casillero): disparos/misiles/rayos/zarpazos extra del ataque principal. No afecta a las armas especiales. Solo se ofrece si el ataque principal lo admite (no sale en el aura de Strange ni en el círculo evolucionado de Hulk).
 - **Área**: tamaño del daño o del efecto (aura, explosiones, rayos, telarañas).
 
@@ -109,7 +109,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 |---|---|---|---|
 | Iron Man | Vuelo | 5 s de vuelo con misiles | 40 s |
 | Doctor Strange | Tiempo detenido | 5 s: congela a todos y descarga el daño al final | 35 s |
-| Capitán América | Escudos | 16 escudos en todas direcciones que atraviesan (45 de daño) | 38 s |
+| Capitán América | Carga | Embiste 0,8 s hacia donde mira (velocidad 420), sin recibir daño, y daña y empuja a todo lo que toca (18 de daño cada 60 ms, radio 30; rompe cajas) | 30 s |
 | Spider-Man | Red gigante | 25 de daño y casi inmóviles 4 s a todos los de la pantalla (al jefe lo frena a la mitad) | 36 s |
 | Thor | Trueno | 4 s de 2 rayos cada 140 ms sobre enemigos de la pantalla (40 de daño) | 40 s |
 | Hulk | Aplastar | Onda de radio 190, 110 de daño y mucho empuje | 42 s |

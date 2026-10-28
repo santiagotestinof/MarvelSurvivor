@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import type { BreakableProp } from '../entities/BreakableProp';
 import type { Character } from '../entities/Character';
 import type { Enemy } from '../entities/Enemy';
-import { Projectile } from '../entities/Projectile';
 import type { PlayerStats } from '../progression/PlayerStats';
 import { activeEnemies, damageArea, drawThunder } from './areaDamage';
 
@@ -44,6 +43,7 @@ abstract class TimedUltimate implements HeroUltimate {
     if (this.endsAt <= 0) return false;
     if (now >= this.endsAt) {
       this.endsAt = 0;
+      this.onEnd();
       return true;
     }
     this.onTick(now);
@@ -60,6 +60,7 @@ abstract class TimedUltimate implements HeroUltimate {
 
   protected abstract onStart(now: number): void;
   protected onTick(_now: number): void {}
+  protected onEnd(): void {}
 
   /** Enemigos que se ven en la pantalla ahora. */
   protected onScreen(): Enemy[] {
@@ -74,23 +75,40 @@ abstract class TimedUltimate implements HeroUltimate {
   }
 }
 
-/** Capitán América: "¡Escudos al frente!" lanza 16 escudos en todas las direcciones; atraviesan a todos. */
-export class ShieldBurst extends TimedUltimate {
-  readonly cooldownMs = 38_000;
-  readonly label = 'ESCUDOS';
-  protected readonly durationMs = 1;
+/** Capitán América: "¡Carga!" embiste hacia donde mira, sin recibir daño, y se lleva puesto a todo lo que toca. */
+export class ShieldCharge extends TimedUltimate {
+  readonly cooldownMs = 30_000;
+  readonly label = 'CARGA';
+  protected readonly durationMs = 800;
+  private nextHitAt = 0;
+  private nextTrailAt = 0;
 
-  protected onStart(): void {
-    const { scene, player, stats, projectiles, projectileTexture } = this.deps;
-    const count = 16;
-    for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2;
-      const projectile = new Projectile(scene, player.x, player.y - 14, projectileTexture, 45 * stats.damageMult, 230, Math.cos(angle) * 300, Math.sin(angle) * 300, { pierce: 999 });
-      projectile.setScale(1.4);
-      projectiles.add(projectile);
-      projectile.setVelocity(Math.cos(angle) * 300, Math.sin(angle) * 300);
+  protected onStart(now: number): void {
+    const { player } = this.deps;
+    const dir = player.facingVector();
+    const speed = 420;
+    player.setDash({ vx: dir.x * speed, vy: dir.y * speed });
+    player.protectUntil(this.deps.scene.time.now + this.durationMs + 150);
+    this.nextHitAt = now;
+    this.nextTrailAt = now;
+    this.ring(player.x, player.y, 50, 0x2f6fe0);
+  }
+
+  protected onTick(now: number): void {
+    const { scene, player, enemies, props, stats } = this.deps;
+    if (now >= this.nextHitAt) {
+      this.nextHitAt = now + 60;
+      damageArea(enemies, props(), player.x, player.y - 4, 30, 18 * stats.damageMult, 130);
     }
-    this.ring(player.x, player.y, 70, 0x2f6fe0);
+    if (now >= this.nextTrailAt) {
+      this.nextTrailAt = now + 45;
+      const trail = scene.add.circle(player.x, player.y - 6, 11, 0x5aa0ff, 0.45).setDepth(player.y - 1);
+      scene.tweens.add({ targets: trail, alpha: 0, scale: 0.3, duration: 320, onComplete: () => trail.destroy() });
+    }
+  }
+
+  protected onEnd(): void {
+    this.deps.player.setDash(null);
   }
 }
 
@@ -163,7 +181,7 @@ export class HulkSmash extends TimedUltimate {
 export function createHeroUltimate(heroId: string, deps: HeroUltimateDeps): HeroUltimate | null {
   switch (heroId) {
     case 'capitan':
-      return new ShieldBurst(deps);
+      return new ShieldCharge(deps);
     case 'spiderman':
       return new GiantWeb(deps);
     case 'thor':

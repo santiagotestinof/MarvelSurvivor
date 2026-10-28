@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { CharacterAction, CharacterDefinition } from '../characters/CharacterDefinition';
 import { TEXTURES } from '../config/assetKeys';
-import { Direction, directionFromVector } from '../core/direction';
+import { DIRECTION_ANGLES, Direction, directionFromVector } from '../core/direction';
 import { CharacterAnimator } from '../systems/AnimationSystem';
 import { MovementSystem } from '../systems/MovementSystem';
 
@@ -26,6 +26,8 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   private action: CharacterAction = 'idle';
   private currentHealth: number;
   private invulnerableUntil = 0;
+  /** Embestida (ulti del Capitán): mientras existe, la velocidad la fija ella y no el teclado. */
+  private dash: { vx: number; vy: number } | null = null;
   private speed: number;
   private flightHeight = 0;
 
@@ -104,6 +106,13 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
 
   /** Avanza un cuadro de lógica: mueve, actualiza la orientación y elige la animación. */
   step(moveIntent: Phaser.Math.Vector2): void {
+    if (this.dash) {
+      (this.body as Phaser.Physics.Arcade.Body).setVelocity(this.dash.vx, this.dash.vy);
+      this.facing = directionFromVector(this.dash.vx, this.dash.vy);
+      this.action = 'walk';
+      this.animator.play(this.action, this.facing);
+      return;
+    }
     const moving = this.movement.apply(this.body as Phaser.Physics.Arcade.Body, moveIntent);
 
     // Al detenerse no se toca `facing`: conserva la última orientación.
@@ -111,6 +120,25 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
 
     this.action = moving ? 'walk' : 'idle';
     this.animator.play(this.action, this.facing);
+  }
+
+  /** Empieza o termina una embestida (`null` la corta). */
+  setDash(velocity: { vx: number; vy: number } | null): void {
+    this.dash = velocity;
+  }
+
+  /** Vector unitario hacia donde mira (o hacia donde se mueve). */
+  facingVector(): { x: number; y: number } {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const len = Math.hypot(body.velocity.x, body.velocity.y);
+    if (len > 1) return { x: body.velocity.x / len, y: body.velocity.y / len };
+    const a = DIRECTION_ANGLES[this.facing];
+    return { x: Math.cos(a), y: Math.sin(a) };
+  }
+
+  /** Sin daño hasta `until` (reloj de la escena). */
+  protectUntil(until: number): void {
+    this.invulnerableUntil = Math.max(this.invulnerableUntil, until);
   }
 
   /** Aplica daño (no hay inmunidad tras un golpe; solo la protección al revivir). Devuelve true si lo recibió. */

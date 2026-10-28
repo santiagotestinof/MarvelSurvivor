@@ -195,6 +195,8 @@ export class GameScene extends Phaser.Scene {
         enemies: this.enemies,
         stats: this.stats,
         props: () => map.breakables,
+        projectiles: this.attack.projectiles,
+        projectileTexture: this.player.definition.stats.attack.projectileTexture,
       }) ?? null;
 
     this.missiles = new MissileWeapon(

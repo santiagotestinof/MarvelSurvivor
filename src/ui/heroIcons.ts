@@ -12,7 +12,7 @@ export const HERO_ICONS: Record<string, string[]> = {
     '..OOOOOO..',
     '.Y..YY..Y.',
   ],
-  'orbit-shields': [
+  'shield-storm': [
     '..BBBBBB..',
     '.BRRRRRRB.',
     'BRRWWWWRRB',

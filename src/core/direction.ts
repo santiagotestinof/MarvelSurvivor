@@ -53,3 +53,15 @@ export function directionFromVector(x: number, y: number): Direction {
   const sector = Math.round(Math.atan2(y, x) / (Math.PI / 4));
   return SECTOR_TO_DIRECTION[(sector + 8) % 8];
 }
+
+/** Ángulo (radianes, pantalla) hacia el que mira cada dirección, indexado por `Direction`. */
+export const DIRECTION_ANGLES: readonly number[] = [
+  Math.PI / 2, // Down
+  (3 * Math.PI) / 4, // DownLeft
+  Math.PI, // Left
+  (-3 * Math.PI) / 4, // UpLeft
+  -Math.PI / 2, // Up
+  -Math.PI / 4, // UpRight
+  0, // Right
+  Math.PI / 4, // DownRight
+];

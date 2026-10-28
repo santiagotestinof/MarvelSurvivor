@@ -4,7 +4,7 @@ import type { BreakableProp } from '../entities/BreakableProp';
 import type { Character } from '../entities/Character';
 import type { PlayerStats } from '../progression/PlayerStats';
 import { activeEnemies, damageArea, drawThunder } from './areaDamage';
-import type { Enemy } from '../entities/Enemy';
+import { Projectile } from '../entities/Projectile';
 
 /**
  * Arma secundaria exclusiva de un héroe: arranca bloqueada (nivel 0) y se desbloquea y sube de nivel
@@ -28,6 +28,9 @@ export interface HeroWeaponDeps {
   enemies: Phaser.Physics.Arcade.Group;
   stats: PlayerStats;
   props: () => Iterable<BreakableProp>;
+  /** Grupo de disparos del héroe y su textura (para armas que lanzan proyectiles, como la ráfaga de escudos). */
+  projectiles: Phaser.Physics.Arcade.Group;
+  projectileTexture: string;
 }
 
 /**
@@ -92,49 +95,44 @@ abstract class LeveledWeapon implements HeroWeapon {
   abstract update(now: number, delta: number): void;
 }
 
-/** Capitán América: escudos que giran a su alrededor y golpean a todo el que toquen. */
-export const ORBIT_SHIELDS_LEVELS = ['+1 escudo', 'Giran más rápido', '+1 escudo', 'Más daño y área', '+1 escudo', 'Más daño y giran más rápido'];
-export class OrbitShields extends LeveledWeapon {
+/** Capitán América: cada tanto lanza escudos en todas las direcciones; atraviesan a todos los enemigos. */
+export const SHIELD_STORM_LEVELS = ['+2 escudos', 'Lanza más seguido', '+2 escudos', 'Más daño y alcance', 'Lanza más seguido', '+2 escudos y más daño'];
+export class ShieldStorm extends LeveledWeapon {
   protected readonly table = {
-    2: { amount: 1 },
-    3: { spin: 1.3 },
-    4: { amount: 1 },
+    2: { amount: 2 },
+    3: { cooldown: 0.85 },
+    4: { amount: 2 },
     5: { damage: 1.4, area: 1.2 },
-    6: { amount: 1 },
-    7: { damage: 1.3, spin: 1.2 },
+    6: { cooldown: 0.85 },
+    7: { amount: 2, damage: 1.3 },
   };
-  private readonly sprites: Phaser.GameObjects.Image[] = [];
-  private angle = 0;
-  private readonly nextHit = new WeakMap<Enemy, number>();
+  private nextThrow = 0;
 
   get units(): number {
-    return this.level > 0 ? 2 + this.bonus.amount + this.deps.stats.amountBonus : 0;
+    return this.level > 0 ? 4 + this.bonus.amount + this.deps.stats.amountBonus : 0;
   }
 
-  update(now: number, delta: number): void {
-    const { scene, owner, enemies, stats } = this.deps;
-    const b = this.bonus;
-    const count = this.units;
-    while (this.sprites.length < count) this.sprites.push(scene.add.image(0, 0, TEXTURES.shield).setDepth(999_990));
-    while (this.sprites.length > count) this.sprites.pop()?.destroy();
-    if (count === 0) return;
+  update(now: number): void {
+    if (this.level === 0 || now < this.nextThrow) return;
+    const { scene, owner, enemies, stats, projectiles, projectileTexture } = this.deps;
+    // Solo lanza si hay algo para golpear cerca.
+    if (!activeEnemies(enemies).some((e) => (e.x - owner.x) ** 2 + (e.y - owner.y) ** 2 < 260 * 260)) return;
 
-    this.angle += (delta / 1000) * 2.85 * b.spin;
-    const radius = 33 * b.area * stats.areaMult;
-    const damage = 8 * b.damage * stats.damageMult;
-    const scale = 1 + 0.15 * stats.areaMult * b.area;
-    const list = activeEnemies(enemies);
-    this.sprites.forEach((sprite, i) => {
-      const a = this.angle + (i * Math.PI * 2) / count;
-      sprite.setPosition(owner.x + Math.cos(a) * radius, owner.y - 8 + Math.sin(a) * radius * 0.8).setRotation(this.angle * 6 + i * 2).setScale(scale * 0.35);
-      for (const enemy of list) {
-        if (enemy.dying || (this.nextHit.get(enemy) ?? 0) > now) continue;
-        if ((enemy.x - sprite.x) ** 2 + (enemy.y - 6 - sprite.y) ** 2 > 14 * 14 * scale) continue;
-        this.nextHit.set(enemy, now + 450);
-        enemy.takeDamage(damage);
-        if (!enemy.dying && enemy.kind.id !== 'overlord') enemy.knockback(enemy.x - owner.x, enemy.y - owner.y, 70, 80);
-      }
-    });
+    const b = this.bonus;
+    this.nextThrow = now + 5000 * b.cooldown * stats.cooldownMult;
+    const count = this.units;
+    const turn = Math.random() * Math.PI * 2;
+    const damage = 12 * b.damage * stats.damageMult;
+    const distance = 170 * b.area * stats.areaMult;
+    for (let i = 0; i < count; i++) {
+      const angle = turn + (i / count) * Math.PI * 2;
+      const vx = Math.cos(angle) * 280;
+      const vy = Math.sin(angle) * 280;
+      const shield = new Projectile(scene, owner.x, owner.y - 14, projectileTexture, damage, distance, vx, vy, { pierce: 999 });
+      shield.setScale(1.2);
+      projectiles.add(shield);
+      shield.setVelocity(vx, vy);
+    }
   }
 }
 
@@ -479,11 +477,11 @@ export const HERO_WEAPONS: Record<
     create: () => null,
   },
   capitan: {
-    upgradeId: 'orbit-shields',
-    name: 'Escudos orbitales',
-    text: 'Escudos que giran a tu alrededor y golpean a todos',
-    levels: ORBIT_SHIELDS_LEVELS,
-    create: (deps) => new OrbitShields(deps),
+    upgradeId: 'shield-storm',
+    name: 'Ráfaga de escudos',
+    text: 'Lanza escudos en todas las direcciones que atraviesan a los enemigos',
+    levels: SHIELD_STORM_LEVELS,
+    create: (deps) => new ShieldStorm(deps),
   },
   spiderman: {
     upgradeId: 'web-traps',
