@@ -176,3 +176,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Vida **7000** y velocidad ×1,3 (antes 4500 y ×1,15). Pausa entre ataques **1,2 s**.
 - El cañón dispara **5** descargas en abanico (antes 3) y abre **6** grietas del cubo (antes 4).
 - Refuerzos: **4 Drones cada 2,2 s** hasta 34 vivos, y 4 más tras cada embestida. El daño no cambió respecto de la sección anterior.
+
+## Jefe final: tercera subida
+- Vida **10000** (antes 7000).
+- Refuerzos: **8 Drones cada 1,8 s** hasta 60 vivos (antes 4 cada 2,2 s hasta 34), y 8 más tras cada embestida.

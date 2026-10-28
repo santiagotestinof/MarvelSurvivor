@@ -321,7 +321,7 @@ export class BossAttackSystem {
     }
 
     // Convoca un par de escoltas al terminar la embestida si no hay demasiados enemigos en pantalla
-    for (let i = 0; i < 4; i++) this.waves.spawnEnemy(DRONE, { health: 1.5, speed: 1.15 });
+    for (let i = 0; i < 8; i++) this.waves.spawnEnemy(DRONE, { health: 1.5, speed: 1.15 });
   }
 
   private updateBolts(delta: number): void {
