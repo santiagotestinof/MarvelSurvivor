@@ -19,15 +19,15 @@ export const ironManDefinition: CharacterDefinition = {
   body: { width: 10, height: 8, offsetX: 19, offsetY: 37 },
   stats: {
     moveSpeed: HERO_BASE.moveSpeed,
-    maxHealth: HERO_BASE.maxHealth,
+    maxHealth: 100,
     // Arma principal: repulsores. Los minimisiles son su arma exclusiva (ver `MissileWeapon`).
     attack: {
       kind: 'bolt',
-      cooldownMs: 450,
-      damage: 10,
+      cooldownMs: 600,
+      damage: 9,
       projectileTexture: TEXTURES.repulsor,
       projectileSpeed: 240,
-      aimRange: 200,
+      aimRange: 150,
       maxDistance: 240,
     },
   },
