@@ -144,8 +144,8 @@ export const SENTINEL: EnemyKind = {
   meleeDamage: 4,
   xpValue: 2,
   gold: { chance: 0.1, value: 1 },
-  rangedAttack: { range: 145, cooldownMs: 2400, damage: 6, projectileSpeed: 165 },
-  spawn: { fromProgress: 0.04, weight: 1.5, maxAlive: 3 },
+  rangedAttack: { range: 145, cooldownMs: 1800, damage: 6, projectileSpeed: 330 },
+  spawn: { fromProgress: 0.04, weight: 1.5 },
 };
 
 /** Outrider (súbdito de Thanos en Endgame): rápido y frágil, conserva la velocidad, vida y daño originales. */

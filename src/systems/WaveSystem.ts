@@ -63,6 +63,10 @@ export class WaveSystem {
     for (let i = 0; i < batch && this.aliveCount() < maxAlive; i++) {
       const kind = this.forceDoombots ? BRUTE : pickWaveEnemy(progress, (id) => this.aliveCountOfKind(id));
       this.spawnEnemy(kind, scaling);
+      // Cada selección de Sentinel genera un par, sin modificar su peso de aparición.
+      if (!this.forceDoombots && kind.id === 'sentinel' && this.aliveCount() < maxAlive) {
+        this.spawnEnemy(kind, scaling);
+      }
     }
   }
 
