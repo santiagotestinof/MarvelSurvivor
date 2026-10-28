@@ -162,6 +162,6 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Abandonar la ronda desde la pausa o cerrar la página en plena ronda cuenta como derrota: se conserva todo el oro juntado y se suman los totales para los logros (sin bono del jefe). Solo se guarda una vez por ronda.
 
 ## Jefe final (Cráneo Rojo) más difícil
-- Vida **4500** (antes 1500; `ROUND.bossHealthMultiplier`). Daño por contacto **35** (antes 20), descargas del cañón **26** (antes 14), grietas del cubo **30** (antes 16) y onda de la embestida **30** (antes 15).
-- Ataca más seguido: 1,8 s entre ataques (antes 2,3 s).
+- Vida **4500** (antes 1500; `ROUND.bossHealthMultiplier`). Daño por contacto **50** (antes 20), descargas del cañón **38** (antes 14), grietas del cubo **45** (antes 16) y onda de la embestida **45** (antes 15).
+- Ataca más seguido: 1,5 s entre ataques (antes 2,3 s).
 - Invoca más refuerzos: **3 Drones cada 2,8 s** (antes 1 cada 4,5 s) hasta 28 enemigos vivos (`ROUND.bossMinionCount/Interval/Cap`), y 3 Drones más tras cada embestida (antes 1).
