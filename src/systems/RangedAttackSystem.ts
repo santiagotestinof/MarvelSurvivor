@@ -113,7 +113,7 @@ export class RangedAttackSystem {
         sprite,
         velocityX: Math.cos(angle) * attack.projectileSpeed,
         velocityY: Math.sin(angle) * attack.projectileSpeed,
-        damage: attack.damage,
+        damage: enemy.kind.id === 'sentinel' && now >= 10 * 60_000 ? attack.damage * 2 : attack.damage,
       });
 
       charge.line.destroy();

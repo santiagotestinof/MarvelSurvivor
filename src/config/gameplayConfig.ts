@@ -13,9 +13,9 @@ function readRoundDurationMs(): number {
 export const ROUND = {
   /** Duración de las oleadas. Al terminar aparece el jefe. */
   durationMs: readRoundDurationMs(),
-  /** Vida del jefe final: 7000 (con la armadura de abajo equivale a mucho más). */
-  bossHealthMultiplier: 7000 / 440,
-  bossSpeedMultiplier: 1.3,
+  /** Vida base del jefe final: 20000, antes de aplicar la armadura. */
+  bossHealthMultiplier: 20000 / 440,
+  bossSpeedMultiplier: 1.43,
   /** Cada cuánto invoca refuerzos y cuántos (hasta `bossMinionCap` enemigos vivos a la vez). */
   bossMinionIntervalMs: 1800,
   bossMinionCount: 8,
@@ -87,9 +87,9 @@ export const WAVES = {
   relocateCheckMs: 400,
   relocatePerCheck: 6,
   /** Al final de la ronda los enemigos tienen (1 + healthGrowth) veces la vida base. */
-  healthGrowth: 2.4,
+  healthGrowth: 3.36,
   /** Al final de la ronda los enemigos son (1 + speedGrowth) veces más rápidos. */
-  speedGrowth: 0.55,
+  speedGrowth: 0.605,
 };
 
 /**
@@ -101,7 +101,7 @@ export const SECRET_BOOK = { x: 110, y: 3720, pickupRadius: 18 };
 
 export const MINIBOSS_CONFIG = {
   /** Sale cada tercio de la ronda (5 min en una ronda de 15) y suelta un premio grande. */
-  xp: 60,
+  xp: 69,
   coins: 12,
   coinValue: 2,
   /** Niveles gratis (mejoras para elegir) que da el cofre del mini jefe. */
