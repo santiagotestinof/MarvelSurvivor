@@ -155,7 +155,8 @@ export const HERO_BASE = { moveSpeed: 80, maxHealth: 120 } as const;
 export const BASIC_ATTACK_LIMITS = {
   /** Disparos por ataque como máximo. */
   maxProjectiles: 4,
-  maxPierce: 3,
+  /** Tope de perforación de todas las armas (el escudo y las ultis atraviesan siempre y no cuentan). */
+  maxPierce: 2,
   maxSpeedUpgrades: 4,
   maxCritChance: 0.5,
   /** Ángulo entre disparos del abanico (radianes). */

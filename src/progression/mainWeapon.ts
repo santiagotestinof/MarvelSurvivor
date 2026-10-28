@@ -1,5 +1,6 @@
 import type { AttackKind } from '../characters/CharacterDefinition';
 import type { PlayerStats } from './PlayerStats';
+import { BASIC_ATTACK_LIMITS } from '../config/gameplayConfig';
 
 /** Nivel máximo del arma principal (el nivel 1 es el que tiene el héroe al empezar). */
 export const MAIN_WEAPON_MAX_LEVEL = 7;
@@ -48,7 +49,7 @@ export const MAIN_WEAPONS: Record<AttackKind, MainWeaponDefinition> = {
       { text: '+25% de velocidad de las telarañas', speedMult: SHOT_SPEED },
       { text: '+1 telaraña por disparo', count: 1 },
       { text: 'La telaraña atraviesa +1 enemigo', pierce: 1 },
-      { text: '+1 telaraña y atraviesa +1 enemigo', count: 1, pierce: 1 },
+      { text: '+1 telaraña por disparo', count: 1 },
     ],
   },
   hammer: {
@@ -108,7 +109,7 @@ export function levelUpMainWeapon(kind: AttackKind, stats: PlayerStats): void {
   stats.mainLevel++;
   const bonus = MAIN_WEAPONS[kind].levels[stats.mainLevel - 2];
   stats.projectileCount += bonus.count ?? 0;
-  stats.pierce += bonus.pierce ?? 0;
+  stats.pierce = Math.min(BASIC_ATTACK_LIMITS.maxPierce, stats.pierce + (bonus.pierce ?? 0));
   stats.projectileSpeedMult *= bonus.speedMult ?? 1;
   stats.mainAreaMult *= bonus.areaMult ?? 1;
   stats.fanAngleMult *= bonus.fanAngleMult ?? 1;

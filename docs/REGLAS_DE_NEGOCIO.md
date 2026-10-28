@@ -56,7 +56,7 @@ El arma principal de cada héroe empieza en nivel 1 y sube hasta el **7** con un
 |---|---|
 | Iron Man (Repulsor) | +1 disparo · atraviesa +1 · +1 disparo · +25% vel. · +1 disparo · atraviesa +1 y +25% vel. |
 | Capitán (Escudo) | +1 escudo · +25% vel. · +1 escudo · +25% vel. · +1 escudo · +25% vel. |
-| Spider-Man (Telarañas) | +1 telaraña · atraviesa +1 · +25% vel. · +1 telaraña · atraviesa +1 · +1 telaraña y atraviesa +1 |
+| Spider-Man (Telarañas) | +1 telaraña · atraviesa +1 · +25% vel. · +1 telaraña · atraviesa +1 · +1 telaraña |
 | Thor (Martillo sísmico) | +1 onda · +12% largo y ancho · +1 onda · +12% largo y ancho · +1 onda · +25% largo y ancho |
 | Hulk (Zarpazo) | +25% ángulo · +20% alcance · +1 zarpazo · +25% ángulo · +20% alcance · +1 zarpazo y +25% ángulo |
 | Strange (Aura) | +12% radio ×5 · +25% radio |
@@ -185,3 +185,6 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - La Maldición (la mejora permanente y la pasiva se suman en un solo multiplicador, `curseMult`) también sube al jefe final: multiplica su **vida, velocidad y daño** (contacto y todos sus ataques) y la **cantidad y tope de Drones** que invoca (y la vida y velocidad de esos Drones). Sin Maldición el multiplicador es 1 y el jefe queda como está descrito arriba.
 
 - El daño por contacto del jefe final pasó a **81** (sin Maldición; con Maldición se multiplica).
+
+## Perforación
+- La perforación de las armas (disparos, telarañas, chispas de los portales) llega como máximo a **2** enemigos atravesados (`BASIC_ATTACK_LIMITS.maxPierce`), sumando niveles del arma principal y la mejora Perforación. El escudo del Capitán y las ultis que atraviesan a todos no cuentan. El nivel 7 de las telarañas de Spider-Man ya no da perforación, solo +1 telaraña.
