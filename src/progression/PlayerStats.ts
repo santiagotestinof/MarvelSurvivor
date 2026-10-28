@@ -51,6 +51,8 @@ export class PlayerStats {
   mainLevel = 1;
   /** Área extra del arma principal (explosiones, rayos, aura); sube con sus niveles. */
   mainAreaMult = 1;
+  /** Daño extra del arma principal por nivel (solo el martillo de Thor). */
+  mainDamageMult = 1;
 
   // Ataque básico (repulsor)
   /** Disparos por ataque, abiertos en abanico hacia el mismo objetivo. */

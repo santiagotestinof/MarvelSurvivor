@@ -95,7 +95,7 @@ export class AutoAttackSystem {
 
   private rollDamage(): { damage: number; critical: boolean } {
     const critical = Math.random() < this.stats.critChance;
-    const damage = this.attack.damage * this.stats.damageMult * (critical ? this.stats.critMult : 1);
+    const damage = this.attack.damage * this.stats.damageMult * this.stats.mainDamageMult * (critical ? this.stats.critMult : 1);
     return { damage, critical };
   }
 
@@ -212,7 +212,7 @@ export class AutoAttackSystem {
     for (let i = 0; i < count; i++) {
       const angle = aim + (i - (count - 1) / 2) * BASIC_ATTACK_LIMITS.spread;
       const critical = Math.random() < stats.critChance;
-      const damage = this.attack.damage * stats.damageMult * (critical ? stats.critMult : 1);
+      const damage = this.attack.damage * stats.damageMult * stats.mainDamageMult * (critical ? stats.critMult : 1);
       const projectile = new Projectile(
         this.scene,
         originX,

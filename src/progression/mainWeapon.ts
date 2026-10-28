@@ -12,6 +12,8 @@ interface MainBonus {
   pierce?: number;
   speedMult?: number;
   areaMult?: number;
+  /** Daño extra del arma principal (solo el martillo de Thor lo usa). */
+  damageMult?: number;
   fanAngleMult?: number;
   fanReachMult?: number;
 }
@@ -55,12 +57,12 @@ export const MAIN_WEAPONS: Record<AttackKind, MainWeaponDefinition> = {
   hammer: {
     name: 'Martillo volador',
     levels: [
-      { text: 'Martillos más grandes (+12%)', areaMult: AREA },
+      { text: 'El martillo pega más fuerte (+30% de daño)', damageMult: 1.3 },
+      { text: 'Martillo más grande (+12%)', areaMult: AREA },
+      { text: 'El martillo pega más fuerte (+30% de daño)', damageMult: 1.3 },
       { text: 'El martillo vuela más rápido (+25%)', speedMult: SHOT_SPEED },
-      { text: 'Martillos más grandes (+12%)', areaMult: AREA },
-      { text: 'El martillo vuela más rápido (+25%)', speedMult: SHOT_SPEED },
-      { text: 'Martillos más grandes (+12%)', areaMult: AREA },
-      { text: 'Martillos más grandes (+25%) y más rápidos (+25%)', areaMult: AREA * AREA, speedMult: SHOT_SPEED },
+      { text: 'El martillo pega más fuerte (+30% de daño)', damageMult: 1.3 },
+      { text: 'Martillo más grande (+25%) y +40% de daño', areaMult: AREA * AREA, damageMult: 1.4 },
     ],
   },
   fan: {
@@ -112,6 +114,7 @@ export function levelUpMainWeapon(kind: AttackKind, stats: PlayerStats): void {
   stats.pierce = Math.min(BASIC_ATTACK_LIMITS.maxPierce, stats.pierce + (bonus.pierce ?? 0));
   stats.projectileSpeedMult *= bonus.speedMult ?? 1;
   stats.mainAreaMult *= bonus.areaMult ?? 1;
+  stats.mainDamageMult *= bonus.damageMult ?? 1;
   stats.fanAngleMult *= bonus.fanAngleMult ?? 1;
   stats.fanReachMult *= bonus.fanReachMult ?? 1;
 }
