@@ -404,9 +404,7 @@ export function pickUpgradeChoices(
     (!upgrade.exclusiveTo || upgrade.exclusiveTo.includes(ctx.heroId)) &&
     hasSlot(upgrade, ctx.taken) &&
     (upgrade.isAvailable?.(ctx) ?? true);
-  // Solo salen mejoras pasivas y de armas. Reparación queda para cuando no hay nada más (para que subir de nivel no quede vacío).
-  let pool = UPGRADES.filter((upgrade) => upgrade.id !== 'repair' && available(upgrade));
-  if (pool.length === 0) pool = UPGRADES.filter((upgrade) => upgrade.id === 'repair' && available(upgrade));
+  const pool = UPGRADES.filter(available);
   const picked: UpgradeDefinition[] = [];
   while (picked.length < count && pool.length > 0) {
     const total = pool.reduce((sum, upgrade) => sum + (upgrade.weight ?? 1), 0);
