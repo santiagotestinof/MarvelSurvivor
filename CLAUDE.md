@@ -14,7 +14,7 @@ Juego web 2D estilo Vampire Survivors con héroes de Marvel. Lo desarrolla un eq
 
 ## Comandos
 - `npm run dev` · `npm run typecheck` · `npm run build` · `npm run sprites`
-- Parámetros de URL para probar: `?ronda=30` (ronda corta), `?joystick` (joystick con mouse), `?debug` (cajas de colisión), `?test=1` (empieza a 1 minuto del jefe), `?todos` (desbloquea todos los héroes) y `?oleada` (oleadas especiales cada 15 s) y `?oro=5000` (suma oro; ojo: se suma en cada carga de esa URL).
+- Parámetros de URL para probar: `?ronda=30` (ronda corta), `?joystick` (joystick con mouse), `?debug` (cajas de colisión), `?test=1` (empieza a 1 minuto del jefe, con el arma principal y la exclusiva al nivel 7 y la evolución ya aplicada), `?todos` (desbloquea todos los héroes) y `?oleada` (oleadas especiales cada 15 s) y `?oro=5000` (suma oro; ojo: se suma en cada carga de esa URL).
 
 ## Estado por fase
 - Fase 1 (hecha): proyecto, mapa de pruebas, Iron Man con 8 direcciones, cámara, colisiones.

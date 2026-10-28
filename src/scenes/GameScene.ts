@@ -16,7 +16,7 @@ import { TEXTURES } from '../config/assetKeys';
 import { saveData } from '../meta/saveData';
 import { PlayerStats } from '../progression/PlayerStats';
 import { ProgressionSystem, type ProgressState } from '../progression/ProgressionSystem';
-import { passiveTypesTaken, passivesTaken, pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
+import { EVOLUTIONS, passiveTypesTaken, passivesTaken, pickUpgradeChoices, type UpgradeContext, type UpgradeDefinition } from '../progression/upgrades';
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { BossAttackSystem } from '../systems/BossAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
@@ -29,6 +29,7 @@ import { RoundController, type HudState } from '../systems/RoundController';
 import { TIME_STOP, TimeStopUltimate } from '../systems/TimeStopUltimate';
 import { WaveSystem } from '../systems/WaveSystem';
 import { damageArea } from '../systems/areaDamage';
+import { MAIN_WEAPON_MAX_LEVEL, levelUpMainWeapon } from '../progression/mainWeapon';
 import { OVERLORD } from '../enemies/enemyKinds';
 import { TestMap } from '../world/TestMap';
 import { createHeroUltimate, type HeroUltimate } from '../systems/HeroUltimates';
@@ -207,6 +208,16 @@ export class GameScene extends Phaser.Scene {
     );
     // Los minimisiles son el arma exclusiva de Iron Man.
     if (this.player.definition.id === 'ironman') this.heroWeapon = this.missiles;
+
+    // `?test=1`: para probar el jefe, el héroe arranca con el arma principal y la exclusiva al máximo y, si tiene, la evolución.
+    if (testMode) {
+      while (this.stats.mainLevel < MAIN_WEAPON_MAX_LEVEL) levelUpMainWeapon(this.player.definition.stats.attack.kind, this.stats);
+      while (this.heroWeapon && !this.heroWeapon.maxed) this.heroWeapon.levelUp();
+      if (EVOLUTIONS.some((evo) => evo.hero === this.player.definition.id)) {
+        this.stats.evolved = true;
+        if (this.player.definition.id === 'ironman') this.missiles.evolve();
+      }
+    }
 
     this.rangedAttacks = new RangedAttackSystem(
       this,

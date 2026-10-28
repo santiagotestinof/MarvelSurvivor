@@ -165,3 +165,6 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Vida **4500** (antes 1500; `ROUND.bossHealthMultiplier`). Daño por contacto **50** (antes 20), descargas del cañón **38** (antes 14), grietas del cubo **45** (antes 16) y onda de la embestida **45** (antes 15).
 - Ataca más seguido: 1,5 s entre ataques (antes 2,3 s).
 - Invoca más refuerzos: **3 Drones cada 2,8 s** (antes 1 cada 4,5 s) hasta 28 enemigos vivos (`ROUND.bossMinionCount/Interval/Cap`), y 3 Drones más tras cada embestida (antes 1).
+
+## Modo de prueba `?test=1`
+- Además de empezar a 1 minuto del jefe, el héroe arranca con el arma principal y la exclusiva al nivel 7 y con su evolución aplicada (Thor no tiene evolución). Solo con ese parámetro; en una ronda normal no cambia nada.
