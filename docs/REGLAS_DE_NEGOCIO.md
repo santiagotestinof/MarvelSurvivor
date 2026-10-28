@@ -168,3 +168,6 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Modo de prueba `?test=1`
 - Además de empezar a 1 minuto del jefe, el héroe arranca con el arma principal y la exclusiva al nivel 7 y con su evolución aplicada (Thor no tiene evolución). Solo con ese parámetro; en una ronda normal no cambia nada.
+
+## Trampas de telaraña (Spider-Man)
+- Daño por tic en el piso: **3,4** (antes 4,5, −25 %), cada 0,35 s mientras el enemigo está adentro; los bonos de nivel y la pasiva Más daño se multiplican sobre ese valor.
