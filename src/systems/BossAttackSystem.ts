@@ -317,11 +317,12 @@ export class BossAttackSystem {
     });
 
     if (Phaser.Math.Distance.Between(boss.x, boss.y - 6, this.player.x, this.player.y - 8) <= shockRadius) {
-      this.player.takeDamage(45);
+      this.player.takeDamage(Math.round(45 * this.waves.curse));
     }
 
     // Convoca un par de escoltas al terminar la embestida si no hay demasiados enemigos en pantalla
-    for (let i = 0; i < 8; i++) this.waves.spawnEnemy(DRONE, { health: 1.5, speed: 1.15 });
+    const escorts = Math.round(8 * this.waves.curse);
+    for (let i = 0; i < escorts; i++) this.waves.spawnEnemy(DRONE, { health: 1.5 * this.waves.curse, speed: 1.15 * this.waves.curse });
   }
 
   private updateBolts(delta: number): void {
@@ -334,7 +335,7 @@ export class BossAttackSystem {
       b.core.setPosition(nx, ny).setRotation(b.core.rotation + 8 * dt);
 
       if (Phaser.Math.Distance.Between(nx, ny, this.player.x, this.player.y - 8) <= BOLT_HIT_RADIUS) {
-        this.player.takeDamage(b.damage);
+        this.player.takeDamage(Math.round(b.damage * this.waves.curse));
         b.outer.destroy();
         b.core.destroy();
         this.bolts.splice(i, 1);
@@ -359,7 +360,7 @@ export class BossAttackSystem {
       if (now < r.detonateAt) continue;
 
       if (Phaser.Math.Distance.Between(r.x, r.y, this.player.x, this.player.y - 8) <= r.radius) {
-        this.player.takeDamage(r.damage);
+        this.player.takeDamage(Math.round(r.damage * this.waves.curse));
       }
 
       const flash = this.scene.add

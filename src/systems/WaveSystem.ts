@@ -28,6 +28,11 @@ export class WaveSystem {
   ) {}
 
   /** Multiplicadores de vida y velocidad según el progreso del tiempo (`0` al inicio, `1` al llegar al jefe y sigue subiendo). */
+  /** Maldición actual (permanente + pasiva): sube la dificultad de las oleadas y del jefe final. */
+  get curse(): number {
+    return this.stats.curseMult;
+  }
+
   getScaling(progress: number): EnemyScaling {
     const p = Math.max(0, progress);
     return {

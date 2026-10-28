@@ -11,6 +11,8 @@ import {
 export interface EnemyScaling {
   health: number;
   speed: number;
+  /** Multiplica el daño por contacto (el jefe final lo sube con la Maldición). */
+  damage?: number;
 }
 
 /** Velocidad máxima de giro visual (radianes/s) para que pase por las vistas diagonales 3/4 de forma natural. */
@@ -50,7 +52,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.currentHealth = this.maxHealth;
     this.speedScale = scaling.speed;
     this.moveSpeed = kind.speed * scaling.speed;
-    this.meleeDamage = kind.meleeDamage;
+    this.meleeDamage = Math.round(kind.meleeDamage * (scaling.damage ?? 1));
 
     scene.add.existing(this);
     scene.physics.add.existing(this);

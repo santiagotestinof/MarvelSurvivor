@@ -201,7 +201,7 @@ export const OVERLORD: EnemyKind = {
   body: { width: 22, height: 18, offsetX: 13, offsetY: 26 },
   health: 440,
   speed: 33,
-  meleeDamage: 50,
+  meleeDamage: 81,
   xpValue: 0,
 };
 

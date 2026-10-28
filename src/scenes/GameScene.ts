@@ -730,7 +730,7 @@ export class GameScene extends Phaser.Scene {
       this.player.setVelocity(0, 0);
       camera.centerOn(this.player.x, this.player.y);
       this.round.setBoss(
-        this.waves.spawnAt(OVERLORD, { health: ROUND.bossHealthMultiplier, speed: ROUND.bossSpeedMultiplier }, this.arena.bossSpawn.x, this.arena.bossSpawn.y),
+        this.waves.spawnAt(OVERLORD, { health: ROUND.bossHealthMultiplier * this.stats.curseMult, speed: ROUND.bossSpeedMultiplier * this.stats.curseMult, damage: this.stats.curseMult }, this.arena.bossSpawn.x, this.arena.bossSpawn.y),
       );
       this.events.emit('special-wave', '¡EL JEFE FINAL!');
       camera.fadeIn(450, 0, 0, 0);

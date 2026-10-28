@@ -162,7 +162,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Abandonar la ronda desde la pausa o cerrar la página en plena ronda cuenta como derrota: se conserva todo el oro juntado y se suman los totales para los logros (sin bono del jefe). Solo se guarda una vez por ronda.
 
 ## Jefe final (Cráneo Rojo) más difícil
-- Vida **4500** (antes 1500; `ROUND.bossHealthMultiplier`). Daño por contacto **50** (antes 20), descargas del cañón **38** (antes 14), grietas del cubo **45** (antes 16) y onda de la embestida **45** (antes 15).
+- Vida **4500** (antes 1500; `ROUND.bossHealthMultiplier`). Daño por contacto **81** (antes 20), descargas del cañón **38** (antes 14), grietas del cubo **45** (antes 16) y onda de la embestida **45** (antes 15).
 - Ataca más seguido: 1,5 s entre ataques (antes 2,3 s).
 - Invoca más refuerzos: **3 Drones cada 2,8 s** (antes 1 cada 4,5 s) hasta 28 enemigos vivos (`ROUND.bossMinionCount/Interval/Cap`), y 3 Drones más tras cada embestida (antes 1).
 
@@ -180,3 +180,8 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 ## Jefe final: tercera subida
 - Vida **10000** (antes 7000).
 - Refuerzos: **8 Drones cada 1,8 s** hasta 60 vivos (antes 4 cada 2,2 s hasta 34), y 8 más tras cada embestida.
+
+## Maldición y jefe final
+- La Maldición (la mejora permanente y la pasiva se suman en un solo multiplicador, `curseMult`) también sube al jefe final: multiplica su **vida, velocidad y daño** (contacto y todos sus ataques) y la **cantidad y tope de Drones** que invoca (y la vida y velocidad de esos Drones). Sin Maldición el multiplicador es 1 y el jefe queda como está descrito arriba.
+
+- El daño por contacto del jefe final pasó a **81** (sin Maldición; con Maldición se multiplica).
