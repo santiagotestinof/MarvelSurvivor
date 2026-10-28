@@ -55,12 +55,12 @@ export const MAIN_WEAPONS: Record<AttackKind, MainWeaponDefinition> = {
   hammer: {
     name: 'Martillo volador',
     levels: [
-      { text: '+1 martillo volando', count: 1 },
       { text: 'Martillos más grandes (+12%)', areaMult: AREA },
-      { text: '+1 martillo volando', count: 1 },
+      { text: 'El martillo vuela más rápido (+25%)', speedMult: SHOT_SPEED },
       { text: 'Martillos más grandes (+12%)', areaMult: AREA },
-      { text: '+1 martillo volando', count: 1 },
-      { text: 'Martillos más grandes (+25%)', areaMult: AREA * AREA },
+      { text: 'El martillo vuela más rápido (+25%)', speedMult: SHOT_SPEED },
+      { text: 'Martillos más grandes (+12%)', areaMult: AREA },
+      { text: 'Martillos más grandes (+25%) y más rápidos (+25%)', areaMult: AREA * AREA, speedMult: SHOT_SPEED },
     ],
   },
   fan: {

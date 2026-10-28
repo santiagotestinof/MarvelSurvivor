@@ -160,8 +160,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
     description: '+1 unidad en tu arma especial y +1 disparo en tu arma principal',
     describe: ({ heroWeapon, stats }) => `+1 unidad en tu arma especial (${heroWeapon?.units ?? 0} → ${(heroWeapon?.units ?? 0) + 1}) y +1 disparo en tu arma principal (${stats.shotCount} → ${stats.shotCount + 1})`,
     // Solo suma a las armas especiales: sale una vez que el héroe ya tiene la suya.
-    // Thor: la pasiva suma como máximo 2 martillos (los demás héroes, hasta 3 tomas).
-    isAvailable: (ctx) => times(ctx, 'amount') < (ctx.basicKind === 'hammer' ? 2 : 3) && (ctx.heroWeapon?.level ?? 0) > 0,
+    isAvailable: (ctx) => times(ctx, 'amount') < 3 && (ctx.heroWeapon?.level ?? 0) > 0,
     apply: ({ stats }) => stats.amountBonus++,
   },
   tiered({
