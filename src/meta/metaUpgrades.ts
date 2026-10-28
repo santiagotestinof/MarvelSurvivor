@@ -98,7 +98,7 @@ export const META_UPGRADES: readonly MetaUpgradeDefinition[] = [
     name: 'Cantidad',
     maxLevel: 2,
     baseCost: 250,
-    effect: (level) => `${plural(level, 'unidad extra', 'unidades extra')} en las armas especiales`,
+    effect: (level) => `${plural(level, 'unidad extra', 'unidades extra')} en las armas especiales y 1 disparo más en la principal por nivel`,
     apply: (level, { stats }) => (stats.amountBonus += level),
   },
   {

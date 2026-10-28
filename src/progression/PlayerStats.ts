@@ -55,6 +55,10 @@ export class PlayerStats {
   // Ataque básico (repulsor)
   /** Disparos por ataque, abiertos en abanico hacia el mismo objetivo. */
   projectileCount = 1;
+  /** Disparos reales por ataque del arma principal: los del arma más 1 por cada toma de Cantidad. */
+  get shotCount(): number {
+    return this.projectileCount + this.amountBonus;
+  }
   /** Cuántos enemigos más atraviesa cada disparo antes de desaparecer. */
   pierce = 0;
   projectileSpeedMult = 1;
