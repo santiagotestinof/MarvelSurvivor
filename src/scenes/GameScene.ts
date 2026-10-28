@@ -814,7 +814,7 @@ export class GameScene extends Phaser.Scene {
           targetY = enemy.y + dir.y * dist;
         }
       }
-      if (enemy.chase(targetX, targetY, separationX, separationY)) this.player.takeDamage(enemy.meleeDamage);
+      if (enemy.chase(targetX, targetY, separationX, separationY, this.player.x, this.player.y - 6)) this.player.takeDamage(enemy.meleeDamage);
     }
     this.tryRevive();
     const timeStopped = this.timeStop?.isActive(now) ?? false;
