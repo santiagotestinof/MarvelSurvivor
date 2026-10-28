@@ -31,6 +31,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   private currentHealth: number;
   private frozenDamage = 0;
+  /** Fracción del daño que se descarta (0 a 1). Solo el jefe final la usa. */
+  damageReduction = 0;
   private slowUntil = 0;
   private slowFactor = 1;
   private knockUntil = 0;
@@ -263,6 +265,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.frozenDamage += amount;
       return true;
     }
+    amount *= 1 - this.damageReduction;
     this.currentHealth -= amount;
     showDamageNumber(this.scene, this.x, this.y - this.displayHeight * this.originY - 2, amount);
     audio.playEnemyHit(this.currentHealth <= 0);

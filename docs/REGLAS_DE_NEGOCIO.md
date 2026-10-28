@@ -178,7 +178,8 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Refuerzos: **4 Drones cada 2,2 s** hasta 34 vivos, y 4 más tras cada embestida. El daño no cambió respecto de la sección anterior.
 
 ## Jefe final: tercera subida
-- Vida **10000** (antes 7000).
+- Vida **7000** (antes 10000; la armadura de abajo compensa).
+- **Armadura del Cráneo Rojo**: reduce el daño que recibe un 25 % base, +1 % por cada Dron vivo, con tope de 50 % (la Maldición sube el tope 10 puntos por cada punto por encima de 1, máximo 70 %). Se muestra como `ARMADURA xx %` debajo de su barra de vida. Valores en `ROUND` (`bossArmor*`); se aplica en `Enemy.damageReduction`, calculada por `RoundController.updateBossArmor`.
 - Refuerzos: **8 Drones cada 1,8 s** hasta 60 vivos (antes 4 cada 2,2 s hasta 34), y 8 más tras cada embestida.
 
 ## Maldición y jefe final

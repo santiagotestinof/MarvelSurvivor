@@ -27,6 +27,7 @@ export class HudScene extends Phaser.Scene {
   private timerText!: Phaser.GameObjects.Text;
   private killsText!: Phaser.GameObjects.Text;
   private bossText!: Phaser.GameObjects.Text;
+  private bossArmorText!: Phaser.GameObjects.Text;
 
   private levelText!: Phaser.GameObjects.Text;
   private goldText!: Phaser.GameObjects.Text;
@@ -63,6 +64,7 @@ export class HudScene extends Phaser.Scene {
     this.timerText = this.add.text(0, 0, '', textStyle(24)).setOrigin(0.5, 0).setDepth(2);
     this.killsText = this.add.text(0, 0, '', textStyle(14)).setOrigin(1, 0).setDepth(2);
     this.bossText = this.add.text(0, 0, 'CRÁNEO ROJO', textStyle(12, '#ffd9d9')).setOrigin(0.5).setDepth(2).setVisible(false);
+    this.bossArmorText = this.add.text(0, 0, '', textStyle(10, '#ffd36b')).setOrigin(0.5, 0).setDepth(2).setVisible(false);
 
     this.levelText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
     this.goldText = this.add.text(0, 0, '', textStyle(12, '#ffd24a')).setOrigin(0, 0).setDepth(2);
@@ -251,6 +253,7 @@ export class HudScene extends Phaser.Scene {
     // Vida del jefe
     const showBoss = state.phase === 'boss' && state.bossMaxHealth > 0;
     this.bossText.setVisible(showBoss);
+    this.bossArmorText.setVisible(showBoss);
     if (showBoss) {
       const bossW = Math.min(width * 0.6, Math.round(100 * this.ui));
       const bossX = (width - bossW) / 2;
@@ -259,6 +262,10 @@ export class HudScene extends Phaser.Scene {
       g.fillStyle(0x000000, 0.6).fillRect(bossX - 2, bossY - 2, bossW + 4, barH + 4);
       g.fillStyle(0xc82828, 1).fillRect(bossX, bossY, bossW * bossRatio, barH);
       this.bossText.setPosition(width / 2, bossY + barH / 2);
+      this.bossArmorText
+        .setFontSize(Math.max(9, Math.round(this.barHeight * 0.7)))
+        .setText(`ARMADURA ${Math.round(state.bossArmor * 100)} %`)
+        .setPosition(width / 2, bossY + barH + 4);
     }
   }
 

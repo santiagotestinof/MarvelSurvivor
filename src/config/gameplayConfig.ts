@@ -13,13 +13,20 @@ function readRoundDurationMs(): number {
 export const ROUND = {
   /** Duración de las oleadas. Al terminar aparece el jefe. */
   durationMs: readRoundDurationMs(),
-  /** Vida del jefe final: 10000 (antes 1500). */
-  bossHealthMultiplier: 10000 / 440,
+  /** Vida del jefe final: 7000 (con la armadura de abajo equivale a mucho más). */
+  bossHealthMultiplier: 7000 / 440,
   bossSpeedMultiplier: 1.3,
   /** Cada cuánto invoca refuerzos y cuántos (hasta `bossMinionCap` enemigos vivos a la vez). */
   bossMinionIntervalMs: 1800,
   bossMinionCount: 8,
   bossMinionCap: 60,
+  /** Armadura del jefe: reduce el daño que recibe. Base + un tanto por cada Dron vivo, hasta un tope (que la Maldición sube). */
+  bossArmorBase: 0.25,
+  bossArmorPerDrone: 0.01,
+  bossArmorCap: 0.5,
+  /** Cuánto sube el tope por cada punto de Maldición por encima de 1, y el máximo absoluto. */
+  bossArmorCapPerCurse: 0.1,
+  bossArmorCapMax: 0.7,
 };
 
 /**

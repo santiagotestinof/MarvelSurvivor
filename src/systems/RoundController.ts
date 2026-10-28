@@ -21,6 +21,8 @@ export interface HudState {
   kills: number;
   bossHealth: number;
   bossMaxHealth: number;
+  /** Armadura del jefe (0 a 1) para mostrarla en el HUD. */
+  bossArmor: number;
 }
 
 /** Reglas de una ronda: oleadas durante `ROUND.durationMs`, después el jefe; se gana al vencerlo. */
@@ -78,7 +80,9 @@ export class RoundController {
       } else {
         this.waves.update(now, progress);
       }
-    } else if (this.phase === 'boss' && this.boss && now >= this.nextBossMinionAt) {
+    }
+    if (this.phase === 'boss' && this.boss) this.updateBossArmor();
+    if (this.phase === 'boss' && this.boss && now >= this.nextBossMinionAt) {
       const scaling = this.waves.getScaling(progress);
       const curse = this.waves.curse;
       const count = Math.round(ROUND.bossMinionCount * curse);
@@ -106,7 +110,17 @@ export class RoundController {
       kills: this.kills,
       bossHealth: this.boss ? Math.max(0, this.boss.health) : 0,
       bossMaxHealth: this.boss ? this.boss.maxHealth : 0,
+      bossArmor: this.boss ? this.boss.damageReduction : 0,
     };
+  }
+
+  /** Armadura del Cráneo Rojo: base + 1 % por cada Dron vivo, hasta un tope que sube con la Maldición. */
+  private updateBossArmor(): void {
+    if (!this.boss) return;
+    let drones = 0;
+    for (const e of this.enemies.getChildren() as Enemy[]) if (e.active && e.kind.id === DRONE.id && !e.dying) drones++;
+    const cap = Math.min(ROUND.bossArmorCapMax, ROUND.bossArmorCap + ROUND.bossArmorCapPerCurse * Math.max(0, this.waves.curse - 1));
+    this.boss.damageReduction = Math.min(cap, ROUND.bossArmorBase + ROUND.bossArmorPerDrone * drones);
   }
 
   private finish(result: 'won' | 'lost', now: number): void {
