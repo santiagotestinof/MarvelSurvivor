@@ -150,7 +150,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 ## Thor: martillo volador como arma principal
 - El arma principal de Thor es un **martillo siempre en el aire** que va de enemigo en enemigo, **sin cadencia** (la pasiva Cadencia no lo afecta). Hace **5 de daño por golpe** (antes 16 cada 1,8 s; bajado a propósito porque pega sin parar), con un respiro de 0,35 s por martillo y enemigo.
 - Cada martillo busca el enemigo más cercano a él (dentro de 300 px de Thor) que no sea el recién golpeado ni el de otro martillo; sigue de largo un instante tras el golpe y pega a todo lo que toca en el camino. Sin enemigos va a una caja o roca cercana, y sin nada da vueltas alrededor de Thor.
-- Hay **un martillo por cada disparo** del arma principal: +1 en los niveles 2, 4 y 6 (hasta 4), y también por Cantidad. Los niveles 3, 5 y 7 los agrandan (tamaño y alcance del golpe). La pasiva Velocidad del proyectil le sube la velocidad de vuelo (base 230 px/s). Son arma principal con 7 niveles fijos y las mejoras comunes (daño, crítico, etc.).
+- Hay **un martillo por cada disparo** del arma principal: +1 en los niveles 2, 4 y 6 (hasta 4), y también por Cantidad (la pasiva da como máximo **2 martillos** a Thor; la mejora permanente de la tienda suma aparte). Los niveles 3, 5 y 7 los agrandan (tamaño y alcance del golpe). La pasiva Velocidad del proyectil le sube la velocidad de vuelo (base 230 px/s). Son arma principal con 7 niveles fijos y las mejoras comunes (daño, crítico, etc.).
 - Los rayos de antes son su **arma exclusiva** (1 rayo de 16 de daño cada 1,8 s sobre un enemigo de la pantalla, hasta nv 7).
 - Thor ya no tiene evolución (el libro secreto lista 5).
 
