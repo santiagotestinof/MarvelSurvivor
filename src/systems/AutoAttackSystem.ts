@@ -8,6 +8,7 @@ import { Projectile } from '../entities/Projectile';
 import { activeEnemies, damageArea } from './areaDamage';
 import type { PlayerStats } from '../progression/PlayerStats';
 import { AuraVisual } from './AuraVisual';
+import { FlyingHammers } from './FlyingHammers';
 
 /** Punto al que se apunta un disparo. */
 interface AimPoint {
@@ -24,6 +25,7 @@ export class AutoAttackSystem {
   private lastShotAt = -Infinity;
   private lastUpdateAt = 0;
   private readonly aura: AuraVisual | null;
+  private readonly hammers: FlyingHammers | null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -36,6 +38,7 @@ export class AutoAttackSystem {
     this.projectiles = scene.physics.add.group({ allowGravity: false });
     this.aura = attack.kind === 'aura' ? new AuraVisual(scene, owner) : null;
     if (this.aura) scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.aura?.destroy());
+    this.hammers = attack.kind === 'hammer' ? new FlyingHammers(scene, owner, enemies, stats, props, () => this.rollDamage().damage) : null;
   }
 
   /** Radio actual del aura: crece con Área. */
@@ -49,16 +52,19 @@ export class AutoAttackSystem {
     const delta = Math.max(0, now - this.lastUpdateAt);
     this.lastUpdateAt = now;
     this.aura?.update(delta, this.auraRadius());
+    // Los martillos de Thor siempre están volando: no tienen cadencia.
+    if (this.hammers) {
+      this.hammers.update(now, delta);
+      return;
+    }
     if (now - this.lastShotAt < this.attack.cooldownMs * this.stats.cooldownMult) return;
 
     const fired =
       this.attack.kind === 'aura'
         ? this.pulseAura()
-        : this.attack.kind === 'hammer'
-          ? this.slam()
-          : this.attack.kind === 'fan'
-            ? this.swipe()
-            : this.fireNearest();
+        : this.attack.kind === 'fan'
+          ? this.swipe()
+          : this.fireNearest();
     if (fired) this.lastShotAt = now;
   }
 
@@ -91,117 +97,6 @@ export class AutoAttackSystem {
     const critical = Math.random() < this.stats.critChance;
     const damage = this.attack.damage * this.stats.damageMult * (critical ? this.stats.critMult : 1);
     return { damage, critical };
-  }
-
-  /** Thor: una onda de choque por cada disparo disponible, hacia enemigos al azar que estén en pantalla (o una caja si no hay). */
-  private slam(): boolean {
-    const count = this.stats.shotCount;
-    const view = this.scene.cameras.main.worldView;
-    const pool = activeEnemies(this.enemies).filter((enemy) => view.contains(enemy.x, enemy.y));
-    Phaser.Utils.Array.Shuffle(pool);
-    const targets: AimPoint[] = pool.slice(0, count).map((enemy) => ({ x: enemy.x, y: enemy.y - 6 }));
-    if (targets.length === 0) {
-      const prop = this.findNearestProp();
-      if (!prop) return false;
-      targets.push(prop);
-    }
-    for (const target of targets) this.shockLine(target);
-    return true;
-  }
-
-  /** Thor: onda de choque en línea desde Thor hacia `target`; daña a todo lo que toca. */
-  private shockLine(target: AimPoint): void {
-    const x1 = this.owner.x;
-    const y1 = this.owner.y - 8;
-    const angle = Math.atan2(target.y - y1, target.x - x1);
-    // Corta al principio: crece con los niveles de área del arma (a nivel 7 llega a ~190 px).
-    const length = EVOLUTION.thorLineLength * (1 + (this.stats.mainAreaMult - 1) * 1.4);
-    const width = EVOLUTION.thorLineWidth * this.stats.areaMult * this.stats.mainAreaMult;
-    const x2 = x1 + Math.cos(angle) * length;
-    const y2 = y1 + Math.sin(angle) * length;
-    const { damage, critical } = this.rollDamage();
-
-    const near = (px: number, py: number, extra: number): boolean => {
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const t = Phaser.Math.Clamp(((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy), 0, 1);
-      return Math.hypot(px - (x1 + dx * t), py - (y1 + dy * t)) <= width / 2 + extra;
-    };
-    for (const enemy of activeEnemies(this.enemies)) if (near(enemy.x, enemy.y - 6, 6)) enemy.takeDamage(damage);
-    for (const prop of this.props()) if (!prop.isBroken && near(prop.x, prop.y, 4)) prop.takeDamage(damage);
-
-    // El piso se rompe: una grieta de pixel art (bloques negros en escalera, con ramas) que se estira a lo largo de la onda.
-    // A nivel del piso (como las telarañas del suelo): queda debajo de personajes, enemigos y árboles.
-    const g = this.scene.add.graphics().setDepth(2);
-    const cell = 4;
-    const snap = (v: number): number => Math.round(v / cell) * cell;
-    const thick = Math.max(1, Math.round(width / 34));
-    const blocks = new Set<string>();
-    const put = (px: number, py: number): void => {
-      for (let ox = 0; ox < thick; ox++) for (let oy = 0; oy < thick; oy++) blocks.add(`${snap(px) + ox * cell},${snap(py) + oy * cell}`);
-    };
-    /** Camino en escalera desde (sx, sy) con dirección `dir` y `len` px, con desvíos al azar; devuelve los puntos de paso. */
-    const crack = (sx: number, sy: number, dir: number, len: number, wobble: number): { x: number; y: number }[] => {
-      const path: { x: number; y: number }[] = [];
-      let cx = sx;
-      let cy = sy;
-      let heading = dir;
-      for (let walked = 0; walked < len; walked += cell * 0.8) {
-        heading += Phaser.Math.FloatBetween(-wobble, wobble);
-        // Escalera: en cada paso se avanza en un solo eje, el que más se acerque a la dirección.
-        if (Math.random() * (Math.abs(Math.cos(heading)) + Math.abs(Math.sin(heading))) < Math.abs(Math.cos(heading))) cx += Math.sign(Math.cos(heading)) * cell;
-        else cy += Math.sign(Math.sin(heading)) * cell;
-        put(cx, cy);
-        path.push({ x: cx, y: cy });
-      }
-      return path;
-    };
-    // Grieta principal: recta hacia el objetivo, con pequeños escalones a los costados (se nota la línea del ataque).
-    const main: { x: number; y: number }[] = [];
-    let side = 0;
-    for (let walked = 0; walked <= length; walked += cell * 0.8) {
-      if (Math.random() < 0.12) side = Phaser.Math.Between(-1, 1);
-      const px = x1 + Math.cos(angle) * walked - Math.sin(angle) * side * cell;
-      const py = y1 + Math.sin(angle) * walked + Math.cos(angle) * side * cell;
-      put(px, py);
-      main.push({ x: snap(px), y: snap(py) });
-    }
-    // Ramas cortas que salen de la grieta, y a veces una ramita de la rama.
-    for (let k = 3; k < main.length - 1; k += Phaser.Math.Between(6, 9)) {
-      const side = Math.random() < 0.5 ? -1 : 1;
-      const dir = angle + side * Phaser.Math.FloatBetween(0.8, 1.2);
-      const branch = crack(main[k].x, main[k].y, dir, Phaser.Math.Between(8, 16), 0.5);
-      if (branch.length > 4 && Math.random() < 0.25) crack(branch[3].x, branch[3].y, dir - side * Phaser.Math.FloatBetween(0.8, 1.2), Phaser.Math.Between(6, 12), 0.5);
-    }
-    g.fillStyle(0x120b06, 0.95);
-    for (const key of blocks) {
-      const [bx, by] = key.split(',').map(Number);
-      g.fillRect(bx - cell / 2, by - cell / 2, cell, cell);
-    }
-    if (critical) {
-      g.fillStyle(0xffe272, 0.9);
-      for (const p of main) if (Math.random() < 0.25) g.fillRect(p.x - 0.5, p.y - 0.5, 1.5, 1.5);
-    }
-    // La grieta queda un momento y después se desvanece.
-    this.scene.tweens.add({ targets: g, alpha: 0, duration: 900, delay: 350, onComplete: () => g.destroy() });
-
-    // Trozos de tierra y piedra que saltan de la grieta.
-    for (let i = 0; i < Math.max(6, Math.round(length / 14)); i++) {
-      const p = main[Phaser.Math.Between(0, main.length - 1)];
-      const size = Phaser.Math.Between(2, 4);
-      const chunk = this.scene.add.rectangle(p.x, p.y, size, size, Phaser.Math.RND.pick([0x5b4630, 0x3a2a1c, 0x7d6a4f])).setDepth(999_998);
-      this.scene.tweens.add({
-        targets: chunk,
-        x: p.x + Phaser.Math.Between(-14, 14),
-        y: [p.y - Phaser.Math.Between(10, 22), p.y + Phaser.Math.Between(0, 6)],
-        angle: Phaser.Math.Between(-180, 180),
-        alpha: 0,
-        duration: Phaser.Math.Between(380, 620),
-        ease: 'Quad.easeOut',
-        onComplete: () => chunk.destroy(),
-      });
-    }
-    this.scene.cameras.main.shake(70, 0.002);
   }
 
   /** Hulk: zarpazo en abanico fino hacia el enemigo más cercano; con más disparos, abanicos repartidos alrededor. */

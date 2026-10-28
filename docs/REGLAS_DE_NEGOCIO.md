@@ -57,7 +57,7 @@ El arma principal de cada héroe empieza en nivel 1 y sube hasta el **7** con un
 | Iron Man (Repulsor) | +1 disparo · atraviesa +1 · +1 disparo · +25% vel. · +1 disparo · atraviesa +1 y +25% vel. |
 | Capitán (Escudo) | +1 escudo · +25% vel. · +1 escudo · +25% vel. · +1 escudo · +25% vel. |
 | Spider-Man (Telarañas) | +1 telaraña · atraviesa +1 · +25% vel. · +1 telaraña · atraviesa +1 · +1 telaraña |
-| Thor (Martillo sísmico) | +1 onda · +12% largo y ancho · +1 onda · +12% largo y ancho · +1 onda · +25% largo y ancho |
+| Thor (Martillo volador) | +1 martillo · +12% de tamaño · +1 martillo · +12% de tamaño · +1 martillo · +25% de tamaño |
 | Hulk (Zarpazo) | +25% ángulo · +20% alcance · +1 zarpazo · +25% ángulo · +20% alcance · +1 zarpazo y +25% ángulo |
 | Strange (Aura) | +12% radio ×5 · +25% radio |
 
@@ -147,12 +147,12 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 - Desde ahí aparece el botón LIBRO (tecla B) en el menú, que abre `BookScene` con la combinación de cada evolución (pasiva ×3 + arma principal nv 7 + arma exclusiva nv 7), sacada de `EVOLUTIONS`. Una vez encontrado, el libro deja de aparecer en el mapa.
 - `?libro` o `?todos` muestran el botón en esa carga sin guardarlo.
 
-## Thor: martillo sísmico como arma principal
-- El martillo sísmico (onda de choque en línea larga que rompe el piso, 16 de daño cada 1,8 s hacia enemigos al azar de la pantalla) ya no es una evolución: es el **arma principal** de Thor, con sus 7 niveles fijos y las mejoras del arma principal (Disparo múltiple, crítico, etc.).
-- Los rayos de antes pasaron a ser su **arma exclusiva** (reemplaza a la Tormenta de rayos, que se eliminó): 1 rayo de 16 de daño cada 1,8 s sobre un enemigo de la pantalla, hasta nv 7.
+## Thor: martillo volador como arma principal
+- El arma principal de Thor es un **martillo siempre en el aire** que va de enemigo en enemigo, **sin cadencia** (la pasiva Cadencia no lo afecta). Hace **5 de daño por golpe** (antes 16 cada 1,8 s; bajado a propósito porque pega sin parar), con un respiro de 0,35 s por martillo y enemigo.
+- Cada martillo busca el enemigo más cercano a él (dentro de 300 px de Thor) que no sea el recién golpeado ni el de otro martillo; sigue de largo un instante tras el golpe y pega a todo lo que toca en el camino. Sin enemigos va a una caja o roca cercana, y sin nada da vueltas alrededor de Thor.
+- Hay **un martillo por cada disparo** del arma principal: +1 en los niveles 2, 4 y 6 (hasta 4), y también por Cantidad. Los niveles 3, 5 y 7 los agrandan (tamaño y alcance del golpe). La pasiva Velocidad del proyectil le sube la velocidad de vuelo (base 230 px/s). Son arma principal con 7 niveles fijos y las mejoras comunes (daño, crítico, etc.).
+- Los rayos de antes son su **arma exclusiva** (1 rayo de 16 de daño cada 1,8 s sobre un enemigo de la pantalla, hasta nv 7).
 - Thor ya no tiene evolución (el libro secreto lista 5).
-- La onda del martillo es corta al principio (**105 px** de largo, 22 de ancho) y crece con los niveles de área del arma (~190 px a nivel 7). Visualmente rompe el piso: una grieta de pixel art (bloques negros en escalera, con ramas) que se estira según el largo de la onda, más trozos de tierra que saltan y un leve temblor de cámara.
-- La grieta se dibuja a nivel del piso (debajo de personajes y árboles) y va en línea recta hacia el objetivo, con pocas ramas.
 
 ## HUD de armas
 - Abajo a la izquierda, arriba de los 4 casilleros de pasivas, hay un casillero para el arma principal (siempre) y otro para la exclusiva (aparece al tomarla), con su nivel como número; en el nivel 7 el número y el borde se vuelven dorados.

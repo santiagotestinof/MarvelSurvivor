@@ -53,14 +53,14 @@ export const MAIN_WEAPONS: Record<AttackKind, MainWeaponDefinition> = {
     ],
   },
   hammer: {
-    name: 'Martillo sísmico',
+    name: 'Martillo volador',
     levels: [
-      { text: '+1 onda por ataque', count: 1 },
-      { text: 'Ondas más largas y anchas (+12%)', areaMult: AREA },
-      { text: '+1 onda por ataque', count: 1 },
-      { text: 'Ondas más largas y anchas (+12%)', areaMult: AREA },
-      { text: '+1 onda por ataque', count: 1 },
-      { text: 'Ondas más largas y anchas (+25%)', areaMult: AREA * AREA },
+      { text: '+1 martillo volando', count: 1 },
+      { text: 'Martillos más grandes (+12%)', areaMult: AREA },
+      { text: '+1 martillo volando', count: 1 },
+      { text: 'Martillos más grandes (+12%)', areaMult: AREA },
+      { text: '+1 martillo volando', count: 1 },
+      { text: 'Martillos más grandes (+25%)', areaMult: AREA * AREA },
     ],
   },
   fan: {

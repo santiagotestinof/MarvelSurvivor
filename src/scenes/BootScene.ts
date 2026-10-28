@@ -53,6 +53,7 @@ export class BootScene extends Phaser.Scene {
     this.createCoinTexture();
     this.createMagnetTexture();
     this.createFruitTexture();
+    this.createHammerTexture();
     this.createChestTexture();
     this.createBookTexture();
     registerUpgradeIcons(this);
@@ -101,6 +102,20 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xdfe6ee, 1).fillRect(0, 0, 4, 3).fillRect(6, 0, 4, 3);
     g.fillStyle(0xffffff, 1).fillRect(1, 1, 1, 1);
     g.generateTexture(TEXTURES.magnet, 10, 10);
+    g.destroy();
+  }
+
+  /** Martillo de Thor (provisional): cabeza de metal con franja y mango de cuero. */
+  private createHammerTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x2a303c, 1).fillRect(1, 0, 12, 8);
+    g.fillStyle(0x9aa6b8, 1).fillRect(2, 1, 10, 6);
+    g.fillStyle(0xdfe6ee, 1).fillRect(2, 1, 10, 2);
+    g.fillStyle(0x6d788a, 1).fillRect(2, 5, 10, 2);
+    g.fillStyle(0x2a303c, 1).fillRect(6, 8, 2, 7);
+    g.fillStyle(0x7a4a1e, 1).fillRect(6, 8, 2, 6);
+    g.fillStyle(0xe0b84a, 1).fillRect(5, 13, 4, 1);
+    g.generateTexture(TEXTURES.hammer, 14, 15);
     g.destroy();
   }
 

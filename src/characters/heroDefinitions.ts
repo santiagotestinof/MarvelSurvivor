@@ -83,7 +83,7 @@ export const thorDefinition: CharacterDefinition = {
   displayName: 'Thor',
   rarity: 'epic',
   statBonus: { moveSpeedMult: 1.15, maxHealthMult: 1.25 },
-  weaponText: 'Martillo sísmico: ondas de choque en línea que rompen el piso (+15% de velocidad y +25% de vida)',
+  weaponText: 'Martillo volador: siempre en el aire, va de enemigo en enemigo sin parar (+15% de velocidad y +25% de vida)',
   frame: FRAME,
   origin: ORIGIN,
   body: BODY,
@@ -93,7 +93,7 @@ export const thorDefinition: CharacterDefinition = {
     attack: {
       kind: 'hammer',
       cooldownMs: 1800,
-      damage: 16,
+      damage: 5,
       projectileTexture: TEXTURES.thunder,
       projectileSpeed: 0,
       aimRange: 170,

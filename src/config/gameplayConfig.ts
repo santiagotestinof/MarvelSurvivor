@@ -48,9 +48,6 @@ export const EVOLUTION = {
   shieldMaxExtra: 5,
   /** Telaraña inmovilizadora de Spider-Man: cuánto queda inmóvil el enemigo (ms). */
   webFreezeMs: 2500,
-  /** Martillo sísmico de Thor: largo y ancho de la onda en línea (px). */
-  thorLineLength: 105,
-  thorLineWidth: 22,
   /** Dimensión lenta de Strange: cuánto se agranda el aura y cómo frena a los enemigos. */
   strangeRadiusMult: 1.8,
   strangeSlowMs: 900,

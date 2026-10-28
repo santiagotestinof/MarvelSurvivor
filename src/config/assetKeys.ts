@@ -21,6 +21,7 @@ export const TEXTURES = {
   fruit: 'fruit-pickup',
   chest: 'chest-pickup',
   book: 'secret-book',
+  hammer: 'thor-hammer',
 } as const;
 
 /** Animaciones de efectos (no de personajes ni enemigos). */
