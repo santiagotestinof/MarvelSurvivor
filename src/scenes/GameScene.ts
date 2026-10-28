@@ -187,6 +187,9 @@ export class GameScene extends Phaser.Scene {
       stats: this.stats,
       projectiles: this.attack.projectiles,
       projectileTexture: this.player.definition.stats.attack.projectileTexture,
+      anchors: () => (map.obstacles.getChildren() as Phaser.GameObjects.Rectangle[]).filter((object) =>
+        object.getData('webAnchor') === true || object.width >= 80 || object.height >= 80),
+      obstacles: () => map.obstacles.getChildren() as Phaser.GameObjects.Rectangle[],
     });
     this.heroWeapon =
       HERO_WEAPONS[this.player.definition.id]?.create({
@@ -315,7 +318,11 @@ export class GameScene extends Phaser.Scene {
   activateUltimate(): void {
     if (this.heroUltimate) {
       if (this.round.ended || this.frozen || this.player.isDead) return;
-      if (this.heroUltimate.isActive(this.clock) || this.clock < this.ultimateReadyAt) return;
+      if (this.heroUltimate.isActive(this.clock)) {
+        if (this.heroUltimate.cancel(this.clock)) this.ultimateReadyAt = this.clock + this.heroUltimate.cooldownMs;
+        return;
+      }
+      if (this.clock < this.ultimateReadyAt) return;
       this.heroUltimate.start(this.clock);
       return;
     }
@@ -764,7 +771,7 @@ export class GameScene extends Phaser.Scene {
     const now = this.clock;
     if (this.ultimateKey && Phaser.Input.Keyboard.JustDown(this.ultimateKey)) this.activateUltimate();
     this.updateUltimate(now);
-    this.player.step(this.moveInput.getVector());
+    if (!this.heroUltimate?.isActive(now)) this.player.step(this.moveInput.getVector());
     this.attack.update(now);
     this.missiles.update(now, delta);
     this.heroWeapon?.update(now, delta);
