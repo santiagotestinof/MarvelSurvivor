@@ -771,7 +771,7 @@ export class GameScene extends Phaser.Scene {
     const now = this.clock;
     if (this.ultimateKey && Phaser.Input.Keyboard.JustDown(this.ultimateKey)) this.activateUltimate();
     this.updateUltimate(now);
-    if (!this.heroUltimate?.isActive(now)) this.player.step(this.moveInput.getVector());
+    if (this.player.definition.id !== 'spiderman' || !this.heroUltimate?.isActive(now)) this.player.step(this.moveInput.getVector());
     this.attack.update(now);
     this.missiles.update(now, delta);
     this.heroWeapon?.update(now, delta);
