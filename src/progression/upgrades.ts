@@ -306,6 +306,7 @@ export const UPGRADES: readonly UpgradeDefinition[] = [
   },
   tiered({
     id: 'crit',
+    passive: true,
     name: 'Crítico',
     isAvailable: ({ stats }) => stats.critChance < BASIC_ATTACK_LIMITS.maxCritChance - 1e-6,
     tiers: {
