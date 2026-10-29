@@ -12,6 +12,7 @@ export class WaveSystem {
   private nextRelocateAt = 0;
   stopped = false;
   private nextSpecialAtMs = -1;
+  private nextSurroundAtMs = -1;
   private nextMiniBossAtMs = -1;
   private readonly quickMiniBoss = new URLSearchParams(window.location.search).has('minijefe');
   private nextSpecialIsHorde = Math.random() < 0.5;
@@ -45,6 +46,7 @@ export class WaveSystem {
   update(now: number, progress: number): void {
     if (this.stopped) return;
     this.updateSpecial(progress);
+    this.updateSurround(progress);
     this.updateMiniBoss(progress);
     this.relocateStragglers(now);
     if (now < this.nextSpawnAt) return;
@@ -134,6 +136,31 @@ export class WaveSystem {
     this.scene.events.emit('special-wave', horde ? '¡MANADA!' : '¡TE RODEAN!');
   }
 
+  /** Te rodean: primera aparición al minuto 3 y luego una vez por minuto. */
+  private updateSurround(progress: number): void {
+    const elapsed = progress * ROUND.durationMs;
+    if (this.nextSurroundAtMs < 0) this.nextSurroundAtMs = 3 * 60_000;
+    if (elapsed < this.nextSurroundAtMs) return;
+    this.nextSurroundAtMs += 60_000;
+
+    const range = SPECIAL_WAVES.ringCount;
+    const count = Math.round(Phaser.Math.Linear(range.from, range.to, Phaser.Math.Clamp(progress, 0, 1)));
+    const kind = pickWaveEnemy(progress, (id) => this.aliveCountOfKind(id));
+    const scaling = this.getScaling(progress);
+    const room = Math.round(WAVES.maxAlive * Math.max(1, this.stats.curseMult * this.stats.spawnMult)) + SPECIAL_WAVES.extraAlive - this.aliveCount();
+    const total = Math.max(0, Math.min(count, room));
+    const view = this.scene.cameras.main.worldView;
+    const margin = WAVES.spawnMargin;
+    const radius = Math.hypot(view.width, view.height) / 2 + margin;
+    const firstAngle = Math.random() * Math.PI * 2;
+    for (let i = 0; i < total; i++) {
+      const angle = firstAngle + (i / Math.max(1, total)) * Math.PI * 2;
+      this.spawnEnemyAt(kind, scaling, this.player.x + Math.cos(angle) * radius, this.player.y + Math.sin(angle) * radius);
+    }
+    this.scene.events.emit('special-wave', '¡TE RODEAN!');
+  }
+
+  
   private spawnEnemyAt(kind: EnemyKind, scaling: EnemyScaling, x: number, y: number, clampToWorld = true): Enemy {
     const enemy = new Enemy(
       this.scene,
