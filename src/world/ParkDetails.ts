@@ -162,7 +162,8 @@ export function buildParkDetails(
       bench.fillStyle(0x68462f).fillRect(-26, -8, 52, 6);
       bench.fillStyle(0xd2a36a).fillRect(-25, -24, 50, 2).fillRect(-25, -8, 50, 2);
       bench.fillStyle(0xddd0a1).fillRect(-20, -22, 2, 2).fillRect(20, -22, 2, 2);
-      obstacle(x, benchY - 4, 52, 12);
+      const benchCollider = obstacle(x, benchY - 4, 52, 12);
+      if (benchCollider instanceof Phaser.GameObjects.Rectangle) benchCollider.setData('webAnchor', true);
       const lamp = scene.add.graphics().setPosition(x + 44, lampY).setDepth(lampY);
       // Hierro oscuro, base moldurada y linterna de vidrio cálido.
       lamp.fillStyle(0x292b36).fillRect(-9, -4, 18, 4).fillRect(-7, -8, 14, 6);
@@ -180,7 +181,8 @@ export function buildParkDetails(
       lamp.fillStyle(0x514b5b).fillRect(-6, -88, 12, 3).fillRect(-4, -92, 8, 3);
       lamp.fillStyle(0x94818b).fillRect(-6, -85, 11, 1).fillRect(-3, -91, 3, 2);
       lamp.fillStyle(0x30303c).fillRect(-2, -96, 4, 4);
-      obstacle(x + 44, lampY - 2, 10, 6);
+      const lampCollider = obstacle(x + 44, lampY - 2, 10, 6);
+      if (lampCollider instanceof Phaser.GameObjects.Rectangle) lampCollider.setData('webAnchor', true);
       const bin = scene.add.graphics().setPosition(x - 46, benchY).setDepth(benchY);
       bin.fillStyle(0x243d38).fillRect(-9, -22, 18, 22);
       bin.fillStyle(0x487566).fillRect(-6, -19, 12, 17);
