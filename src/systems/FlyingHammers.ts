@@ -9,7 +9,7 @@ import { activeEnemies } from './areaDamage';
 /** Valores del martillo volador de Thor (arma principal). */
 export const HAMMER = {
   /** Velocidad de vuelo (px/s); la pasiva Velocidad la sube. */
-  speed: 480,
+  speed: 340,
   /** Hasta dónde se aleja de Thor para ir a por un enemigo o una caja. */
   leash: 300,
   /** Radio del golpe del martillo (px, antes de Área). */
