@@ -48,15 +48,22 @@ export function drawHeroCard(
   panel.fillStyle(rarity.color, locked ? 0.08 : 0.14).fillRoundedRect(x + 3, y + 3, w - 6, h * 0.46, 6);
   objects.push(panel);
 
-  const spriteScale = Math.max(2, Math.floor((h * 0.34) / def.frame.height));
+  const imported = def.id === 'ironman' || def.id === 'capitan';
+  // Comparar el dibujo visible: las hojas importadas tienen mucho margen transparente.
+  const textureKey = imported ? `${def.id}-menu` : def.sheets.idle.textureKey;
+  const portrait = scene.textures.getFrame(textureKey, 0);
+  const spriteScale = imported
+    ? Math.min(h * 0.28 / portrait.height, (w - pad * 2) / portrait.width)
+    : Math.max(2, Math.floor((h * 0.34) / def.frame.height));
+  const imageAreaHeight = imported ? 48 * Math.max(2, Math.floor(h * 0.34 / 48)) : def.frame.height * spriteScale;
   const sprite = scene.add
-    .sprite(x + w / 2, y + pad + (def.frame.height * spriteScale) / 2, def.sheets.idle.textureKey, 0)
-    .setScale(spriteScale)
-    .play(animationKey(def.id, 'idle', Direction.Down));
+    .sprite(x + w / 2, y + pad + imageAreaHeight / 2, textureKey, 0)
+    .setScale(spriteScale);
+  if (!imported) sprite.play(animationKey(def.id, 'idle', Direction.Down));
   if (locked) sprite.setTintFill(0x000000).setAlpha(0.92);
   objects.push(sprite);
 
-  let cursor = y + pad * 1.3 + def.frame.height * spriteScale;
+  let cursor = y + pad * 1.3 + imageAreaHeight;
   const name = scene.add.text(x + w / 2, cursor, locked ? 'SIN DESBLOQUEAR' : def.displayName.toUpperCase(), textStyle(locked ? Math.round(nameSize * 0.8) : nameSize, locked ? '#8a97a3' : '#ffffff')).setOrigin(0.5, 0);
   name.setWordWrapWidth(w - pad * 2).setAlign('center');
   objects.push(name);

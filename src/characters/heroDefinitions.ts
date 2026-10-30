@@ -20,6 +20,7 @@ const ORIGIN = { x: 0.5, y: 41 / 48 };
 const BODY = { width: 10, height: 8, offsetX: 19, offsetY: 37 };
 
 export const CAPITAN_ID = 'capitan';
+export const CAPITAN_SCALE = 2 / 3;
 export const SPIDERMAN_ID = 'spiderman';
 export const THOR_ID = 'thor';
 export const HULK_ID = 'hulk';
@@ -31,9 +32,12 @@ export const capitanDefinition: CharacterDefinition = {
   displayName: 'Capitán América',
   rarity: 'common',
   weaponText: 'Escudo: va y vuelve atravesando enemigos',
-  frame: FRAME,
-  origin: ORIGIN,
-  body: BODY,
+  frame: { width: 92, height: 92 },
+  origin: { x: 0.5, y: 77 / 92 },
+  body: {
+    width: 10 / CAPITAN_SCALE, height: 8 / CAPITAN_SCALE,
+    offsetX: 46 - 5 / CAPITAN_SCALE, offsetY: 77 - 4 / CAPITAN_SCALE,
+  },
   stats: {
     moveSpeed: HERO_BASE.moveSpeed,
     maxHealth: HERO_BASE.maxHealth,
@@ -47,7 +51,10 @@ export const capitanDefinition: CharacterDefinition = {
       maxDistance: 120,
     },
   },
-  sheets: sheets(CAPITAN_ID),
+  sheets: {
+    idle: { ...sheets(CAPITAN_ID).idle, frameCount: 1, frameRate: 1 },
+    walk: { ...sheets(CAPITAN_ID).walk, frameCount: 7 },
+  },
 };
 
 /** Spider-Man: rápido y frágil; sus telarañas frenan a los enemigos. */

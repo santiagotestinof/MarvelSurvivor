@@ -25,6 +25,7 @@ export class BootScene extends Phaser.Scene {
 
     this.load.image(TEXTURES.repulsor, ASSET_PATHS.repulsor);
     this.load.image('ironman-menu', `assets/characters/ironman/ironman-menu.png?v=${__BUILD_ID__}`);
+    this.load.image('capitan-menu', `assets/characters/capitan/capitan-menu.png?v=${__BUILD_ID__}`);
     this.load.image(TEXTURES.missile, ASSET_PATHS.missile);
     this.load.image(TEXTURES.shield, ASSET_PATHS.shield);
     this.load.image(TEXTURES.web, ASSET_PATHS.web);

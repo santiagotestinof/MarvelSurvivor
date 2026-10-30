@@ -4,6 +4,7 @@ import { Character } from '../entities/Character';
 import { IronMan } from './ironman/IronMan';
 import {
   CAPITAN_ID,
+  CAPITAN_SCALE,
   HULK_ID,
   SPIDERMAN_ID,
   STRANGE_ID,
@@ -27,7 +28,7 @@ export const CHARACTER_REGISTRY: Record<string, CharacterEntry> = {
     definition: ironManDefinition,
     create: (scene, x, y) => new IronMan(scene, x, y),
   },
-  [CAPITAN_ID]: { definition: capitanDefinition, create: (scene, x, y) => new Character(scene, x, y, capitanDefinition) },
+  [CAPITAN_ID]: { definition: capitanDefinition, create: (scene, x, y) => new Character(scene, x, y, capitanDefinition).setScale(CAPITAN_SCALE) },
   [SPIDERMAN_ID]: { definition: spidermanDefinition, create: (scene, x, y) => new Character(scene, x, y, spidermanDefinition) },
   [THOR_ID]: { definition: thorDefinition, create: (scene, x, y) => new Character(scene, x, y, thorDefinition) },
   [STRANGE_ID]: { definition: strangeDefinition, create: (scene, x, y) => new Character(scene, x, y, strangeDefinition) },
