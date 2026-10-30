@@ -69,6 +69,11 @@ export class WaveSystem {
       if (!this.forceDoombots && kind.id === 'sentinel' && this.aliveCount() < maxAlive) {
         this.spawnEnemy(kind, scaling);
       }
+      // Normales (Dron, Doombot): a veces sale uno más. Los tiradores y los rápidos quedan como estaban.
+      const isNormal = kind.id === 'drone' || kind.id === 'brute';
+      if (isNormal && !this.forceDoombots && this.aliveCount() < maxAlive && Math.random() < WAVES.normalExtraChance) {
+        this.spawnEnemy(kind, scaling);
+      }
     }
   }
 

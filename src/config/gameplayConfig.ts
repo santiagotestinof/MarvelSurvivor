@@ -72,7 +72,9 @@ export const WAVES = {
   endIntervalMs: 220,
   /** Enemigos por aparición: crece de 1 a este valor durante la ronda. */
   maxBatch: 3,
-  maxAlive: 160,
+  maxAlive: 200,
+  /** Enemigos normales (Dron y Doombot: ni disparan ni son rápidos): al salir uno, con esta chance sale otro más. No afecta a tiradores ni a rápidos. */
+  normalExtraChance: 0.5,
   /** Distancia fuera de la pantalla donde aparecen. */
   spawnMargin: 28,
   /** Con el jugador en movimiento, esta parte de los enemigos nuevos aparece del lado hacia donde va (el resto, de cualquier lado). */

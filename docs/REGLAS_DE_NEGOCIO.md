@@ -196,3 +196,6 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 ## Mejoras permanentes por héroe
 - El catálogo de mejoras permanentes es el mismo para todos, pero **el progreso es único de cada héroe**: comprar para Thor no afecta a Hulk. La tienda trabaja con el héroe elegido (botón HÉROE [H]); el reembolso devuelve solo lo gastado en ese héroe.
 - Al pasar del guardado viejo (mejoras comunes) al nuevo se reembolsó todo el oro gastado y cada héroe arranca en nivel 0.
+
+## Cantidad de enemigos normales
+- Los enemigos normales (Dron y Doombot: no disparan ni son rápidos) salen en mayor cantidad: cada uno que aparece en una oleada normal trae otro más con 50 % de chance (`WAVES.normalExtraChance`). Los tiradores (Centinela) y los rápidos (Explorador) no cambian.
