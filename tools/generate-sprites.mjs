@@ -14,6 +14,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { IRON_MAN_REF } from './ironman-reference.mjs';
+import { ironManPose } from './ironman-poses.mjs';
+import { restoreImportedIronMan } from './imported-ironman.mjs';
 import { CAPITAN_REF } from './hero-trace-capitan.mjs';
 import { THOR_REF } from './hero-trace-thor.mjs';
 import { HULK_REF } from './hero-trace-hulk.mjs';
@@ -333,15 +335,15 @@ function buildSheet(style, frames) {
 // ---------------------------------------------------------------- Iron Man (a partir de la imagen de referencia)
 
 const REF_PALETTE = {
-  K: hex('#150909'),
-  R: hex('#c80000'),
-  r: hex('#880000'),
-  d: hex('#560000'),
-  Y: hex('#f4d434'),
-  O: hex('#c4a400'),
-  o: hex('#947200'),
-  B: hex('#84b4f4'),
-  W: hex('#d4e4f4'),
+  K: hex('#000000'),
+  R: hex('#ce2d2d'),
+  r: hex('#8e1518'),
+  d: hex('#4e0c17'),
+  Y: hex('#e8c762'),
+  O: hex('#d78f2f'),
+  o: hex('#875027'),
+  B: hex('#82c7cc'),
+  W: hex('#d7fffa'),
 };
 
 /** Tamaño del cuadro de Iron Man (más alto que el resto por los propulsores) y escala de la referencia. */
@@ -351,8 +353,6 @@ const IM_SCALE = 0.8;
 const IM_FEET_ROW = 43;
 /** Fila del cuadro donde están los pies: 6 filas más arriba que el suelo (41), así flota en el aire. */
 const IM_FEET_Y = 35;
-
-const refGrid = () => IRON_MAN_REF.map((row) => [...row]);
 
 /** Achica la grilla de letras a `scale`: cada píxel nuevo toma la letra que más ocupa su zona (el contorno pesa un poco más). */
 function shrinkGrid(grid, scale) {
@@ -419,25 +419,27 @@ function squeezeGrid(grid, factor) {
 }
 
 // fx, fy: hacia dónde mira. stride: -2..2 (piernas abiertas/cerradas). bob: 0/-1 (cuerpo arriba). pulse: 0..2 (largo de las llamas).
-function drawIronManRef({ fx, fy, stride = 0, bob = 0, pulse = 0 }) {
-  let g = refGrid();
+function drawIronManRef({ fx, fy, stride = 0, bob = 0, pulse = 0, lean = 0 }) {
+  let g = ironManPose(IRON_MAN_REF, fx, fy);
   const h = g.length;
   const w = g[0].length;
 
-  // De espaldas: el casco y el pecho quedan lisos (sin careta ni reactor).
-  if (fy < 0) {
-    const toRed = { Y: 'R', O: 'r', o: 'd', B: 'R', W: 'R' };
-    for (let y = 0; y < 14; y++) for (let x = 0; x < w; x++) g[y][x] = toRed[g[y][x]] ?? g[y][x];
-    for (let y = 14; y < 24; y++) for (let x = 12; x < 24; x++) if (g[y][x] === 'B' || g[y][x] === 'W') g[y][x] = 'R';
+  // Separar las llamas del dibujo de la armadura, conservando reactor y visor.
+  const emitters = [];
+  for (const [start, end, minY] of [[0, 9, 31], [24, w, 31], [9, 15, 43], [15, 24, 44]]) {
+    const points = [];
+    for (let y = minY; y < h; y++) for (let x = start; x < end; x++) {
+      if (g[y][x] === 'B' || g[y][x] === 'W') points.push({ x, y });
+    }
+    const firstY = Math.min(...points.map((p) => p.y));
+    const top = points.filter((p) => p.y === firstY);
+    if (top.length) emitters.push({ x: top.reduce((sum, p) => sum + p.x, 0) / top.length, y: firstY, foot: minY > 40 });
   }
-
-  // Largo de las llamas de los propulsores (pies abajo, manos a los costados).
-  const flame = [10, 7, 9][pulse] ?? 10;
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
       if (g[y][x] !== 'B' && g[y][x] !== 'W') continue;
-      const foot = y > IM_FEET_ROW && y - IM_FEET_ROW > flame;
-      const hand = y >= 31 && (x <= 8 || x >= 25) && y - 31 > flame + 2;
+      const foot = y >= 43;
+      const hand = y >= 31 && (x <= 8 || x >= 24);
       if (foot || hand) g[y][x] = '.';
     }
 
@@ -461,17 +463,37 @@ function drawIronManRef({ fx, fy, stride = 0, bob = 0, pulse = 0 }) {
     g = legs;
   }
 
-  // Costados y diagonales: el mismo dibujo de frente (o de espaldas), espejado si mira a la izquierda.
-  if (fx < 0) g = g.map((row) => row.reverse());
-
   const small = shrinkGrid(g, IM_SCALE);
   const cv = new Canvas(IM_FRAME.w, IM_FRAME.h);
   const ox = Math.round((IM_FRAME.w - small[0].length) / 2);
   const oy = IM_FEET_Y - Math.round(IM_FEET_ROW * IM_SCALE) + bob;
+  // El casco se traslada como una pieza rígida: la inclinación no lo deforma.
+  const tiltAt = (sy) => Math.round(lean * fx * (IM_FEET_ROW * IM_SCALE - Math.max(11, sy)) / 28)
+    // Tres cuartos posterior en píxeles finales: nunca estrechar al volver a muestrear.
+    + (fy < 0 && fx !== 0 ? (sy < 11 ? fx : sy >= 24 ? -fx : 0) : 0);
+  // Chorros compactos: borde azul, cono celeste y núcleo blanco; nunca columnas sueltas.
+  for (let index = 0; index < emitters.length; index++) {
+    const emitter = emitters[index];
+    const sy = Math.round(emitter.y * IM_SCALE);
+    const px = ox + Math.round(emitter.x * IM_SCALE) + tiltAt(sy);
+    const py = oy + sy;
+    const phase = (pulse + index) % 6;
+    const length = (emitter.foot ? 5 : 6) + [0, 1, 2, 2, 1, 0][phase];
+    for (let j = 0; j < length; j++) {
+      const drift = lean ? -fx * Math.floor(j / 5) : 0;
+      const radius = j < 2 ? 2 : j < length - 2 ? 1 : 0;
+      cv.rect(px + drift - radius, py + j, radius * 2 + 1, 1, hex('#258fd1'));
+      if (radius > 0) cv.rect(px + drift - Math.max(0, radius - 1), py + j, Math.max(1, radius * 2 - 1), 1, hex('#72dbf4'));
+      if (j < length - 3) cv.set(px + drift, py + j, hex('#efffff'));
+    }
+    cv.set(px - 1, py + 1, phase % 2 === 0 ? REF_PALETTE.W : REF_PALETTE.B);
+  }
   small.forEach((row, y) =>
     row.forEach((letter, x) => {
       const color = REF_PALETTE[letter];
-      if (color) cv.set(ox + x, oy + y, color);
+      // Inclinación leve del torso durante el desplazamiento, anclada cerca de los pies.
+      const tilt = tiltAt(y);
+      if (color) cv.set(ox + x + tilt, oy + y, color);
     }),
   );
   return cv;
@@ -498,9 +520,10 @@ const WALK_STRIDE = [0, 2, 2, 0, -2, -2];
 const WALK_BOB = [-1, 0, 0, -1, 0, 0];
 const WALK_FRAMES = WALK_STRIDE.map((stride, i) => ({ stride, bob: WALK_BOB[i], pulse: i % 2 ? 1 : 0 }));
 
-// Iron Man flota: el cuerpo no se mueve, solo cambia el largo de las llamas de los propulsores.
-const IM_IDLE_FRAMES = [0, 1, 2, 1].map((pulse) => ({ pulse }));
-const IM_WALK_FRAMES = [0, 1, 2, 1, 2, 1].map((pulse) => ({ pulse }));
+// Ciclos cerrados: flotación de un píxel y empuje progresivo, sin pasos al caminar.
+const IM_IDLE_FRAMES = [0, 1, 2, 3, 4, 5].map((pulse, i) => ({ pulse, bob: [1, 1, 0, 0, 0, 1][i] }));
+const IM_WALK_FRAMES = [1, 2, 3, 4, 5, 0].map((pulse, i) => ({ pulse,
+  bob: [0, 0, 1, 1, 1, 0][i], lean: [2, 2, 3, 3, 2, 2][i] }));
 
 
 // ---------------------------------------------------------------- héroes: un estilo por personaje
@@ -2437,6 +2460,32 @@ function previewOf(cv, scale, bg = hex('#5f8f58')) {
 
 // ---------------------------------------------------------------- main
 
+// Generación selectiva para trabajar en Iron Man sin reescribir recursos del equipo.
+if (process.argv.includes('--only=ironman')) {
+  restoreImportedIronMan();
+  process.exit(0);
+}
+if (process.argv.includes('--only=legacy-ironman')) {
+  const idle = buildIronManSheet(IM_IDLE_FRAMES);
+  const walk = buildIronManSheet(IM_WALK_FRAMES);
+  save(idle, 'characters/ironman/ironman-idle.png');
+  save(walk, 'characters/ironman/ironman-walk.png');
+  const previewIndex = process.argv.indexOf('--preview');
+  if (previewIndex !== -1) {
+    const dir = process.argv[previewIndex + 1];
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'ironman-idle.png'), encodePng(previewOf(idle, 4)));
+    writeFileSync(join(dir, 'ironman-walk.png'), encodePng(previewOf(walk, 4)));
+    const poses = new Canvas(IM_FRAME.w * 8, IM_FRAME.h);
+    for (let direction = 0; direction < 8; direction++) {
+      for (let y = 0; y < IM_FRAME.h; y++) for (let x = 0; x < IM_FRAME.w; x++) {
+        poses.set(direction * IM_FRAME.w + x, y, idle.get(x, direction * IM_FRAME.h + y));
+      }
+    }
+    writeFileSync(join(dir, 'ironman-poses.png'), encodePng(previewOf(poses, 3, hex('#202b35'))));
+  }
+  process.exit(0);
+}
 console.log('Generando recursos provisionales...');
 // Íconos de las mejoras permanentes (tienda).
 {
@@ -2518,3 +2567,5 @@ if (previewIdx !== -1) {
   writeFileSync(join(dir, 'fire.png'), encodePng(previewOf(fire, 8)));
   console.log('  vistas previas en', dir);
 }
+
+restoreImportedIronMan();

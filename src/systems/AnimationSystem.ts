@@ -42,13 +42,14 @@ export function registerCharacterAnimations(scene: Phaser.Scene, definition: Cha
 /** Reproduce la animación correcta según acción y dirección. */
 export class CharacterAnimator {
   private currentAction: CharacterAction | null = null;
+  private locomotionPhase: Partial<Record<'idle' | 'walk', { frame: number; accumulator: number; nextTick: number }>> = {};
 
   constructor(
     private readonly sprite: Phaser.GameObjects.Sprite,
     private readonly definition: CharacterDefinition,
   ) {}
 
-  play(action: CharacterAction, direction: Direction): void {
+  play(action: CharacterAction, direction: Direction, initialFrame?: number): void {
     // Si la acción no existe para este personaje se cae a idle.
     const resolved: CharacterAction = this.definition.sheets[action] ? action : 'idle';
     const sheet = this.definition.sheets[resolved];
@@ -56,15 +57,37 @@ export class CharacterAnimator {
 
     const key = animationKey(this.definition.id, resolved, direction);
     const anims = this.sprite.anims;
-    if (anims.isPlaying && anims.currentAnim?.key === key) return;
+    if (initialFrame === undefined && anims.currentAnim?.key === key && (anims.isPlaying || !sheet.loop)) return;
+
+    // El disparo automático interrumpe el vuelo: al volver no debe reiniciar siempre F1.
+    const studioHero = this.definition.id === 'ironman';
+    if (studioHero && resolved !== this.currentAction && anims.currentFrame &&
+        (this.currentAction === 'idle' || this.currentAction === 'walk')) {
+      this.locomotionPhase[this.currentAction] = {
+        frame: anims.currentFrame.index - 1,
+        accumulator: anims.accumulator,
+        nextTick: anims.nextTick,
+      };
+    }
+    const resumedPhase = studioHero && initialFrame === undefined && resolved !== this.currentAction &&
+      (resolved === 'idle' || resolved === 'walk') ? this.locomotionPhase[resolved] : undefined;
 
     // Al girar mientras camina se conserva el cuadro actual para que el paso no se reinicie.
-    let startFrame = 0;
-    if (resolved === this.currentAction && anims.currentFrame) {
+    let startFrame = initialFrame ?? resumedPhase?.frame ?? 0;
+    if (initialFrame === undefined && resolved === this.currentAction && anims.currentFrame) {
       startFrame = Math.min(anims.currentFrame.index - 1, sheet.frameCount - 1);
     }
 
+    // Iron Man mantiene también el tiempo dentro del cuadro al girar: sus propulsores
+    // no se congelan en el primer instante cuando cambia de dirección continuamente.
+    const preserveTiming = studioHero && resolved === this.currentAction && anims.isPlaying;
+    const accumulator = resumedPhase?.accumulator ?? anims.accumulator;
+    const nextTick = resumedPhase?.nextTick ?? anims.nextTick;
     anims.play({ key, startFrame }, true);
+    if (preserveTiming || resumedPhase) {
+      anims.accumulator = accumulator;
+      anims.nextTick = nextTick;
+    }
     this.currentAction = resolved;
   }
 }

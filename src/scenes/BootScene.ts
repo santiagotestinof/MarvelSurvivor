@@ -24,6 +24,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet(TEXTURES.crate, `${ASSET_PATHS.crate}?v=${__BUILD_ID__}`, { frameWidth: 16, frameHeight: 16 });
 
     this.load.image(TEXTURES.repulsor, ASSET_PATHS.repulsor);
+    this.load.image('ironman-menu', `assets/characters/ironman/ironman-menu.png?v=${__BUILD_ID__}`);
     this.load.image(TEXTURES.missile, ASSET_PATHS.missile);
     this.load.image(TEXTURES.shield, ASSET_PATHS.shield);
     this.load.image(TEXTURES.web, ASSET_PATHS.web);
