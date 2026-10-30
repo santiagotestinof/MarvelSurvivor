@@ -1,15 +1,18 @@
 import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
+import type { CharacterDefinition } from '../characters/CharacterDefinition';
+import { HERO_INFO, heroStatLines } from '../characters/heroInfo';
 import { CHARACTER_REGISTRY } from '../characters/registry';
 import { RARITY_INFO, RARITY_ORDER } from '../characters/rarity';
 import type { Rarity } from '../characters/CharacterDefinition';
-import { TEXTURES } from '../config/assetKeys';
-import { computeZoom } from '../config/cameraConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
+import { META_UPGRADES } from '../meta/metaUpgrades';
 import { saveData } from '../meta/saveData';
-import { drawHeroCard } from '../ui/heroCard';
-import { UiButton } from '../ui/UiButton';
-import { textStyle, uiScale } from '../ui/uiLayout';
+import { HERO_WEAPONS } from '../systems/HeroWeapons';
+import { portraitKey } from '../ui/heroPortrait';
+import { drawMenuBackdrop } from '../ui/menuBackdrop';
+import { PanelButton } from '../ui/PanelButton';
+import { TITLE_FONT, UI_FONT, textStyle, uiScale } from '../ui/uiLayout';
 
 const RANDOM_HERO_PRICE = 2000;
 const RARITY_CHANCES: Record<Rarity, number> = {
@@ -31,18 +34,30 @@ const HERO_CODE_NAMES: Record<string, string> = {
   hulk: 'BANNER',
 };
 
-/** Elegir héroes desbloqueados y reclutar uno aleatorio de los que faltan. */
+const GOLD = '#ffcf4a';
+const RARITY_GLOW: Record<Rarity, number> = { common: 0x2a3f66, rare: 0x1b4f8f, epic: 0x4b2a86, legendary: 0x7a5410 };
+const RARITY_TOP: Record<Rarity, number> = { common: 0x1c2740, rare: 0x143055, epic: 0x2b1b52, legendary: 0x3b2c10 };
+
+/** Elegir héroes reclutados, ver la ficha de cada uno (con scroll) y reclutar uno aleatorio de los que faltan. */
 export class CharacterScene extends Phaser.Scene {
-  private ground!: Phaser.GameObjects.TileSprite;
-  private shade!: Phaser.GameObjects.Graphics;
-  private title!: Phaser.GameObjects.Text;
-  private hint!: Phaser.GameObjects.Text;
-  private backButton!: UiButton;
-  private recruitButton!: UiButton;
-  private goldLabel!: Phaser.GameObjects.Text;
-  private cardObjects: Phaser.GameObjects.GameObject[] = [];
+  private backdrop!: Phaser.GameObjects.Graphics;
+  private backButton!: PanelButton;
+  private recruitButton!: PanelButton;
+  private chooseButton!: PanelButton;
+  private upgradesButton!: PanelButton;
+  private dynamicObjects: Phaser.GameObjects.GameObject[] = [];
   private revealObjects: Phaser.GameObjects.GameObject[] = [];
   private revealActive = false;
+  /** Héroe cuya ficha se está viendo (puede ser uno todavía no reclutado). */
+  private viewId = saveData.selectedCharacter;
+  private scrollY = 0;
+  private scrollMax = 0;
+  private scrollBox = new Phaser.Geom.Rectangle();
+  private scrollContent: Phaser.GameObjects.Container | null = null;
+  private scrollBar: Phaser.GameObjects.Graphics | null = null;
+  private scrollViewH = 0;
+  private scrollContentH = 0;
+  private dragging = false;
 
   constructor() {
     super(SCENE_KEYS.characters);
@@ -61,18 +76,17 @@ export class CharacterScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor('#0e1a12');
+    this.cameras.main.setBackgroundColor('#070c1a');
     audio.play('menu');
-    this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
-    this.shade = this.add.graphics();
-    this.title = this.add.text(0, 0, 'PERSONAJES', textStyle(28, '#ffffff')).setOrigin(0.5);
-    this.title.setShadow(0, 4, '#1593b8', 0, true, true);
-    this.hint = this.add.text(0, 0, 'Elegí entre los héroes que ya desbloqueaste. Los demás se reclutan al azar.', textStyle(11, '#9fb3bf')).setOrigin(0.5);
-    this.backButton = new UiButton(this, 'VOLVER [ESC]', 16, () => {
+    this.viewId = saveData.selectedCharacter;
+    this.scrollY = 0;
+    this.backdrop = this.add.graphics().setDepth(-20);
+    this.backButton = new PanelButton(this, '‹', () => {
       if (!this.revealActive) this.scene.start(SCENE_KEYS.menu);
-    }, ['ESC']);
-    this.recruitButton = new UiButton(this, 'RECLUTAR ALEATORIO · 2000', 14, () => this.recruitRandomHero(), [], true);
-    this.goldLabel = this.add.text(0, 0, '', textStyle(14, '#ffd24a')).setOrigin(1, 0);
+    }, { hotkeys: ['ESC'] });
+    this.recruitButton = new PanelButton(this, 'RECLUTAR HÉROE AL AZAR · 2000', () => this.recruitRandomHero(), { style: 'gold', display: true });
+    this.chooseButton = new PanelButton(this, 'ELEGIR', () => this.chooseViewed(), { style: 'primary', display: true });
+    this.upgradesButton = new PanelButton(this, 'MEJORAS', () => this.openUpgrades(), { style: 'gold' });
 
     if (!this.anims.exists(FURY_ANIMATION)) {
       this.anims.create({
@@ -83,87 +97,305 @@ export class CharacterScene extends Phaser.Scene {
       });
     }
 
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, _objects: unknown, _dx: number, dy: number) => {
+      if (this.revealActive || !this.scrollBox.contains(pointer.x, pointer.y)) return;
+      this.scrollBy(dy * 0.6);
+    });
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, (pointer: Phaser.Input.Pointer) => {
+      this.dragging = !this.revealActive && this.scrollBox.contains(pointer.x, pointer.y);
+    });
+    this.input.on(Phaser.Input.Events.POINTER_UP, () => (this.dragging = false));
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, (pointer: Phaser.Input.Pointer) => {
+      if (this.dragging && pointer.isDown) this.scrollBy(pointer.prevPosition.y - pointer.y);
+    });
+
     this.render();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.render, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.render, this);
+      this.input.off('wheel');
       this.clearReveal();
     });
   }
 
-  update(_time: number, delta: number): void {
-    this.ground.tilePositionX += 4 * (delta / 1000);
-    this.ground.tilePositionY += 2 * (delta / 1000);
+  private scrollBy(delta: number): void {
+    if (!this.scrollContent || this.scrollMax <= 0) return;
+    this.scrollY = Phaser.Math.Clamp(this.scrollY + delta, 0, this.scrollMax);
+    this.scrollContent.y = this.scrollBox.y - this.scrollY;
+    this.drawScrollBar();
+  }
+
+  private drawScrollBar(): void {
+    const bar = this.scrollBar;
+    if (!bar) return;
+    bar.clear();
+    if (this.scrollMax <= 0) return;
+    const trackH = this.scrollViewH;
+    const thumbH = Math.max(24, trackH * (this.scrollViewH / this.scrollContentH));
+    const thumbY = this.scrollBox.y + (trackH - thumbH) * (this.scrollY / this.scrollMax);
+    bar.fillStyle(0xffffff, 0.08).fillRoundedRect(this.scrollBox.right + 4, this.scrollBox.y, 4, trackH, 2);
+    bar.fillStyle(0x8cb4ff, 0.6).fillRoundedRect(this.scrollBox.right + 4, thumbY, 4, thumbH, 2);
+  }
+
+  private chooseViewed(): void {
+    if (this.revealActive || !saveData.isUnlocked(this.viewId)) return;
+    saveData.select(this.viewId);
+    this.render();
+  }
+
+  /** La tienda de mejoras trabaja con el héroe elegido: se lo elige antes de abrirla. */
+  private openUpgrades(): void {
+    if (this.revealActive || !saveData.isUnlocked(this.viewId)) return;
+    saveData.select(this.viewId);
+    this.scene.start(SCENE_KEYS.shop);
+  }
+
+  private text(x: number, y: number, value: string, size: number, color: string, options: { title?: boolean; origin?: [number, number]; wrap?: number; bold?: boolean; into?: Phaser.GameObjects.Container } = {}): Phaser.GameObjects.Text {
+    const t = this.add
+      .text(x, y, value, {
+        fontFamily: options.title ? TITLE_FONT : UI_FONT,
+        fontStyle: options.title || options.bold === false ? 'normal' : 'bold',
+        fontSize: `${Math.max(7, Math.round(size))}px`,
+        color,
+        wordWrap: options.wrap ? { width: options.wrap } : undefined,
+      })
+      .setOrigin(...(options.origin ?? [0, 0]));
+    if (options.into) options.into.add(t);
+    else this.dynamicObjects.push(t);
+    return t;
   }
 
   private render(): void {
+    for (const object of this.dynamicObjects) object.destroy();
+    this.dynamicObjects = [];
+    this.scrollContent = null;
+    this.scrollBar = null;
     const { width, height } = this.scale;
-    const ui = uiScale(width, height);
-    const portrait = width < height;
-    const zoom = Math.max(2, computeZoom(width, height));
-    this.ground.setSize(width, height).setTileScale(zoom);
-    this.shade.clear().fillStyle(0x05080c, 0.72).fillRect(0, 0, width, height);
-    this.title.setFontSize(Math.max(18, Math.round(portrait ? Math.min(width * 0.07, 34) : 8 * ui))).setPosition(width / 2, height * 0.07);
-    this.hint.setFontSize(Math.max(10, Math.round(3.2 * ui))).setPosition(width / 2, height * (portrait ? 0.125 : 0.15));
+    const portrait = width < height * 0.95;
+    const entries = Object.values(CHARACTER_REGISTRY).map((entry) => entry.definition);
+    if (!CHARACTER_REGISTRY[this.viewId]) this.viewId = saveData.selectedCharacter;
+    const view = CHARACTER_REGISTRY[this.viewId].definition;
+    const owned = saveData.isUnlocked(view.id);
+    const chosen = saveData.selectedCharacter === view.id;
 
-    const size = Math.max(12, Math.round(3.6 * ui));
-    this.backButton.setFontSize(size).setEnabled(!this.revealActive);
-    this.goldLabel.setText(`ORO: ${saveData.gold}`).setFontSize(Math.max(12, Math.round(4 * ui))).setPosition(width - 3 * ui, 3 * ui);
+    drawMenuBackdrop(this.backdrop, width, height, RARITY_GLOW[view.rarity], portrait ? 0.5 : 0.72, portrait ? 0.7 : 0.45);
 
-    for (const object of this.cardObjects) object.destroy();
-    this.cardObjects = [];
+    const s = portrait ? Math.min(width / 720, height / 1280) : Math.min(width / 1280, height / 720);
+    const designW = portrait ? 720 : 1280;
+    const designH = portrait ? 1280 : 720;
+    const ox = (width - designW * s) / 2;
+    const oy = (height - designH * s) / 2;
+    const X = (v: number) => ox + v * s;
+    const Y = (v: number) => oy + v * s;
 
-    const entries = Object.values(CHARACTER_REGISTRY);
-    const columns = portrait ? 2 : entries.length;
-    const rows = Math.ceil(entries.length / columns);
-    const cardGap = Math.round(Math.max(6, 2.2 * ui));
-    const areaX = width * 0.04;
-    const areaW = width * 0.92;
-    const areaY = height * (portrait ? 0.17 : 0.2);
-    const areaH = height * 0.86 - areaY;
-    const cardW = (areaW - cardGap * (columns - 1)) / columns;
-    const cardH = Math.min((areaH - cardGap * (rows - 1)) / rows, portrait ? 999 : 340);
+    // Cabecera.
+    this.backButton.setBox(44 * s, 44 * s, 24 * s).setPosition(X(48 + 22), Y(32 + 22)).setEnabled(!this.revealActive);
+    const title = this.text(X(48 + 62), Y(portrait ? 30 : 28), 'PERSONAJES', (portrait ? 38 : 44) * s, '#ffffff', { title: true });
+    title.setLetterSpacing(3 * s);
+    const count = entries.filter((d) => saveData.isUnlocked(d.id)).length;
+    this.text(X(48 + 62), Y(portrait ? 76 : 80), `${count} de ${entries.length} reclutados`, 13 * s, '#9db4d8', { bold: false });
+    const goldText = this.text(0, 0, saveData.gold.toLocaleString('es-AR'), 26 * s, GOLD, { title: true, origin: [1, 0.5] });
+    const chipH = 44 * s;
+    const chipW = goldText.width + 62 * s;
+    const chipX = X(designW - 48) - chipW;
+    const chipY = Y(32);
+    const chip = this.add.graphics();
+    chip.fillStyle(0x0a1224, 0.8).fillRoundedRect(chipX, chipY, chipW, chipH, chipH / 2);
+    chip.lineStyle(2, 0xffcf4a, 0.45).strokeRoundedRect(chipX, chipY, chipW, chipH, chipH / 2);
+    chip.fillStyle(0xffcf4a, 1).fillCircle(chipX + 26 * s, chipY + chipH / 2, 10 * s);
+    chip.lineStyle(2, 0xb78700, 1).strokeCircle(chipX + 26 * s, chipY + chipH / 2, 10 * s);
+    this.dynamicObjects.push(chip);
+    goldText.setPosition(chipX + chipW - 18 * s, chipY + chipH / 2).setDepth(1);
 
-    entries.forEach(({ definition }, index) => {
-      const column = index % columns;
-      const row = Math.floor(index / columns);
-      const x = areaX + column * (cardW + cardGap);
-      const y = areaY + row * (cardH + cardGap);
-      const unlocked = saveData.isUnlocked(definition.id);
-      const chosen = saveData.selectedCharacter === definition.id;
-      const footer = chosen
-        ? { text: 'ELEGIDO', color: '#ffe272' }
-        : unlocked
-          ? { text: 'TOCÁ PARA ELEGIR', color: '#9fb3bf' }
-          : { text: 'RECLUTAMIENTO ALEATORIO', color: '#ffd24a' };
-      const objects = drawHeroCard(this, definition, x, y, cardW, cardH, {
-        locked: !unlocked,
-        highlighted: chosen,
-        footer,
-      });
-      const zone = this.add.zone(x, y, cardW, cardH).setOrigin(0).setInteractive({ useHandCursor: unlocked && !this.revealActive });
-      zone.on(Phaser.Input.Events.POINTER_UP, () => {
-        if (this.revealActive) return;
-        if (saveData.isUnlocked(definition.id)) {
-          if (saveData.selectedCharacter !== definition.id) saveData.select(definition.id);
-          this.render();
-        }
-      });
-      this.cardObjects.push(...objects, zone);
+    // Grilla de héroes.
+    const gridX = 48;
+    const gridY = portrait ? 120 : 112;
+    const gridW = portrait ? 624 : 520;
+    const gap = 16;
+    const tileW = (gridW - gap * 2) / 3;
+    const tileH = portrait ? 170 : 200;
+    entries.forEach((def, index) => {
+      const col = index % 3;
+      const row = Math.floor(index / 3);
+      this.drawTile(def, X(gridX + col * (tileW + gap)), Y(gridY + row * (tileH + gap)), tileW * s, tileH * s, s, def.id === view.id);
     });
-
-    const lockedCount = entries.filter(({ definition }) => !saveData.isUnlocked(definition.id)).length;
+    const gridBottom = gridY + 2 * tileH + gap;
+    this.recruitButton.setBox(gridW * s, 54 * s, 22 * s).setPosition(X(gridX + gridW / 2), Y(portrait ? gridBottom + 16 + 27 : 632 + 27));
+    const lockedCount = entries.length - count;
     const canRecruit = lockedCount > 0 && saveData.gold >= RANDOM_HERO_PRICE && !this.revealActive;
-    this.recruitButton.setLabel(lockedCount === 0 ? 'TODOS DESBLOQUEADOS' : 'RECLUTAR ALEATORIO · 2000');
-    this.recruitButton.setFontSize(Math.max(11, Math.round((portrait ? 3.1 : 3.5) * ui)));
-    this.recruitButton.setEnabled(canRecruit).setAlpha(canRecruit || lockedCount === 0 ? 1 : 0.5);
-    if (portrait) {
-      this.recruitButton.setPosition(width / 2, height * 0.905);
-      this.backButton.setPosition(width / 2, height * 0.965);
+    this.recruitButton.setLabel(lockedCount === 0 ? 'TODOS RECLUTADOS' : `RECLUTAR HÉROE AL AZAR · ${RANDOM_HERO_PRICE}`).setEnabled(canRecruit);
+
+    // Panel de detalle.
+    const px = portrait ? 48 : 620;
+    const py = portrait ? gridBottom + 16 + 54 + 16 : 112;
+    const pw = portrait ? 624 : 612;
+    const ph = portrait ? 1232 - py : 574;
+    const panel = this.add.graphics().setDepth(-5);
+    panel.fillStyle(0x0a1224, 0.78).fillRoundedRect(X(px), Y(py), pw * s, ph * s, 22 * s);
+    panel.fillStyle(RARITY_GLOW[view.rarity], 0.3).fillRoundedRect(X(px), Y(py), (portrait ? pw : 250) * s, (portrait ? 262 : ph) * s, { tl: 22 * s, tr: portrait ? 22 * s : 0, bl: portrait ? 0 : 22 * s, br: 0 });
+    panel.lineStyle(2, 0x8cb4ff, 0.25).strokeRoundedRect(X(px), Y(py), pw * s, ph * s, 22 * s);
+    this.dynamicObjects.push(panel);
+
+    // Retrato grande.
+    const key = portraitKey(this, view);
+    const img = this.add.image(0, 0, key).setOrigin(0.5, 1);
+    const portraitH = (portrait ? 210 : 300) * s;
+    img.setScale(portraitH / img.frame.realHeight);
+    const imgCx = portrait ? X(px + pw / 2) : X(px + 125);
+    const imgBottom = portrait ? Y(py + 240) : Y(py + 400);
+    img.setPosition(imgCx, imgBottom);
+    if (!owned) img.setTintFill(0x000000).setAlpha(0.6);
+    this.dynamicObjects.push(img);
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0xffffff, 0.2).fillEllipse(imgCx, imgBottom + 6 * s, 180 * s, 20 * s);
+    this.dynamicObjects.push(shadow);
+
+    // Zona con scroll: datos del héroe.
+    const sx = portrait ? X(px + 28) : X(px + 274);
+    const sy = portrait ? Y(py + 262) : Y(py + 26);
+    const sw = portrait ? (pw - 56 - 16) * s : (pw - 274 - 28 - 16) * s;
+    const sBottom = Y(py + ph - 92);
+    const sh = sBottom - sy;
+    this.scrollBox.setTo(sx, sy, sw, sh);
+    this.scrollViewH = sh;
+    const content = this.add.container(sx, sy);
+    this.scrollContent = content;
+    this.dynamicObjects.push(content);
+    const contentH = this.buildDetail(content, view, sw, s);
+    this.scrollContentH = contentH;
+    this.scrollMax = Math.max(0, contentH - sh);
+    this.scrollY = Phaser.Math.Clamp(this.scrollY, 0, this.scrollMax);
+    content.y = sy - this.scrollY;
+    const maskShape = this.make.graphics({}, false);
+    maskShape.fillStyle(0xffffff, 1).fillRect(sx - 4, sy - 8 * s, sw + 8, sh + 8 * s);
+    content.setMask(maskShape.createGeometryMask());
+    this.dynamicObjects.push(maskShape);
+    this.scrollBar = this.add.graphics();
+    this.dynamicObjects.push(this.scrollBar);
+    this.drawScrollBar();
+
+    // Barra de acciones fija.
+    const barY = Y(py + ph - 92);
+    const bar = this.add.graphics().setDepth(-4);
+    bar.fillStyle(0x0a1224, 0.95).fillRoundedRect(X(px) + 1, barY, pw * s - 2, 91 * s, { tl: 0, tr: 0, bl: 22 * s, br: 22 * s });
+    bar.lineStyle(1, 0x8cb4ff, 0.15).lineBetween(X(px) + 1, barY, X(px + pw) - 1, barY);
+    this.dynamicObjects.push(bar);
+    const actionCy = barY + 46 * s;
+    const actionLeft = portrait ? px + 28 : px + 250 + 24;
+    const actionRight = px + pw - 28;
+    const upW = 150;
+    if (owned) {
+      const chooseW = actionRight - actionLeft - upW - 12;
+      this.chooseButton.setVisible(true).setBox(chooseW * s, 52 * s, 18 * s).setPosition(X(actionLeft + chooseW / 2), actionCy);
+      this.chooseButton.setLabel(chosen ? 'JUGANDO CON ESTE' : 'ELEGIR').setFill(chosen ? 0xffcf4a : null).setEnabled(!this.revealActive);
+      this.upgradesButton.setVisible(true).setBox(upW * s, 52 * s, 12 * s).setPosition(X(actionRight - upW / 2), actionCy).setEnabled(!this.revealActive);
+      const levels = META_UPGRADES.reduce((sum, upgrade) => sum + saveData.levelOf(upgrade.id, view.id), 0);
+      this.upgradesButton.setLabel(`MEJORAS · ${levels} NIV.`);
     } else {
-      this.recruitButton.setPosition(width * 0.36, height * 0.94);
-      this.backButton.setPosition(width * 0.78, height * 0.94);
+      this.chooseButton.setVisible(false);
+      this.upgradesButton.setVisible(false);
+      const note = this.text(X((actionLeft + actionRight) / 2), actionCy, 'Se consigue reclutando al azar', 13 * s, '#9db4d8', { origin: [0.5, 0.5] });
+      note.setLetterSpacing(1 * s);
     }
+  }
+
+  /** Una tarjeta de la grilla: retrato, nombre y rareza; silueta con candado si todavía no se reclutó. */
+  private drawTile(def: CharacterDefinition, x: number, y: number, w: number, h: number, s: number, selected: boolean): void {
+    const rarity = RARITY_INFO[def.rarity];
+    const owned = saveData.isUnlocked(def.id);
+    const g = this.add.graphics();
+    g.fillStyle(0x000000, 0.35).fillRoundedRect(x, y + 5 * s, w, h, 16 * s);
+    g.fillStyle(0x0a1326, 1).fillRoundedRect(x, y, w, h, 16 * s);
+    g.fillStyle(RARITY_TOP[def.rarity], 1).fillRoundedRect(x, y, w, h * 0.7, { tl: 16 * s, tr: 16 * s, bl: 0, br: 0 });
+    g.fillStyle(rarity.color, 1).fillRoundedRect(x, y, w, 5 * s, { tl: 16 * s, tr: 16 * s, bl: 0, br: 0 });
+    g.fillStyle(0x050914, 0.6).fillRect(x, y + h * 0.78, w, h * 0.22 - 16 * s);
+    g.fillStyle(0x050914, 0.6).fillRoundedRect(x, y + h - 36 * s, w, 36 * s, { tl: 0, tr: 0, bl: 16 * s, br: 16 * s });
+    g.lineStyle(selected ? 3 : 1.5, selected ? 0xffffff : rarity.color, selected ? 1 : 0.55).strokeRoundedRect(x, y, w, h, 16 * s);
+    this.dynamicObjects.push(g);
+
+    const key = portraitKey(this, def);
+    const img = this.add.image(x + w / 2, y + h * 0.66, key).setOrigin(0.5, 1);
+    img.setScale(Math.min((h * 0.55) / img.frame.realHeight, (w * 0.7) / img.frame.realWidth));
+    if (!owned) img.setTintFill(0x000000).setAlpha(0.55);
+    this.dynamicObjects.push(img);
+
+    this.text(x + w / 2, y + h - 48 * s, def.displayName.toUpperCase().replace('CAPITÁN AMÉRICA', 'CAPITÁN').replace('DOCTOR STRANGE', 'DR. STRANGE'), 18 * s, '#ffffff', { title: true, origin: [0.5, 0] }).setLetterSpacing(1 * s);
+    this.text(x + w / 2, y + h - 12 * s, rarity.label, 9 * s, rarity.css, { origin: [0.5, 1] }).setLetterSpacing(2 * s);
+
+    if (!owned) {
+      const lock = this.add.graphics();
+      lock.fillStyle(0x050914, 0.85).fillCircle(x + w - 26 * s, y + 28 * s, 14 * s);
+      lock.fillStyle(0x9db4d8, 1).fillRoundedRect(x + w - 32 * s, y + 27 * s, 12 * s, 9 * s, 2 * s);
+      lock.lineStyle(2 * s, 0x9db4d8, 1).strokeCircle(x + w - 26 * s, y + 25 * s, 3.5 * s);
+      this.dynamicObjects.push(lock);
+    } else if (saveData.selectedCharacter === def.id) {
+      const label = this.text(0, 0, 'JUGANDO', 10 * s, '#2a1d00', { origin: [0.5, 0.5] });
+      label.setLetterSpacing(1.5 * s);
+      const badgeW = label.width + 16 * s;
+      const badge = this.add.graphics();
+      badge.fillStyle(0xffcf4a, 1).fillRoundedRect(x + 10 * s, y + 14 * s, badgeW, label.height + 6 * s, (label.height + 6 * s) / 2);
+      this.dynamicObjects.push(badge);
+      label.setPosition(x + 10 * s + badgeW / 2, y + 14 * s + (label.height + 6 * s) / 2).setDepth(1);
+    }
+
+    const zone = this.add.zone(x, y, w, h).setOrigin(0).setInteractive({ useHandCursor: true });
+    zone.on(Phaser.Input.Events.POINTER_UP, () => {
+      if (this.revealActive || this.viewId === def.id) return;
+      this.viewId = def.id;
+      this.scrollY = 0;
+      this.render();
+    });
+    this.dynamicObjects.push(zone);
+  }
+
+  /** Arma la ficha (rareza, nombre, stats, arma, exclusiva, ulti) dentro del contenedor con scroll. Devuelve su alto. */
+  private buildDetail(into: Phaser.GameObjects.Container, def: CharacterDefinition, w: number, s: number): number {
+    const rarity = RARITY_INFO[def.rarity];
+    const info = HERO_INFO[def.id];
+    const stats = heroStatLines(def);
+    const exclusive = HERO_WEAPONS[def.id];
+    const g = this.add.graphics();
+    into.add(g);
+    let y = 0;
+    this.text(0, y, rarity.label, 11 * s, rarity.css, { into }).setLetterSpacing(3 * s);
+    y += 18 * s;
+    const name = this.text(0, y, def.displayName.toUpperCase(), 48 * s, '#ffffff', { title: true, into, wrap: w });
+    name.setLetterSpacing(1.5 * s);
+    y += name.height + 14 * s;
+
+    const bar = (label: string, value: number, max: number, color: number, css: string) => {
+      this.text(0, y, label, 13 * s, '#eef4ff', { into });
+      this.text(w, y, String(value), 13 * s, css, { into, origin: [1, 0] });
+      y += 20 * s;
+      g.fillStyle(0xffffff, 0.1).fillRoundedRect(0, y, w, 8 * s, 4 * s);
+      g.fillStyle(color, 1).fillRoundedRect(0, y, Math.max(8 * s, w * Math.min(1, value / max)), 8 * s, 4 * s);
+      y += 22 * s;
+    };
+    bar('Vida', stats.health, 160, 0xff5a6e, '#ff7a8a');
+    bar('Velocidad', stats.speed, 100, 0x3ed68c, '#5ee0a0');
+    if (stats.bonus) {
+      const bonus = this.text(0, y - 6 * s, stats.bonus, 12 * s, GOLD, { into, wrap: w });
+      y += bonus.height + 8 * s;
+    }
+    y += 10 * s;
+
+    const card = (label: string, title: string, text: string, color: number) => {
+      const body = this.text(60 * s, y + 38 * s, text, 12 * s, '#9db4d8', { into, wrap: w - 72 * s, bold: false });
+      const cardH = Math.max(64 * s, 46 * s + body.height + 12 * s);
+      g.fillStyle(0xffffff, 0.04).fillRoundedRect(0, y, w, cardH, 12 * s);
+      g.lineStyle(1, 0x8cb4ff, 0.15).strokeRoundedRect(0, y, w, cardH, 12 * s);
+      g.fillStyle(color, 0.16).fillRoundedRect(12 * s, y + 12 * s, 38 * s, 38 * s, 10 * s);
+      g.lineStyle(2, color, 0.7).strokeRoundedRect(12 * s, y + 12 * s, 38 * s, 38 * s, 10 * s);
+      g.fillStyle(color, 1).fillCircle(31 * s, y + 31 * s, 7 * s);
+      this.text(60 * s, y + 10 * s, label, 10 * s, '#7f97c0', { into }).setLetterSpacing(2 * s);
+      this.text(60 * s, y + 22 * s, title, 15 * s, '#ffffff', { into });
+      into.bringToTop(body);
+      y += cardH + 10 * s;
+    };
+    card('ARMA PRINCIPAL', info.main.name, info.main.text, 0x3dd9ff);
+    if (exclusive) card('ARMA EXCLUSIVA · NIVEL 1 A 7', exclusive.name, exclusive.text, 0xb06bff);
+    card(`ULTI · ENFRIAMIENTO ${info.ultimate.cooldown}`, info.ultimate.name, info.ultimate.text, 0xffcf4a);
+    return y;
   }
 
   private recruitRandomHero(): void {
@@ -194,6 +426,8 @@ export class CharacterScene extends Phaser.Scene {
     const chosen = rarityPool[Math.floor(Math.random() * rarityPool.length)];
     if (!chosen || !saveData.buyHero(chosen.id, RANDOM_HERO_PRICE)) return;
     this.revealActive = true;
+    this.viewId = chosen.id;
+    this.scrollY = 0;
     this.render();
     this.playNickFuryReveal(chosen.id, chosen.displayName, chosen.rarity);
   }

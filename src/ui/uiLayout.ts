@@ -15,6 +15,9 @@ export function formatTime(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+/** Tipografía de títulos: Impact si el dispositivo la tiene; si no, Anton (paquete `@fontsource/anton`), parecida. */
+export const TITLE_FONT = 'Impact, Anton, "Arial Narrow", sans-serif';
+
 export const UI_FONT = 'Montserrat, "Segoe UI", system-ui, sans-serif';
 
 export function textStyle(size: number, color = '#ffffff'): Phaser.Types.GameObjects.Text.TextStyle {

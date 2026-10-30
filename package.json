@@ -12,6 +12,7 @@
     "sprites": "node tools/generate-sprites.mjs"
   },
   "dependencies": {
+    "@fontsource/anton": "^5.3.0",
     "@fontsource/montserrat": "^5.3.0",
     "@fontsource/press-start-2p": "^5.3.0",
     "phaser": "^3.90.0"
