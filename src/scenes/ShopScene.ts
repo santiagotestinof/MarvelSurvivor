@@ -10,6 +10,7 @@ import {
   totalSpentGold,
   type MetaUpgradeDefinition,
 } from '../meta/metaUpgrades';
+import { CHARACTER_REGISTRY } from '../characters/registry';
 import { saveData } from '../meta/saveData';
 import { META_COLORS } from '../ui/metaIcons';
 import { META_ITEM_SIZE, META_ITEM_TEXTURE, metaItemFrame } from '../ui/metaItemIcons';
@@ -25,7 +26,8 @@ function css(color: number): string {
 
 /**
  * Tienda de mejoras permanentes: una grilla con todas las mejoras (cada una con su ícono, su color y sus
- * rangos) y, abajo, el detalle de la elegida con el precio y el botón de comprar. Valen para todos los héroes.
+ * rangos) y, abajo, el detalle de la elegida con el precio y el botón de comprar. Cada héroe tiene sus propios niveles:
+ * se compra y se reembolsa para el héroe elegido (un botón permite cambiarlo desde acá).
  */
 export class ShopScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.TileSprite;
@@ -34,6 +36,7 @@ export class ShopScene extends Phaser.Scene {
   private goldText!: Phaser.GameObjects.Text;
   private backButton!: UiButton;
   private refundButton!: UiButton;
+  private heroButton!: UiButton;
   /** Mejora elegida en la grilla (siempre hay una, así el detalle nunca queda vacío). */
   private selectedId = META_UPGRADES[0].id;
   private columns = 1;
@@ -57,6 +60,7 @@ export class ShopScene extends Phaser.Scene {
     this.goldText = this.add.text(0, 0, '', textStyle(16, GOLD_COLOR)).setOrigin(0.5);
     this.backButton = new UiButton(this, 'VOLVER [ESC]', 16, () => this.scene.start(SCENE_KEYS.menu), ['ESC']);
     this.refundButton = new UiButton(this, 'REEMBOLSAR', 16, () => this.refund(), []);
+    this.heroButton = new UiButton(this, 'HÉROE', 16, () => this.nextHero(), ['H']);
     this.selectedId = META_UPGRADES[0].id;
     this.refundArmed = false;
 
@@ -91,7 +95,7 @@ export class ShopScene extends Phaser.Scene {
     this.shade.clear().fillStyle(0x05080c, 0.72).fillRect(0, 0, width, height);
 
     this.title.setFontSize(Math.max(18, Math.round(portrait ? Math.min(width * 0.07, 34) : 7 * ui))).setPosition(cx, height * 0.06);
-    this.goldText.setText(`ORO: ${saveData.gold}`).setFontSize(Math.max(14, Math.round(4.2 * ui))).setPosition(cx, height * (portrait ? 0.105 : 0.125));
+    this.goldText.setText(`${this.heroName()}  ·  ORO: ${saveData.gold}`).setFontSize(Math.max(14, Math.round(4.2 * ui))).setPosition(cx, height * (portrait ? 0.105 : 0.125));
 
     for (const object of this.dynamicObjects) object.destroy();
     this.dynamicObjects = [];
@@ -241,7 +245,8 @@ export class ShopScene extends Phaser.Scene {
     this.refundButton.setLabel(this.refundArmed ? `¿SEGURO? +${spent}` : 'REEMBOLSAR');
     this.refundButton.setEnabled(spent > 0).setAlpha(spent > 0 ? 1 : 0.45);
 
-    const buttons = [this.refundButton, this.backButton];
+    this.heroButton.setLabel(`HÉROE: ${this.heroName()} [H]`);
+    const buttons = [this.heroButton, this.refundButton, this.backButton];
     for (const button of buttons) button.setFontSize(size);
     const gap = Math.round(size * 0.8);
     const total = buttons.reduce((sum, button) => sum + button.width, 0) + gap * (buttons.length - 1);
@@ -261,6 +266,19 @@ export class ShopScene extends Phaser.Scene {
       refundAllUpgrades();
       this.refundArmed = false;
     }
+    this.render();
+  }
+
+  private heroName(): string {
+    return (CHARACTER_REGISTRY[saveData.selectedCharacter]?.definition.displayName ?? saveData.selectedCharacter).toUpperCase();
+  }
+
+  /** Pasa al siguiente héroe desbloqueado (queda como el elegido para jugar). */
+  private nextHero(): void {
+    const owned = Object.keys(CHARACTER_REGISTRY).filter((id) => saveData.isUnlocked(id));
+    if (owned.length < 2) return;
+    saveData.select(owned[(owned.indexOf(saveData.selectedCharacter) + 1) % owned.length]);
+    this.refundArmed = false;
     this.render();
   }
 

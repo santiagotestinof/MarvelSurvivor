@@ -192,3 +192,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Perforación
 - La perforación de las armas (disparos, telarañas, chispas de los portales) llega como máximo a **2** enemigos atravesados (`BASIC_ATTACK_LIMITS.maxPierce`), sumando niveles del arma principal y la mejora Perforación. El escudo del Capitán y las ultis que atraviesan a todos no cuentan. El nivel 7 de las telarañas de Spider-Man ya no da perforación, solo +1 telaraña.
+
+## Mejoras permanentes por héroe
+- El catálogo de mejoras permanentes es el mismo para todos, pero **el progreso es único de cada héroe**: comprar para Thor no afecta a Hulk. La tienda trabaja con el héroe elegido (botón HÉROE [H]); el reembolso devuelve solo lo gastado en ese héroe.
+- Al pasar del guardado viejo (mejoras comunes) al nuevo se reembolsó todo el oro gastado y cada héroe arranca en nivel 0.

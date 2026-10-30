@@ -238,11 +238,11 @@ export function applyMetaUpgrades(ctx: MetaContext): void {
   }
 }
 
-/** Oro gastado en total en las mejoras compradas (lo que devuelve el reembolso). */
-export function totalSpentGold(): number {
+/** Oro gastado en las mejoras compradas de un héroe (por defecto el elegido): lo que devuelve el reembolso. */
+export function totalSpentGold(hero?: string): number {
   let total = 0;
   for (const def of META_UPGRADES) {
-    for (let level = 0; level < Math.min(saveData.levelOf(def.id), def.maxLevel); level++) total += costOfNextLevel(def, level);
+    for (let level = 0; level < Math.min(saveData.levelOf(def.id, hero), def.maxLevel); level++) total += costOfNextLevel(def, level);
   }
   return total;
 }
@@ -251,3 +251,20 @@ export function totalSpentGold(): number {
 export function refundAllUpgrades(): void {
   saveData.refund(totalSpentGold());
 }
+
+/**
+ * Migración: antes las mejoras valían para todos los héroes. Se devuelve en oro todo lo gastado en ellas
+ * (cada héroe arranca en nivel 0). Corre una vez al cargar; con el guardado ya migrado no hace nada.
+ */
+function migrateLegacyUpgrades(): void {
+  const legacy = saveData.legacyUpgrades;
+  const ids = Object.keys(legacy);
+  if (ids.length === 0) return;
+  let total = 0;
+  for (const def of META_UPGRADES) {
+    const level = Math.min(legacy[def.id] ?? 0, def.maxLevel);
+    for (let i = 0; i < level; i++) total += costOfNextLevel(def, i);
+  }
+  saveData.migrateLegacy(total);
+}
+migrateLegacyUpgrades();
