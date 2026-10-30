@@ -10,7 +10,9 @@ const STORAGE_KEY = 'marvel-survivors-save-v1';
 
 interface SaveShape {
   gold: number;
-  /** Nivel comprado de cada mejora permanente, por id. */
+  /** Nivel comprado de cada mejora permanente, por héroe y por id (cada héroe tiene su propio progreso). */
+  heroUpgrades: Record<string, Record<string, number>>;
+  /** Guardado viejo: mejoras comunes a todos los héroes. Se reembolsa en oro y queda vacío (ver `migrateLegacy`). */
   upgrades: Record<string, number>;
   /** Héroes comprados (la primera vez se regala uno común al azar). */
   unlocked: string[];
@@ -28,13 +30,13 @@ interface SaveShape {
 function emptySave(): SaveShape {
   const pool = COMMON_HEROES.length > 0 ? COMMON_HEROES : [STARTER_ID];
   const gift = pool[Math.floor(Math.random() * pool.length)];
-  return { gold: 0, upgrades: {}, unlocked: [gift], selected: gift, achievements: [], stats: emptyLifetimeStats(), book: false };
+  return { gold: 0, heroUpgrades: {}, upgrades: {}, unlocked: [gift], selected: gift, achievements: [], stats: emptyLifetimeStats(), book: false };
 }
 
 function sanitize(raw: unknown): SaveShape {
   if (typeof raw !== 'object' || raw === null) return emptySave();
-  const save: SaveShape = { gold: 0, upgrades: {}, unlocked: [], selected: '', achievements: [], stats: emptyLifetimeStats(), book: false };
-  const { gold, upgrades, unlocked, selected, achievements, stats, book } = raw as Partial<SaveShape>;
+  const save: SaveShape = { gold: 0, heroUpgrades: {}, upgrades: {}, unlocked: [], selected: '', achievements: [], stats: emptyLifetimeStats(), book: false };
+  const { gold, upgrades, heroUpgrades, unlocked, selected, achievements, stats, book } = raw as Partial<SaveShape>;
   save.book = book === true;
   if (Array.isArray(achievements)) {
     for (const id of achievements) if (typeof id === 'string' && ACHIEVEMENTS.some((a) => a.id === id) && !save.achievements.includes(id)) save.achievements.push(id);
@@ -49,6 +51,16 @@ function sanitize(raw: unknown): SaveShape {
   if (typeof upgrades === 'object' && upgrades !== null) {
     for (const [id, level] of Object.entries(upgrades)) {
       if (typeof level === 'number' && Number.isFinite(level) && level > 0) save.upgrades[id] = Math.floor(level);
+    }
+  }
+  if (typeof heroUpgrades === 'object' && heroUpgrades !== null) {
+    for (const [hero, levels] of Object.entries(heroUpgrades)) {
+      if (!(hero in CHARACTER_REGISTRY) || typeof levels !== 'object' || levels === null) continue;
+      const clean: Record<string, number> = {};
+      for (const [id, level] of Object.entries(levels)) {
+        if (typeof level === 'number' && Number.isFinite(level) && level > 0) clean[id] = Math.floor(level);
+      }
+      save.heroUpgrades[hero] = clean;
     }
   }
   if (Array.isArray(unlocked)) {
@@ -158,8 +170,21 @@ class SaveData {
     return fresh;
   }
 
-  levelOf(id: string): number {
-    return this.data.upgrades[id] ?? 0;
+  /** Nivel de una mejora permanente para un héroe (por defecto el elegido). */
+  levelOf(id: string, hero: string = this.data.selected): number {
+    return this.data.heroUpgrades[hero]?.[id] ?? 0;
+  }
+
+  /** Mejoras del guardado viejo (comunes a todos), para reembolsarlas. */
+  get legacyUpgrades(): Readonly<Record<string, number>> {
+    return this.data.upgrades;
+  }
+
+  /** Devuelve en oro las mejoras del guardado viejo y las borra: desde ahora cada héroe tiene las suyas. */
+  migrateLegacy(refundGold: number): void {
+    this.data.gold += Math.max(0, Math.floor(refundGold));
+    this.data.upgrades = {};
+    this.persist();
   }
 
   addGold(amount: number): void {
@@ -169,17 +194,17 @@ class SaveData {
   }
 
   /** Gasta `cost` de oro y sube un nivel de la mejora. Devuelve false si no alcanza el oro. */
-  purchase(id: string, cost: number): boolean {
+  purchase(id: string, cost: number, hero: string = this.data.selected): boolean {
     if (this.data.gold < cost) return false;
     this.data.gold -= cost;
-    this.data.upgrades[id] = this.levelOf(id) + 1;
+    (this.data.heroUpgrades[hero] ??= {})[id] = this.levelOf(id, hero) + 1;
     this.persist();
     return true;
   }
 
-  /** Quita todas las mejoras compradas y suma `gold` al oro (reembolso). */
-  refund(gold: number): void {
-    this.data.upgrades = {};
+  /** Quita todas las mejoras compradas de un héroe (por defecto el elegido) y suma `gold` al oro (reembolso). */
+  refund(gold: number, hero: string = this.data.selected): void {
+    this.data.heroUpgrades[hero] = {};
     this.data.gold += Math.max(0, Math.floor(gold));
     this.persist();
   }
