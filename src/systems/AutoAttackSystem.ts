@@ -9,6 +9,7 @@ import { activeEnemies, damageArea } from './areaDamage';
 import type { PlayerStats } from '../progression/PlayerStats';
 import { AuraVisual } from './AuraVisual';
 import { FlyingHammers } from './FlyingHammers';
+import { directionFromVector } from '../core/direction';
 
 /** Punto al que se apunta un disparo. */
 interface AimPoint {
@@ -198,8 +199,10 @@ export class AutoAttackSystem {
   /** Dispara `projectileCount` disparos en abanico, centrados en la dirección del objetivo. */
   private fireAt(target: AimPoint, targetIsEnemy = true): void {
     const { stats } = this;
-    const originX = this.owner.x;
-    const originY = this.owner.y - 14; // a la altura del pecho
+    const dx = target.x - this.owner.x, dy = target.y - (this.owner.y - 14);
+    this.owner.animateAction('attack', dx, dy, 180, 3);
+    const origin = this.owner.getAttackOrigin('attack', directionFromVector(dx, dy), 3);
+    const originX = origin.x, originY = origin.y;
     const aim = Math.atan2(target.y - originY, target.x - originX);
     const speed = this.attack.projectileSpeed * stats.projectileSpeedMult;
     const count = stats.shotCount;

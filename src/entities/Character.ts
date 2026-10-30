@@ -30,6 +30,27 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   private dash: { vx: number; vy: number } | null = null;
   private speed: number;
   private flightHeight = 0;
+  private visualAction: CharacterAction | null = null;
+  private visualDirection = Direction.Down;
+  private visualUntil = 0;
+
+  /** Solo presenta el ataque existente; no agrega controles ni cambia su daño/cadencia. */
+  animateAction(action: CharacterAction, dx: number, dy: number, durationMs: number, initialFrame?: number): void {
+    if (!this.definition.sheets[action] || this.isDead) return;
+    if (this.visualAction === 'beam' && action !== 'beam' && this.scene.time.now < this.visualUntil) return;
+    if (this.visualAction === 'hurt' && action === 'attack' && this.scene.time.now < this.visualUntil) return;
+    this.visualAction = action;
+    this.visualDirection = directionFromVector(dx, dy);
+    this.visualUntil = this.scene.time.now + durationMs;
+    this.action = action;
+    this.animator.play(action, this.visualDirection, initialFrame);
+  }
+
+  get elevation(): number { return this.flightHeight; }
+
+  getAttackOrigin(_action: 'attack' | 'beam', _direction: Direction, _frame = 3): { x: number; y: number } {
+    return { x: this.x, y: this.y - 14 };
+  }
 
   constructor(scene: Phaser.Scene, x: number, y: number, definition: CharacterDefinition) {
     super(scene, x, y, definition.sheets.idle.textureKey, 0);
@@ -119,6 +140,12 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     if (moving) this.facing = directionFromVector(moveIntent.x, moveIntent.y);
 
     this.action = moving ? 'walk' : 'idle';
+    if (this.visualAction && this.scene.time.now < this.visualUntil) {
+      this.action = this.visualAction;
+      this.animator.play(this.action, this.visualDirection);
+      return;
+    }
+    this.visualAction = null;
     this.animator.play(this.action, this.facing);
   }
 
@@ -150,6 +177,8 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     this.currentHealth = Math.max(0, this.currentHealth - dealt);
     // Aviso al juego y al HUD: viñeta roja y gotas de sangre (ver GameScene y HudScene).
     this.scene.events.emit('player-hurt', dealt, this.maxHealth);
+    const angle = DIRECTION_ANGLES[this.facing];
+    this.animateAction('hurt', Math.cos(angle), Math.sin(angle), 200, 0);
     return true;
   }
 
@@ -165,6 +194,11 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   /** Congela al personaje cuando termina la ronda (derrota). */
   defeat(): void {
     this.setVelocity(0, 0);
+    if (this.definition.sheets.death) {
+      this.animator.play('death', this.facing, 0);
+      this.setAlpha(1).clearTint();
+      return;
+    }
     this.anims.pause();
     this.setAlpha(1);
     this.setTint(0x555555);

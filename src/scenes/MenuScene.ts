@@ -82,9 +82,9 @@ export class MenuScene extends Phaser.Scene {
     const entry = CHARACTER_REGISTRY[saveData.selectedCharacter] ?? CHARACTER_REGISTRY[STARTER_ID];
     const def = entry.definition;
     this.hero = this.add
-      .sprite(0, 0, def.sheets.idle.textureKey, 0)
-      .setOrigin(0.5, def.origin.y)
-      .play(animationKey(def.id, 'idle', Direction.Down));
+      .sprite(0, 0, def.id === 'ironman' ? 'ironman-menu' : def.sheets.idle.textureKey, 0)
+      .setOrigin(0.5, def.id === 'ironman' ? 1 : def.origin.y);
+    if (def.id !== 'ironman') this.hero.play(animationKey(def.id, 'idle', Direction.Down));
     const { stats } = def;
     this.heroName = this.add.text(0, 0, def.displayName.toUpperCase(), textStyle(16, '#ffffff')).setOrigin(0.5);
     this.heroRarity = this.add.text(0, 0, RARITY_INFO[def.rarity].label, textStyle(11, RARITY_INFO[def.rarity].css)).setOrigin(0.5);
@@ -171,9 +171,16 @@ export class MenuScene extends Phaser.Scene {
     this.title.setPosition(cx, this.titleY);
     this.tagline.setFontSize(Math.max(12, Math.round(3.6 * ui))).setPosition(cx, this.titleY + this.title.height / 2 + 3 * ui);
 
-    // Escala entera para que el pixel art quede nítido.
-    const heroScale = Math.max(2, Math.floor(height / (portrait ? 150 : 120)));
+    // El retrato importado de Iron Man no tiene márgenes transparentes.
+    // Pasos de 0.25 permiten aprovechar el espacio también en pantallas bajas.
     this.heroY = height * (portrait ? 0.48 : 0.495);
+    const room = this.heroY - (this.tagline.y + this.tagline.height / 2 + 8);
+    const isIronMan = this.hero.texture.key === 'ironman-menu';
+    const availableScale = room / (this.hero.frame.realHeight * this.hero.originY);
+    const desiredScale = Math.max(2, Math.floor(height / (portrait ? 150 : 120)));
+    const heroScale = isIronMan
+      ? Math.max(0.5, Math.floor(Math.min(desiredScale, availableScale, width * 0.6 / this.hero.frame.realWidth) * 4) / 4)
+      : Math.max(1, Math.min(desiredScale, Math.floor(availableScale)));
     this.hero.setScale(heroScale).setPosition(cx, this.heroY);
     this.heroName.setFontSize(Math.max(13, Math.round(4.4 * ui))).setPosition(cx, this.heroY + 6 * heroScale + 4 * ui);
     this.heroRarity.setFontSize(Math.max(10, Math.round(3 * ui))).setPosition(cx, this.heroName.y + this.heroName.height * 0.5 + 2 * ui);

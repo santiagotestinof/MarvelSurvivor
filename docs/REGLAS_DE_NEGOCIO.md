@@ -24,6 +24,8 @@ Cada héroe tiene un arma especial (se desbloquea eligiendo su mejora al subir d
 
 El arma principal de Iron Man son los **repulsores** (disparo recto); los **Minimisiles** son su arma especial (secundaria). Cada ráfaga lanza los misiles en arco hacia puntos repartidos en un anillo alrededor del jugador (radio base 110, `MISSILES.coverRadius`) y explotan en área al llegar o al tocar a un enemigo; el área de los niveles y de la pasiva Área agranda tanto el anillo como las explosiones. Solo disparan si hay un enemigo o una caja cerca.
 
+Iron Man usa el diseño importado de `Crear_un_sprite_de_Iron.zip`: ocho orientaciones en reposo y vuelo de siete cuadros por dirección al moverse. El paquete no incluye animaciones de ataque, daño ni muerte; se mantienen los disparos y efectos del juego sobre el diseño nuevo. Los originales y las instrucciones de importación están en `character-studio/iron-man/imported/`.
+
 ## 2. Qué significa cada estadística
 
 - **Cadencia** (velocidad de disparo / enfriamiento): qué tan seguido pegan o disparan las armas. En Doctor Strange: la velocidad de las chispas de los portales y el ritmo del aura.

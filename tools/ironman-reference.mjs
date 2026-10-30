@@ -1,8 +1,4 @@
-/**
- * Diseño de Iron Man (de frente, volando, con propulsores en manos y pies) pasado a píxeles desde la
- * imagen de referencia del equipo. Cada letra es un color (ver `REF_PALETTE` en generate-sprites.mjs);
- * "." es transparente. El generador lo achica, lo gira y lo anima para las 8 direcciones.
- */
+/** Grilla de la referencia visual indicada por Lucas; paleta en generate-sprites.mjs. */
 export const IRON_MAN_REF = [
   '..............KKKKK............',
   '............KKRRRRrKK..........',
@@ -34,18 +30,18 @@ export const IRON_MAN_REF = [
   '...KRrK.....KRWRRYYYrrKKOrK....',
   '..KKrrK.....KRBrRRRrrdKKrrdKK..',
   '.KKRRrRK...KrRrrRRrddrK.KddrrK.',
-  'KrrKKKKRK..KRrrrRKKdrrK..KrKKrK',
+  'KRdKKKKRK..KRrrrRKKdrrK..KrKKrK',
   'KKKKBWWKK..KRYYYRKrrOOK..KrKKKK',
   '....BWB....KYRRYKKrOrOK...KWWB.',
   '....BWB...KYRRRK.KOrrK....BWB..',
-  '....BW....KdRRdK.KdrrK....BWB..',
-  '.....B....KRdrr..KrdK......WB..',
+  '....BW....KrRRrK.KdrrK....BWB..',
+  '.....B....KRdrK..KrdK......WB..',
   '.....B....KRrrK..KOrK......B...',
   '.....B...KrYYK...KrOK......B...',
-  '.........KRRrK...KrrK..........',
+  '.........KRRrK...KrrK......B...',
   '.....B...KRRK....KrOK..........',
-  '.........KYRK....KOrK..........',
-  '.....B...KRYK.....rrrK.........',
+  '.........KYRK....KOrK......B...',
+  '.....B...KRYK.....rrdK.........',
   '.....B..KrRK......rrrK.........',
   '........KRRK......BrrK.........',
   '........KRrB......BWB..........',
@@ -55,7 +51,7 @@ export const IRON_MAN_REF = [
   '..........B........B...........',
   '..........B........B...........',
   '..........B........B...........',
-  '..........B........B...........',
+  '..........B....................',
   '..........B........B...........',
   '...................B...........',
 ];
