@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import type { UpgradeDefinition } from '../progression/upgrades';
-import { UiButton } from './UiButton';
+import { PanelButton } from './PanelButton';
 import { UpgradeCard } from './UpgradeCard';
-import { textStyle } from './uiLayout';
+import { TITLE_FONT, UI_FONT } from './uiLayout';
 
 const DEPTH = 20;
 /** Tiempo durante el cual se ignoran toques, para no elegir sin querer al aparecer el menú. */
@@ -42,25 +42,27 @@ export class UpgradeMenu {
   private choices: UpgradeDefinition[] = [];
   private prompt: UpgradePrompt | null = null;
   private banishMode = false;
-  private readonly toolButtons: Record<LevelUpTool, UiButton>;
+  private readonly toolButtons: Record<LevelUpTool, PanelButton>;
   private readonly noteText: Phaser.GameObjects.Text;
   private openedAt = 0;
   private ui = 2;
 
   constructor(private readonly scene: Phaser.Scene) {
-    this.dim = scene.add.rectangle(0, 0, 10, 10, 0x05080c, 0.78).setOrigin(0).setDepth(DEPTH);
-    this.title = scene.add.text(0, 0, '', textStyle(32, '#ffffff')).setOrigin(0.5).setDepth(DEPTH + 1);
+    this.dim = scene.add.rectangle(0, 0, 10, 10, 0x040812, 0.86).setOrigin(0).setDepth(DEPTH);
+    this.title = scene.add.text(0, 0, '', { fontFamily: TITLE_FONT, fontSize: '64px', color: '#ffffff' }).setOrigin(0.5).setDepth(DEPTH + 1);
+    this.title.setLetterSpacing(4);
     this.title.setShadow(0, 4, '#1593b8', 0, true, true);
-    this.subtitle = scene.add.text(0, 0, 'Elegí una mejora', textStyle(16, '#d7e6ef')).setOrigin(0.5).setDepth(DEPTH + 1);
+    this.subtitle = scene.add.text(0, 0, 'ELEGÍ UNA MEJORA', { fontFamily: UI_FONT, fontStyle: 'bold', fontSize: '16px', color: '#9db4d8' }).setOrigin(0.5).setDepth(DEPTH + 1);
+    this.subtitle.setLetterSpacing(4);
     const touch = scene.sys.game.device.input.touch;
     this.hint = scene.add
-      .text(0, 0, touch ? 'Tocá una tarjeta' : 'Click o teclas 1 · 2 · 3', textStyle(12, '#9fb3bf'))
+      .text(0, 0, touch ? 'Tocá una tarjeta' : 'Click o teclas 1 · 2 · 3', { fontFamily: UI_FONT, fontStyle: 'bold', color: '#7f97c0' })
       .setOrigin(0.5)
       .setDepth(DEPTH + 1);
-    this.noteText = scene.add.text(0, 0, '', textStyle(11, '#9fb3bf')).setOrigin(0.5).setDepth(DEPTH + 1);
+    this.noteText = scene.add.text(0, 0, '', { fontFamily: UI_FONT, fontStyle: 'bold', color: '#7f97c0' }).setOrigin(0.5).setDepth(DEPTH + 1);
 
-    const makeTool = (tool: LevelUpTool): UiButton =>
-      new UiButton(scene, TOOL_LABELS[tool].label, 14, () => this.useTool(tool), []).setDepth(DEPTH + 1);
+    const makeTool = (tool: LevelUpTool): PanelButton =>
+      new PanelButton(scene, TOOL_LABELS[tool].label, () => this.useTool(tool), { style: 'nav' }).setDepth(DEPTH + 1);
     this.toolButtons = { reroll: makeTool('reroll'), skip: makeTool('skip'), banish: makeTool('banish') };
     this.setVisible(false);
 
@@ -135,15 +137,19 @@ export class UpgradeMenu {
 
   private layoutTools(width: number, height: number, ui: number): void {
     const visible = (Object.keys(this.toolButtons) as LevelUpTool[]).filter((tool) => (this.prompt?.tools[tool].total ?? 0) > 0);
-    const size = Math.max(11, Math.round(3.4 * ui));
-    const gap = Math.round(size * 0.8);
-    const buttons = visible.map((tool) => this.toolButtons[tool].setFontSize(size));
-    const total = buttons.reduce((sum, button) => sum + button.width, 0) + gap * Math.max(0, buttons.length - 1);
+    const portrait = width < height * 0.95;
+    const s = portrait ? Math.min(width / 720, height / 1280) : Math.min(width / 1280, height / 720);
+    const bw = Math.min(236 * s, (width * 0.94) / Math.max(1, visible.length) - 8 * s);
+    const bh = 50 * s;
+    const gap = 14 * s;
+    const font = Math.max(10, Math.min(15 * s, bw / 11));
+    const total = bw * visible.length + gap * Math.max(0, visible.length - 1);
     let x = width / 2 - total / 2;
-    for (const button of buttons) {
-      button.setPosition(x + button.width / 2, height * 0.84);
-      x += button.width + gap;
+    for (const tool of visible) {
+      this.toolButtons[tool].setBox(bw, bh, font).setPosition(x + bw / 2, height * 0.84);
+      x += bw + gap;
     }
+    void ui;
   }
 
   /** Muestra u oculta cada botón según los usos que quedan y actualiza sus textos. */
@@ -158,6 +164,7 @@ export class UpgradeMenu {
       button.setVisible(total > 0);
       button.setEnabled(total > 0 && (left > 0 || active));
       button.setAlpha(left > 0 || active ? 1 : 0.45);
+      button.setStyle(active ? 'gold' : 'nav');
     }
     this.noteText.setText(prompt.note);
     this.layoutTools(this.scene.scale.width, this.scene.scale.height, this.ui);

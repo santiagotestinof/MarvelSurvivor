@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { RARITY_INFO } from '../characters/rarity';
 import { upgradeKind, type UpgradeDefinition } from '../progression/upgrades';
 import { UPGRADE_ICON_SIZE, setUpgradeIcon, upgradeIconKey } from './upgradeIcons';
-import { UI_FONT, drawPanel, textStyle } from './uiLayout';
+import { TITLE_FONT, UI_FONT, drawPanel } from './uiLayout';
 
 const CARD_FILL = 0x0a1322;
 
@@ -44,9 +44,9 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
     const iconKey = upgradeIconKey(upgrade.id);
     this.icon = scene.add.image(0, 0, scene.textures.exists(iconKey) ? iconKey : '__WHITE');
     this.category = scene.add.text(0, 0, label, { fontFamily: UI_FONT, fontStyle: 'bold', color: '#101010' });
-    this.title = scene.add.text(0, 0, upgrade.name, textStyle(16));
+    this.title = scene.add.text(0, 0, upgrade.name.toUpperCase(), { fontFamily: TITLE_FONT, color: '#ffffff' }).setLetterSpacing(1);
     this.desc = scene.add.text(0, 0, upgrade.description, { fontFamily: UI_FONT, color: '#d7e6ef', lineSpacing: 2 });
-    this.keyLabel = scene.add.text(0, 0, String(index + 1), { fontFamily: UI_FONT, fontStyle: 'bold', color: '#101010' }).setOrigin(0.5);
+    this.keyLabel = scene.add.text(0, 0, String(index + 1), { fontFamily: UI_FONT, fontStyle: 'bold', color: hex(this.color) }).setOrigin(0.5);
     this.add([this.bg, this.icon, this.category, this.title, this.desc, this.keyLabel]);
 
     this.setSize(this.cardW, this.cardH).setInteractive({ useHandCursor: true });
@@ -75,7 +75,7 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
     const { cardW: w, cardH: h, font } = this;
     const left = -w / 2;
     const top = -h / 2;
-    const r = Math.max(6, Math.round(font * 0.6));
+    const r = Math.max(10, Math.round(font * 1.1));
     const g = this.bg;
     g.clear();
     drawPanel(g, left, top, w, h, {
@@ -102,7 +102,7 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
   }
 
   private applyFonts(font: number): void {
-    this.title.setFontSize(Math.round(font * 1.2));
+    this.title.setFontSize(Math.round(font * 1.45));
     this.desc.setFontSize(Math.round(font * 0.9));
     this.category.setFontSize(Math.max(9, Math.round(font * 0.7)));
     this.keyLabel.setFontSize(Math.round(font * 0.85));
@@ -117,15 +117,20 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
   }
 
   /** Tarjeta alta: franja de categoría arriba, ícono, nombre, descripción y tecla abajo. */
-  private layoutVertical(left: number, top: number, w: number, h: number, r: number): void {
+  private layoutVertical(_left: number, top: number, w: number, h: number, _r: number): void {
     const { font } = this;
     const g = this.bg;
     const { bandH, iconScale, iconY: iconOffset, iconRadius } = this.verticalMetrics(w, font);
-    g.fillStyle(this.color, 0.95).fillRoundedRect(left, top, w, bandH, { tl: r, tr: r, bl: 0, br: 0 });
-    this.category.setColor('#101010').setOrigin(0.5).setPosition(0, top + bandH / 2);
+    // Etiqueta de categoría / rareza como una pastilla de color.
+    this.category.setColor('#06101c').setOrigin(0.5).setPosition(0, top + bandH * 0.75);
+    const pillW = this.category.width + font * 1.4;
+    const pillH = this.category.height + font * 0.5;
+    g.fillStyle(this.color, 0.95).fillRoundedRect(-pillW / 2, top + bandH * 0.75 - pillH / 2, pillW, pillH, pillH / 2);
 
     const iconY = top + iconOffset;
-    g.fillStyle(this.color, 0.16).fillCircle(0, iconY, iconRadius);
+    g.fillStyle(this.color, 0.08).fillCircle(0, iconY, iconRadius * 1.25);
+    g.fillStyle(this.color, 0.16).fillRoundedRect(-iconRadius, iconY - iconRadius, iconRadius * 2, iconRadius * 2, iconRadius * 0.35);
+    g.lineStyle(2, this.color, 0.55).strokeRoundedRect(-iconRadius, iconY - iconRadius, iconRadius * 2, iconRadius * 2, iconRadius * 0.35);
     setUpgradeIcon(this.icon, this.upgradeId, iconScale);
     this.icon.setPosition(0, iconY);
 
@@ -144,12 +149,13 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
     const { font } = this;
     const g = this.bg;
     const stripW = Math.max(6, Math.round(font * 0.45));
-    g.fillStyle(this.color, 0.95).fillRoundedRect(left, top, stripW, h, { tl: r, tr: 0, bl: r, br: 0 });
+    g.fillStyle(this.color, 0.95).fillRoundedRect(left + 6, top + r * 0.7, stripW * 0.6, h - r * 1.4, stripW * 0.3);
 
     const iconScale = Math.max(2, Math.floor(Math.min(h * 0.45, w * 0.14) / UPGRADE_ICON_SIZE));
     const iconSize = UPGRADE_ICON_SIZE * iconScale;
     const iconX = left + stripW + font * 0.6 + iconSize * 0.7;
-    g.fillStyle(this.color, 0.16).fillCircle(iconX, 0, iconSize * 0.75);
+    g.fillStyle(this.color, 0.16).fillRoundedRect(iconX - iconSize * 0.7, -iconSize * 0.7, iconSize * 1.4, iconSize * 1.4, iconSize * 0.28);
+    g.lineStyle(2, this.color, 0.55).strokeRoundedRect(iconX - iconSize * 0.7, -iconSize * 0.7, iconSize * 1.4, iconSize * 1.4, iconSize * 0.28);
     setUpgradeIcon(this.icon, this.upgradeId, iconScale);
     this.icon.setPosition(iconX, 0);
 
@@ -164,7 +170,8 @@ export class UpgradeCard extends Phaser.GameObjects.Container {
 
   private drawKeyBadge(x: number, y: number): void {
     const size = Math.round(this.font * 1.4);
-    this.bg.fillStyle(0xffffff, this.hovered ? 1 : 0.85).fillRoundedRect(x - size / 2, y - size / 2, size, size, Math.round(size * 0.25));
+    this.bg.fillStyle(0x050b16, 0.9).fillRoundedRect(x - size / 2, y - size / 2, size, size, Math.round(size * 0.3));
+    this.bg.lineStyle(2, this.color, this.hovered ? 1 : 0.6).strokeRoundedRect(x - size / 2, y - size / 2, size, size, Math.round(size * 0.3));
     this.keyLabel.setPosition(x, y);
   }
 }

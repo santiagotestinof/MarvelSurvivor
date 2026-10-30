@@ -1,90 +1,108 @@
 import Phaser from 'phaser';
 import { audio } from '../audio/AudioManager';
 import { TEXTURES } from '../config/assetKeys';
-import { computeZoom } from '../config/cameraConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { UiButton } from '../ui/UiButton';
-import { drawPanel, textStyle, uiScale } from '../ui/uiLayout';
+import { drawMenuBackdrop } from '../ui/menuBackdrop';
+import { PanelButton } from '../ui/PanelButton';
+import { TITLE_FONT, UI_FONT } from '../ui/uiLayout';
 import { MAPS } from '../world/maps';
 
 /** Lista de mapas disponibles. Hoy hay uno solo (queda elegido); más adelante se podrá elegir entre varios. */
 export class MapScene extends Phaser.Scene {
-  private ground!: Phaser.GameObjects.TileSprite;
-  private shade!: Phaser.GameObjects.Graphics;
-  private title!: Phaser.GameObjects.Text;
-  private hint!: Phaser.GameObjects.Text;
-  private backButton!: UiButton;
-  private cardObjects: Phaser.GameObjects.GameObject[] = [];
+  private backdrop!: Phaser.GameObjects.Graphics;
+  private backButton!: PanelButton;
+  private dynamicObjects: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super(SCENE_KEYS.maps);
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor('#0e1a12');
+    this.cameras.main.setBackgroundColor('#070c1a');
     audio.play('menu');
-    this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
-    this.shade = this.add.graphics();
-    this.title = this.add.text(0, 0, 'MAPAS', textStyle(28, '#ffffff')).setOrigin(0.5);
-    this.title.setShadow(0, 4, '#1593b8', 0, true, true);
-    this.hint = this.add.text(0, 0, 'Estos son los mapas disponibles. Pronto habrá más.', textStyle(11, '#9fb3bf')).setOrigin(0.5);
-    this.backButton = new UiButton(this, 'VOLVER [ESC]', 16, () => this.scene.start(SCENE_KEYS.menu), ['ESC']);
+    this.backdrop = this.add.graphics().setDepth(-20);
+    this.backButton = new PanelButton(this, '‹', () => this.scene.start(SCENE_KEYS.menu), { hotkeys: ['ESC'] });
     this.render();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.render, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.render, this));
   }
 
-  update(_time: number, delta: number): void {
-    this.ground.tilePositionX += 4 * (delta / 1000);
-    this.ground.tilePositionY += 2 * (delta / 1000);
+  private text(x: number, y: number, value: string, size: number, color: string, options: { title?: boolean; origin?: [number, number]; wrap?: number; bold?: boolean; align?: string } = {}): Phaser.GameObjects.Text {
+    const t = this.add
+      .text(x, y, value, {
+        fontFamily: options.title ? TITLE_FONT : UI_FONT,
+        fontStyle: options.title || options.bold === false ? 'normal' : 'bold',
+        fontSize: `${Math.max(7, Math.round(size))}px`,
+        color,
+        align: options.align ?? 'left',
+        wordWrap: options.wrap ? { width: options.wrap } : undefined,
+      })
+      .setOrigin(...(options.origin ?? [0, 0]));
+    this.dynamicObjects.push(t);
+    return t;
   }
 
   private render(): void {
+    for (const object of this.dynamicObjects) object.destroy();
+    this.dynamicObjects = [];
     const { width, height } = this.scale;
-    const ui = uiScale(width, height);
-    const portrait = width < height;
-    const zoom = Math.max(2, computeZoom(width, height));
-    this.ground.setSize(width, height).setTileScale(zoom);
-    this.shade.clear().fillStyle(0x05080c, 0.72).fillRect(0, 0, width, height);
-    this.title.setFontSize(Math.max(18, Math.round(portrait ? Math.min(width * 0.07, 34) : 8 * ui))).setPosition(width / 2, height * 0.07);
-    this.hint.setFontSize(Math.max(10, Math.round(3.2 * ui))).setPosition(width / 2, height * (portrait ? 0.125 : 0.15));
-    this.backButton.setFontSize(Math.max(12, Math.round(3.6 * ui)));
-    this.backButton.setPosition(width / 2, height * 0.94);
+    const portrait = width < height * 0.95;
+    drawMenuBackdrop(this.backdrop, width, height, 0x1d6a3a, 0.5, 0.5);
 
-    for (const object of this.cardObjects) object.destroy();
-    this.cardObjects = [];
+    const designW = portrait ? 720 : 1280;
+    const designH = portrait ? 1280 : 720;
+    const s = Math.min(width / designW, height / designH);
+    const ox = (width - designW * s) / 2;
+    const oy = (height - designH * s) / 2;
+    const X = (v: number) => ox + v * s;
+    const Y = (v: number) => oy + v * s;
 
-    const columns = portrait ? 1 : Math.min(3, MAPS.length);
-    const gap = Math.round(Math.max(6, 2.2 * ui));
-    const cardW = Math.min(width * 0.9, 120 * ui);
-    const cardH = Math.min(height * 0.5, 90 * ui);
+    this.backButton.setBox(44 * s, 44 * s, 24 * s).setPosition(X(48 + 22), Y(32 + 22));
+    this.text(X(48 + 62), Y(portrait ? 30 : 28), 'MAPAS', (portrait ? 38 : 44) * s, '#ffffff', { title: true }).setLetterSpacing(3 * s);
+    this.text(X(48 + 62), Y(portrait ? 76 : 80), 'Estos son los mapas disponibles. Pronto habrá más.', 13 * s, '#9db4d8', { bold: false });
+
+    const columns = portrait ? 1 : Math.min(3, Math.max(1, MAPS.length));
+    const gap = 24;
+    const cardW = portrait ? designW - 96 : Math.min(380, (designW - 96 - gap * (columns - 1)) / columns);
+    const cardH = portrait ? 420 : 440;
     const totalW = cardW * columns + gap * (columns - 1);
-    const startX = (width - totalW) / 2;
-    const startY = height * (portrait ? 0.2 : 0.24);
+    const startX = (designW - totalW) / 2;
+    const startY = portrait ? 140 : 140;
 
     MAPS.forEach((map, index) => {
-      const x = startX + (index % columns) * (cardW + gap);
-      const y = startY + Math.floor(index / columns) * (cardH + gap);
+      const x = X(startX + (index % columns) * (cardW + gap));
+      const y = Y(startY + Math.floor(index / columns) * (cardH + gap));
+      const w = cardW * s;
+      const h = cardH * s;
       const g = this.add.graphics();
-      drawPanel(g, x, y, cardW, cardH, { radius: Math.round(3 * ui), border: 0xffe272, borderAlpha: 0.9 });
-      // Vista previa: el pasto del mapa en un recuadro.
-      const pad = Math.round(2.5 * ui);
-      const previewH = cardH * 0.5;
-      const preview = this.add.tileSprite(x + pad, y + pad, cardW - pad * 2, previewH, TEXTURES.ground).setOrigin(0).setTileScale(zoom);
-      const frame = this.add.graphics().lineStyle(2, 0x37d5ff, 0.6).strokeRect(x + pad, y + pad, cardW - pad * 2, previewH);
-      const name = this.add.text(x + cardW / 2, y + pad * 2 + previewH, map.name, textStyle(Math.max(13, 4.4 * ui), '#ffffff')).setOrigin(0.5, 0);
-      const description = this.add
-        .text(x + cardW / 2, name.y + name.height + pad * 0.6, map.description, {
-          ...textStyle(Math.max(10, 2.8 * ui), '#c9d6df'),
-          align: 'center',
-          wordWrap: { width: cardW - pad * 3 },
-        })
-        .setOrigin(0.5, 0);
-      const chosen = this.add
-        .text(x + cardW - pad, y + pad * 1.4, 'ELEGIDO', textStyle(Math.max(10, 3 * ui), '#ffe272'))
-        .setOrigin(1, 0)
-        .setBackgroundColor('#0a1322');
-      this.cardObjects.push(g, preview, frame, name, description, chosen);
+      g.fillStyle(0x000000, 0.3).fillRoundedRect(x, y + 4 * s, w, h, 18 * s);
+      g.fillStyle(0x0a1224, 0.9).fillRoundedRect(x, y, w, h, 18 * s);
+      g.lineStyle(2, 0xffcf4a, 0.7).strokeRoundedRect(x, y, w, h, 18 * s);
+      this.dynamicObjects.push(g);
+
+      // Vista previa: el pasto del mapa en un recuadro con esquinas redondeadas.
+      const pad = 16 * s;
+      const pw = w - pad * 2;
+      const ph = h * 0.55;
+      const preview = this.add.tileSprite(x + pad, y + pad, pw, ph, TEXTURES.ground).setOrigin(0).setTileScale(Math.max(1, 3 * s));
+      const mask = this.make.graphics({ x: 0, y: 0 });
+      mask.fillStyle(0xffffff, 1).fillRoundedRect(x + pad, y + pad, pw, ph, 12 * s);
+      preview.setMask(mask.createGeometryMask());
+      const frame = this.add.graphics().lineStyle(2, 0x37d5ff, 0.5).strokeRoundedRect(x + pad, y + pad, pw, ph, 12 * s);
+      this.dynamicObjects.push(preview, mask, frame);
+
+      // Cartel ELEGIDO.
+      const chipW = 100 * s;
+      const chipH = 28 * s;
+      const chip = this.add.graphics();
+      chip.fillStyle(0x2a2208, 0.95).fillRoundedRect(x + pw + pad - chipW - 10 * s, y + pad + 10 * s, chipW, chipH, chipH / 2);
+      chip.lineStyle(1.5, 0xffcf4a, 0.8).strokeRoundedRect(x + pw + pad - chipW - 10 * s, y + pad + 10 * s, chipW, chipH, chipH / 2);
+      this.dynamicObjects.push(chip);
+      this.text(x + pw + pad - chipW / 2 - 10 * s, y + pad + 10 * s + chipH / 2, 'ELEGIDO', 12 * s, '#ffcf4a', { origin: [0.5, 0.5] }).setLetterSpacing(1.5 * s);
+
+      const textY = y + pad * 2 + ph;
+      this.text(x + pad, textY, map.name.toUpperCase(), 28 * s, '#ffffff', { title: true }).setLetterSpacing(1.5 * s);
+      this.text(x + pad, textY + 40 * s, map.description, 13 * s, '#9db4d8', { bold: false, wrap: pw });
     });
   }
 }
