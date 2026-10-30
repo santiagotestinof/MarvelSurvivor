@@ -20,10 +20,15 @@ const ORIGIN = { x: 0.5, y: 41 / 48 };
 const BODY = { width: 10, height: 8, offsetX: 19, offsetY: 37 };
 
 export const CAPITAN_ID = 'capitan';
+export const CAPITAN_SCALE = 2 / 3;
 export const SPIDERMAN_ID = 'spiderman';
 export const THOR_ID = 'thor';
+export const THOR_SCALE = 2 / 3;
 export const HULK_ID = 'hulk';
+// Un 15 % más grande en partida; la colisión se compensa abajo.
+export const HULK_SCALE = (2 / 3) * 1.15;
 export const STRANGE_ID = 'strange';
+export const STRANGE_SCALE = 2 / 3;
 
 /** Capitán América: el escudo sale, atraviesa a todos y vuelve a su mano. */
 export const capitanDefinition: CharacterDefinition = {
@@ -31,9 +36,12 @@ export const capitanDefinition: CharacterDefinition = {
   displayName: 'Capitán América',
   rarity: 'common',
   weaponText: 'Escudo: va y vuelve atravesando enemigos',
-  frame: FRAME,
-  origin: ORIGIN,
-  body: BODY,
+  frame: { width: 92, height: 92 },
+  origin: { x: 0.5, y: 77 / 92 },
+  body: {
+    width: 10 / CAPITAN_SCALE, height: 8 / CAPITAN_SCALE,
+    offsetX: 46 - 5 / CAPITAN_SCALE, offsetY: 77 - 4 / CAPITAN_SCALE,
+  },
   stats: {
     moveSpeed: HERO_BASE.moveSpeed,
     maxHealth: HERO_BASE.maxHealth,
@@ -47,7 +55,10 @@ export const capitanDefinition: CharacterDefinition = {
       maxDistance: 120,
     },
   },
-  sheets: sheets(CAPITAN_ID),
+  sheets: {
+    idle: { ...sheets(CAPITAN_ID).idle, frameCount: 1, frameRate: 1 },
+    walk: { ...sheets(CAPITAN_ID).walk, frameCount: 7 },
+  },
 };
 
 /** Spider-Man: rápido y frágil; sus telarañas frenan a los enemigos. */
@@ -84,9 +95,12 @@ export const thorDefinition: CharacterDefinition = {
   rarity: 'epic',
   statBonus: { moveSpeedMult: 1.15, maxHealthMult: 1.25 },
   weaponText: 'Martillo volador: siempre en el aire, va de enemigo en enemigo sin parar (+15% de velocidad y +25% de vida)',
-  frame: FRAME,
-  origin: ORIGIN,
-  body: BODY,
+  frame: { width: 92, height: 92 },
+  origin: { x: 0.5, y: 77 / 92 },
+  body: {
+    width: 10 / THOR_SCALE, height: 8 / THOR_SCALE,
+    offsetX: 46 - 5 / THOR_SCALE, offsetY: 77 - 4 / THOR_SCALE,
+  },
   stats: {
     moveSpeed: HERO_BASE.moveSpeed,
     maxHealth: HERO_BASE.maxHealth,
@@ -100,7 +114,10 @@ export const thorDefinition: CharacterDefinition = {
       maxDistance: 170,
     },
   },
-  sheets: sheets(THOR_ID),
+  sheets: {
+    idle: { ...sheets(THOR_ID).idle, frameCount: 1, frameRate: 1 },
+    walk: { ...sheets(THOR_ID).walk, frameCount: 7 },
+  },
 };
 
 /** Hulk: lento y con muchísima vida; su zarpazo es un abanico fino (cuerpo a cuerpo) que se puede ir ampliando. */
@@ -110,9 +127,12 @@ export const hulkDefinition: CharacterDefinition = {
   rarity: 'legendary',
   statBonus: { regenPerSecond: 0.2 },
   weaponText: 'Zarpazo: abanico fino que se ensancha y alarga con mejoras (+0,2 de vida por segundo)',
-  frame: FRAME,
-  origin: ORIGIN,
-  body: { width: 12, height: 8, offsetX: 10, offsetY: 22 },
+  frame: { width: 92, height: 92 },
+  origin: { x: 0.5, y: 77 / 92 },
+  body: {
+    width: 12 / HULK_SCALE, height: 8 / HULK_SCALE,
+    offsetX: 46 - 6 / HULK_SCALE, offsetY: 77 - 4 / HULK_SCALE,
+  },
   stats: {
     moveSpeed: HERO_BASE.moveSpeed,
     maxHealth: HERO_BASE.maxHealth,
@@ -127,11 +147,14 @@ export const hulkDefinition: CharacterDefinition = {
       arcDegrees: 38,
     },
   },
-  sheets: sheets(HULK_ID),
+  sheets: {
+    idle: { ...sheets(HULK_ID).idle, frameCount: 1, frameRate: 1 },
+    walk: { ...sheets(HULK_ID).walk, frameCount: 7 },
+  },
 };
 
 /**
- * Doctor Strange: flota (como Iron Man) y siempre se ve de frente, sin dibujo de espalda.
+ * Doctor Strange: levita con animación y orientación en ocho direcciones.
  * Su ataque es un aura de runas que daña seguido a todo lo que se acerca; con Área crece.
  * Ulti: "Tiempo detenido" (ver `TimeStopUltimate`).
  */
@@ -141,10 +164,12 @@ export const strangeDefinition: CharacterDefinition = {
   rarity: 'epic',
   statBonus: { areaMult: 1.15 },
   weaponText: 'Aura de runas que daña a los cercanos (+15% de área). Ulti: tiempo detenido',
-  // Dibujo de Santi a tamaño original: cuadro de 48×56, suelo en (24, 51) y el cuerpo flota 3 px.
-  frame: { width: 48, height: 56 },
-  origin: { x: 0.5, y: 51 / 56 },
-  body: { width: 8, height: 6, offsetX: 20, offsetY: 48 },
+  frame: { width: 92, height: 92 },
+  origin: { x: 0.5, y: 80 / 92 },
+  body: {
+    width: 8 / STRANGE_SCALE, height: 6 / STRANGE_SCALE,
+    offsetX: 46 - 4 / STRANGE_SCALE, offsetY: 80 - 3 / STRANGE_SCALE,
+  },
   stats: {
     moveSpeed: HERO_BASE.moveSpeed,
     maxHealth: HERO_BASE.maxHealth,
@@ -159,5 +184,13 @@ export const strangeDefinition: CharacterDefinition = {
       radius: 56,
     },
   },
-  sheets: sheets(STRANGE_ID),
+  sheets: {
+    idle: { ...sheets(STRANGE_ID).idle, frameCount: 7, frameRate: 10 },
+    walk: { ...sheets(STRANGE_ID).walk, frameCount: 7 },
+    ultimate: {
+      textureKey: 'strange-ultimate',
+      path: 'assets/characters/strange/strange-ultimate.png',
+      frameCount: 7, frameRate: 10, loop: true,
+    },
+  },
 };

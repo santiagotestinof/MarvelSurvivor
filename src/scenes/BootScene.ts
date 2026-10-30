@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { CHARACTER_REGISTRY } from '../characters/registry';
+import { createStrangeUltimateVisual } from '../characters/strangeUltimateVisual';
 import { ASSET_PATHS, EFFECT_ANIMS, TEXTURES } from '../config/assetKeys';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds';
@@ -25,6 +26,10 @@ export class BootScene extends Phaser.Scene {
 
     this.load.image(TEXTURES.repulsor, ASSET_PATHS.repulsor);
     this.load.image('ironman-menu', `assets/characters/ironman/ironman-menu.png?v=${__BUILD_ID__}`);
+    this.load.image('capitan-menu', `assets/characters/capitan/capitan-menu.png?v=${__BUILD_ID__}`);
+    this.load.image('thor-menu', `assets/characters/thor/thor-menu.png?v=${__BUILD_ID__}`);
+    this.load.image('strange-menu', `assets/characters/strange/strange-menu.png?v=${__BUILD_ID__}`);
+    this.load.image('hulk-menu', `assets/characters/hulk/hulk-menu.png?v=${__BUILD_ID__}`);
     this.load.image(TEXTURES.missile, ASSET_PATHS.missile);
     this.load.image(TEXTURES.shield, ASSET_PATHS.shield);
     this.load.image(TEXTURES.web, ASSET_PATHS.web);
@@ -49,6 +54,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    createStrangeUltimateVisual(this);
     this.createShadowTexture();
     this.createGemTexture();
     this.createCoinTexture();

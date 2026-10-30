@@ -16,6 +16,10 @@ import { fileURLToPath } from 'node:url';
 import { IRON_MAN_REF } from './ironman-reference.mjs';
 import { ironManPose } from './ironman-poses.mjs';
 import { restoreImportedIronMan } from './imported-ironman.mjs';
+import { restoreImportedCapitan } from './imported-capitan.mjs';
+import { restoreImportedThor } from './imported-thor.mjs';
+import { restoreImportedStrange } from './imported-strange.mjs';
+import { restoreImportedHulk } from './imported-hulk.mjs';
 import { CAPITAN_REF } from './hero-trace-capitan.mjs';
 import { THOR_REF } from './hero-trace-thor.mjs';
 import { HULK_REF } from './hero-trace-hulk.mjs';
@@ -2461,6 +2465,22 @@ function previewOf(cv, scale, bg = hex('#5f8f58')) {
 // ---------------------------------------------------------------- main
 
 // Generación selectiva para trabajar en Iron Man sin reescribir recursos del equipo.
+if (process.argv.includes('--only=capitan')) {
+  restoreImportedCapitan();
+  process.exit(0);
+}
+if (process.argv.includes('--only=thor')) {
+  restoreImportedThor();
+  process.exit(0);
+}
+if (process.argv.includes('--only=strange')) {
+  restoreImportedStrange();
+  process.exit(0);
+}
+if (process.argv.includes('--only=hulk')) {
+  restoreImportedHulk();
+  process.exit(0);
+}
 if (process.argv.includes('--only=ironman')) {
   restoreImportedIronMan();
   process.exit(0);
@@ -2569,3 +2589,7 @@ if (previewIdx !== -1) {
 }
 
 restoreImportedIronMan();
+restoreImportedCapitan();
+restoreImportedThor();
+restoreImportedStrange();
+restoreImportedHulk();

@@ -4,10 +4,14 @@ import { Character } from '../entities/Character';
 import { IronMan } from './ironman/IronMan';
 import {
   CAPITAN_ID,
+  CAPITAN_SCALE,
   HULK_ID,
+  HULK_SCALE,
   SPIDERMAN_ID,
   STRANGE_ID,
+  STRANGE_SCALE,
   THOR_ID,
+  THOR_SCALE,
   capitanDefinition,
   hulkDefinition,
   spidermanDefinition,
@@ -27,11 +31,11 @@ export const CHARACTER_REGISTRY: Record<string, CharacterEntry> = {
     definition: ironManDefinition,
     create: (scene, x, y) => new IronMan(scene, x, y),
   },
-  [CAPITAN_ID]: { definition: capitanDefinition, create: (scene, x, y) => new Character(scene, x, y, capitanDefinition) },
+  [CAPITAN_ID]: { definition: capitanDefinition, create: (scene, x, y) => new Character(scene, x, y, capitanDefinition).setScale(CAPITAN_SCALE) },
   [SPIDERMAN_ID]: { definition: spidermanDefinition, create: (scene, x, y) => new Character(scene, x, y, spidermanDefinition) },
-  [THOR_ID]: { definition: thorDefinition, create: (scene, x, y) => new Character(scene, x, y, thorDefinition) },
-  [STRANGE_ID]: { definition: strangeDefinition, create: (scene, x, y) => new Character(scene, x, y, strangeDefinition) },
-  [HULK_ID]: { definition: hulkDefinition, create: (scene, x, y) => new Character(scene, x, y, hulkDefinition) },
+  [THOR_ID]: { definition: thorDefinition, create: (scene, x, y) => new Character(scene, x, y, thorDefinition).setScale(THOR_SCALE) },
+  [STRANGE_ID]: { definition: strangeDefinition, create: (scene, x, y) => new Character(scene, x, y, strangeDefinition).setScale(STRANGE_SCALE) },
+  [HULK_ID]: { definition: hulkDefinition, create: (scene, x, y) => new Character(scene, x, y, hulkDefinition).setScale(HULK_SCALE) },
 };
 
 /** Héroe de respaldo (si el progreso guardado no tiene ninguno). */
