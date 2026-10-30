@@ -1,48 +1,33 @@
-import { audio } from '../audio/AudioManager';
 import Phaser from 'phaser';
-import { TEXTURES } from '../config/assetKeys';
-import { computeZoom } from '../config/cameraConfig';
-import { SCENE_KEYS } from '../config/sceneKeys';
-import {
-  META_UPGRADES,
-  costOfNextLevel,
-  refundAllUpgrades,
-  totalSpentGold,
-  type MetaUpgradeDefinition,
-} from '../meta/metaUpgrades';
+import { audio } from '../audio/AudioManager';
 import { CHARACTER_REGISTRY } from '../characters/registry';
+import { SCENE_KEYS } from '../config/sceneKeys';
+import { META_UPGRADES, costOfNextLevel, refundAllUpgrades, totalSpentGold, type MetaUpgradeDefinition } from '../meta/metaUpgrades';
 import { saveData } from '../meta/saveData';
+import { drawMenuBackdrop } from '../ui/menuBackdrop';
 import { META_COLORS } from '../ui/metaIcons';
 import { META_ITEM_SIZE, META_ITEM_TEXTURE, metaItemFrame } from '../ui/metaItemIcons';
-import { UiButton } from '../ui/UiButton';
-import { drawPanel, textStyle, uiScale } from '../ui/uiLayout';
+import { PanelButton } from '../ui/PanelButton';
+import { TITLE_FONT, UI_FONT } from '../ui/uiLayout';
 
-const GOLD_COLOR = '#ffd24a';
-const GOLD = 0xf5c518;
-
-function css(color: number): string {
-  return `#${color.toString(16).padStart(6, '0')}`;
-}
+const GOLD_COLOR = '#ffcf4a';
+const GOLD = 0xffcf4a;
 
 /**
- * Tienda de mejoras permanentes: una grilla con todas las mejoras (cada una con su ícono, su color y sus
- * rangos) y, abajo, el detalle de la elegida con el precio y el botón de comprar. Cada héroe tiene sus propios niveles:
- * se compra y se reembolsa para el héroe elegido (un botón permite cambiarlo desde acá).
+ * Tienda de mejoras permanentes: grilla con todas las mejoras (ícono, color y rangos) y, al costado, el detalle de la elegida
+ * con precio y botón de comprar. Cada héroe tiene sus propios niveles: se compra y se reembolsa para el héroe elegido.
  */
 export class ShopScene extends Phaser.Scene {
-  private ground!: Phaser.GameObjects.TileSprite;
-  private shade!: Phaser.GameObjects.Graphics;
-  private title!: Phaser.GameObjects.Text;
-  private goldText!: Phaser.GameObjects.Text;
-  private backButton!: UiButton;
-  private refundButton!: UiButton;
-  private heroButton!: UiButton;
+  private backdrop!: Phaser.GameObjects.Graphics;
+  private backButton!: PanelButton;
+  private refundButton!: PanelButton;
+  private heroButton!: PanelButton;
+  private buyButton!: PanelButton;
   /** Mejora elegida en la grilla (siempre hay una, así el detalle nunca queda vacío). */
   private selectedId = META_UPGRADES[0].id;
-  private columns = 1;
+  private columns = 6;
   /** El reembolso pide confirmar con un segundo toque. */
   private refundArmed = false;
-  /** Objetos de la grilla y del detalle: se destruyen y se arman de nuevo al comprar o cambiar el tamaño. */
   private dynamicObjects: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
@@ -50,17 +35,15 @@ export class ShopScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor('#0e1a12');
+    this.cameras.main.setBackgroundColor('#070c1a');
     audio.play('menu');
-    this.ground = this.add.tileSprite(0, 0, 10, 10, TEXTURES.ground).setOrigin(0);
-    this.shade = this.add.graphics();
-
-    this.title = this.add.text(0, 0, 'MEJORAS PERMANENTES', textStyle(28, '#ffffff')).setOrigin(0.5);
-    this.title.setShadow(0, 4, '#1593b8', 0, true, true);
-    this.goldText = this.add.text(0, 0, '', textStyle(16, GOLD_COLOR)).setOrigin(0.5);
-    this.backButton = new UiButton(this, 'VOLVER [ESC]', 16, () => this.scene.start(SCENE_KEYS.menu), ['ESC']);
-    this.refundButton = new UiButton(this, 'REEMBOLSAR', 16, () => this.refund(), []);
-    this.heroButton = new UiButton(this, 'HÉROE', 16, () => this.nextHero(), ['H']);
+    this.backdrop = this.add.graphics().setDepth(-20);
+    this.backButton = new PanelButton(this, '‹', () => this.scene.start(SCENE_KEYS.menu), { hotkeys: ['ESC'] });
+    this.heroButton = new PanelButton(this, 'HÉROE', () => this.nextHero(), { hotkeys: ['H'], style: 'gold' });
+    this.buyButton = new PanelButton(this, 'COMPRAR', () => this.buySelected(), { style: 'primary', display: true });
+    this.refundButton = new PanelButton(this, 'REEMBOLSAR', () => this.refund(), { style: 'ghost' });
+    // Los botones se crean una sola vez y los paneles se rehacen en cada dibujo: van siempre por encima.
+    for (const button of [this.backButton, this.heroButton, this.buyButton, this.refundButton]) button.setDepth(10);
     this.selectedId = META_UPGRADES[0].id;
     this.refundArmed = false;
 
@@ -79,185 +62,200 @@ export class ShopScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.render, this));
   }
 
-  update(_time: number, delta: number): void {
-    this.ground.tilePositionX += 4 * (delta / 1000);
-    this.ground.tilePositionY += 2 * (delta / 1000);
+  private text(x: number, y: number, value: string, size: number, color: string, options: { title?: boolean; origin?: [number, number]; wrap?: number; bold?: boolean; align?: string } = {}): Phaser.GameObjects.Text {
+    const t = this.add
+      .text(x, y, value, {
+        fontFamily: options.title ? TITLE_FONT : UI_FONT,
+        fontStyle: options.title || options.bold === false ? 'normal' : 'bold',
+        fontSize: `${Math.max(7, Math.round(size))}px`,
+        color,
+        align: options.align ?? 'left',
+        wordWrap: options.wrap ? { width: options.wrap } : undefined,
+      })
+      .setOrigin(...(options.origin ?? [0, 0]));
+    this.dynamicObjects.push(t);
+    return t;
+  }
+
+  private heroName(): string {
+    return (CHARACTER_REGISTRY[saveData.selectedCharacter]?.definition.displayName ?? saveData.selectedCharacter).toUpperCase();
   }
 
   private render(): void {
-    const { width, height } = this.scale;
-    const ui = uiScale(width, height);
-    const portrait = width < height;
-    const cx = width / 2;
-
-    const zoom = Math.max(2, computeZoom(width, height));
-    this.ground.setSize(width, height).setTileScale(zoom);
-    this.shade.clear().fillStyle(0x05080c, 0.72).fillRect(0, 0, width, height);
-
-    this.title.setFontSize(Math.max(18, Math.round(portrait ? Math.min(width * 0.07, 34) : 7 * ui))).setPosition(cx, height * 0.06);
-    this.goldText.setText(`${this.heroName()}  ·  ORO: ${saveData.gold}`).setFontSize(Math.max(14, Math.round(4.2 * ui))).setPosition(cx, height * (portrait ? 0.105 : 0.125));
-
     for (const object of this.dynamicObjects) object.destroy();
     this.dynamicObjects = [];
+    const { width, height } = this.scale;
+    const portrait = width < height * 0.95;
+    drawMenuBackdrop(this.backdrop, width, height, 0x2a3f66, 0.35, 0.45);
 
-    const margin = width * 0.04;
-    const areaW = width - margin * 2;
-    const gap = Math.round(Math.max(5, 1.8 * ui));
+    const s = portrait ? Math.min(width / 720, height / 1280) : Math.min(width / 1280, height / 720);
+    const designW = portrait ? 720 : 1280;
+    const designH = portrait ? 1280 : 720;
+    const ox = (width - designW * s) / 2;
+    const oy = (height - designH * s) / 2;
+    const X = (v: number) => ox + v * s;
+    const Y = (v: number) => oy + v * s;
 
-    // Grilla: 8 columnas en pantalla ancha (3 filas) y 4 en vertical (6 filas).
-    this.columns = portrait ? 4 : 8;
+    // Cabecera: volver, título, héroe y oro.
+    this.backButton.setBox(44 * s, 44 * s, 24 * s).setPosition(X(48 + 22), Y(32 + 22));
+    this.text(X(48 + 62), Y(portrait ? 30 : 28), 'MEJORAS', (portrait ? 38 : 44) * s, '#ffffff', { title: true }).setLetterSpacing(3 * s);
+    this.text(X(48 + 62), Y(portrait ? 76 : 80), 'Permanentes · cada héroe tiene sus propios niveles', 13 * s, '#9db4d8', { bold: false });
+    const goldText = this.text(0, 0, saveData.gold.toLocaleString('es-AR'), 26 * s, GOLD_COLOR, { title: true, origin: [1, 0.5] });
+    const chipH = 44 * s;
+    const chipW = goldText.width + 62 * s;
+    const chipX = X(designW - 48) - chipW;
+    const chipY = Y(32);
+    const chip = this.add.graphics();
+    chip.fillStyle(0x0a1224, 0.8).fillRoundedRect(chipX, chipY, chipW, chipH, chipH / 2);
+    chip.lineStyle(2, GOLD, 0.45).strokeRoundedRect(chipX, chipY, chipW, chipH, chipH / 2);
+    chip.fillStyle(GOLD, 1).fillCircle(chipX + 26 * s, chipY + chipH / 2, 10 * s);
+    chip.lineStyle(2, 0xb78700, 1).strokeCircle(chipX + 26 * s, chipY + chipH / 2, 10 * s);
+    this.dynamicObjects.push(chip);
+    goldText.setPosition(chipX + chipW - 18 * s, chipY + chipH / 2).setDepth(1);
+    this.heroButton.setLabel(portrait ? this.heroName() : `HÉROE: ${this.heroName()} [H]`);
+    const heroW = portrait ? 230 : 280;
+    this.heroButton.setBox(heroW * s, 44 * s, 13 * s).setPosition(chipX - 16 * s - (heroW * s) / 2, chipY + chipH / 2);
+
+    // Grilla.
+    this.columns = portrait ? 4 : 6;
     const rows = Math.ceil(META_UPGRADES.length / this.columns);
-    const gridTop = height * (portrait ? 0.14 : 0.17);
-    const gridBottom = height * (portrait ? 0.66 : 0.7);
-    const cellW = (areaW - gap * (this.columns - 1)) / this.columns;
-    const cellH = (gridBottom - gridTop - gap * (rows - 1)) / rows;
+    const gridX = 48;
+    const gridY = portrait ? 116 : 112;
+    const gridW = portrait ? 624 : 720;
+    const gridH = portrait ? 640 : 520;
+    const gap = 12;
+    const cellW = (gridW - gap * (this.columns - 1)) / this.columns;
+    const cellH = (gridH - gap * (rows - 1)) / rows;
     META_UPGRADES.forEach((def, index) => {
-      const column = index % this.columns;
+      const col = index % this.columns;
       const row = Math.floor(index / this.columns);
-      this.drawCell(def, margin + column * (cellW + gap), gridTop + row * (cellH + gap), cellW, cellH);
+      this.drawCell(def, X(gridX + col * (cellW + gap)), Y(gridY + row * (cellH + gap)), cellW * s, cellH * s, s);
     });
 
-    const detailTop = gridBottom + gap * 1.5;
-    const detailBottom = height * 0.875;
-    this.drawDetail(margin, detailTop, areaW, detailBottom - detailTop, ui, portrait);
-    this.layoutBottomBar(width, height, ui);
+    // Detalle.
+    const dx = portrait ? 48 : 792;
+    const dy = portrait ? gridY + gridH + 18 : 112;
+    const dw = portrait ? 624 : 440;
+    const dh = portrait ? 1232 - dy : 520;
+    this.drawDetail(X(dx), Y(dy), dw * s, dh * s, s, portrait);
   }
 
-  /** Un casillero de la grilla: nombre, ícono dentro de un marco del color de la mejora y sus rangos. */
-  private drawCell(def: MetaUpgradeDefinition, x: number, y: number, w: number, h: number): void {
+  /** Un casillero de la grilla: nombre, ícono en su marco del color de la mejora y sus rangos. */
+  private drawCell(def: MetaUpgradeDefinition, x: number, y: number, w: number, h: number, s: number): void {
     const level = saveData.levelOf(def.id);
     const maxed = level >= def.maxLevel;
     const selected = this.selectedId === def.id;
     const color = META_COLORS[def.id] ?? 0x37d5ff;
 
     const g = this.add.graphics();
-    drawPanel(g, x, y, w, h, {
-      radius: 6,
-      fill: level > 0 ? 0x0f1d33 : 0x0a1322,
-      border: selected ? 0xffffff : maxed ? GOLD : color,
-      borderAlpha: selected ? 1 : maxed ? 0.95 : level > 0 ? 0.75 : 0.4,
-      lineWidth: selected ? 3 : 2,
-    });
+    g.fillStyle(0x000000, 0.3).fillRoundedRect(x, y + 4 * s, w, h, 14 * s);
+    g.fillStyle(level > 0 ? 0x0f1d36 : 0x0a1224, 0.95).fillRoundedRect(x, y, w, h, 14 * s);
+    g.fillStyle(color, level > 0 ? 0.12 : 0.05).fillRoundedRect(x, y, w, h * 0.55, { tl: 14 * s, tr: 14 * s, bl: 0, br: 0 });
+    g.lineStyle(selected ? 3 : 1.5, selected ? 0xffffff : maxed ? GOLD : color, selected ? 1 : level > 0 ? 0.7 : 0.35).strokeRoundedRect(x, y, w, h, 14 * s);
+    this.dynamicObjects.push(g);
 
-    const nameSize = Phaser.Math.Clamp(Math.round(Math.min(w * 0.115, h * 0.13)), 8, 14);
-    const name = this.add
-      .text(x + w / 2, y + h * 0.05, def.name.toUpperCase(), { ...textStyle(nameSize, selected ? '#ffffff' : '#c9d6e2'), align: 'center', strokeThickness: 0 })
-      .setOrigin(0.5, 0)
-      .setWordWrapWidth(w - 6);
+    const name = this.text(x + w / 2, y + 8 * s, def.name.toUpperCase(), Math.min(11 * s, w * 0.095), selected ? '#ffffff' : '#c9d6e2', { origin: [0.5, 0], align: 'center', wrap: w - 8 * s });
 
-    // Marco cuadrado del ícono; el ícono se escala de a números enteros para que los píxeles queden nítidos.
-    const pipsH = Math.max(5, Math.round(h * 0.07));
-    const boxTop = y + h * 0.05 + nameSize * 1.25 * (name.height > nameSize * 1.5 ? 2 : 1) + 2;
-    const boxBottom = y + h - pipsH - h * 0.08;
-    const box = Math.max(16, Math.min(boxBottom - boxTop, w * 0.62));
-    const iconScale = Math.max(0.5, Math.floor(((box * 0.97) / META_ITEM_SIZE) * 2) / 2);
+    const pipsH = Math.max(4, 7 * s);
+    const topArea = y + 8 * s + name.height + 4 * s;
+    const bottomArea = y + h - pipsH - 12 * s;
+    const box = Math.max(16, Math.min(bottomArea - topArea, w * 0.62));
+    const iconScale = Math.max(0.5, Math.floor((box / META_ITEM_SIZE) * 2) / 2);
     const boxX = x + w / 2 - box / 2;
-    const boxY = boxTop + (boxBottom - boxTop - box) / 2;
+    const boxY = topArea + (bottomArea - topArea - box) / 2;
     const frame = this.add.graphics();
-    frame.fillStyle(0x050b14, 1).fillRoundedRect(boxX, boxY, box, box, 5);
-    frame.fillStyle(color, level > 0 ? 0.28 : 0.1).fillRoundedRect(boxX, boxY, box, box, 5);
-    frame.lineStyle(2, maxed ? GOLD : color, level > 0 ? 1 : 0.6).strokeRoundedRect(boxX, boxY, box, box, 5);
+    frame.fillStyle(0x050b14, 1).fillRoundedRect(boxX, boxY, box, box, 8 * s);
+    frame.fillStyle(color, level > 0 ? 0.28 : 0.1).fillRoundedRect(boxX, boxY, box, box, 8 * s);
+    frame.lineStyle(2, maxed ? GOLD : color, level > 0 ? 1 : 0.6).strokeRoundedRect(boxX, boxY, box, box, 8 * s);
+    this.dynamicObjects.push(frame);
     const icon = this.add.image(x + w / 2, boxY + box / 2, META_ITEM_TEXTURE, metaItemFrame(def.id)).setScale(iconScale);
     if (level === 0) icon.setAlpha(0.8);
+    this.dynamicObjects.push(icon);
 
     // Rangos: un casillero por nivel, lleno si ya se compró.
     const pips = this.add.graphics();
     const pipGap = 2;
-    const pipW = Math.min(pipsH * 1.4, (w * 0.8 - pipGap * (def.maxLevel - 1)) / def.maxLevel);
+    const pipW = Math.min(pipsH * 1.6, (w * 0.8 - pipGap * (def.maxLevel - 1)) / def.maxLevel);
     const pipsW = def.maxLevel * pipW + (def.maxLevel - 1) * pipGap;
-    const pipsY = y + h - pipsH - h * 0.05;
+    const pipsY = y + h - pipsH - 8 * s;
     for (let i = 0; i < def.maxLevel; i++) {
       const px = x + w / 2 - pipsW / 2 + i * (pipW + pipGap);
-      pips.fillStyle(i < level ? (maxed ? GOLD : color) : 0x1b2433, 1).fillRect(px, pipsY, pipW, pipsH);
-      pips.lineStyle(1, i < level ? 0xffffff : color, i < level ? 0.5 : 0.35).strokeRect(px, pipsY, pipW, pipsH);
+      pips.fillStyle(i < level ? (maxed ? GOLD : color) : 0x1b2433, 1).fillRoundedRect(px, pipsY, pipW, pipsH, 2);
     }
+    this.dynamicObjects.push(pips);
 
     const zone = this.add.zone(x, y, w, h).setOrigin(0).setInteractive({ useHandCursor: true });
     zone.on(Phaser.Input.Events.POINTER_UP, () => this.select(def.id));
-    this.dynamicObjects.push(g, name, frame, icon, pips, zone);
+    this.dynamicObjects.push(zone);
   }
 
-  /** Panel de abajo: ícono grande, qué hace la mejora elegida, su precio y el botón de comprar. */
-  private drawDetail(x: number, y: number, w: number, h: number, ui: number, portrait: boolean): void {
+  /** Panel del detalle: ícono grande, qué hace la mejora elegida, su precio y los botones de comprar y reembolsar. */
+  private drawDetail(x: number, y: number, w: number, h: number, s: number, portrait: boolean): void {
     const def = META_UPGRADES.find((upgrade) => upgrade.id === this.selectedId) ?? META_UPGRADES[0];
     const level = saveData.levelOf(def.id);
     const maxed = level >= def.maxLevel;
     const cost = costOfNextLevel(def, level);
     const canBuy = !maxed && saveData.gold >= cost;
     const color = META_COLORS[def.id] ?? 0x37d5ff;
-    const pad = Math.round(Math.max(8, 2.4 * ui));
+    const pad = 24 * s;
 
     const g = this.add.graphics();
-    drawPanel(g, x, y, w, h, { radius: 8, border: color, borderAlpha: 0.8 });
+    g.fillStyle(0x0a1224, 0.8).fillRoundedRect(x, y, w, h, 22 * s);
+    g.fillStyle(color, 0.12).fillRoundedRect(x, y, w, 130 * s, { tl: 22 * s, tr: 22 * s, bl: 0, br: 0 });
+    g.lineStyle(2, color, 0.5).strokeRoundedRect(x, y, w, h, 22 * s);
     this.dynamicObjects.push(g);
 
     // Ícono grande en su marco.
-    const box = Math.min(h - pad * 2, portrait ? h * 0.42 : h * 0.8);
+    const box = (portrait ? 96 : 110) * s;
     const boxX = x + pad;
-    const boxY = portrait ? y + pad : y + h / 2 - box / 2;
-    g.fillStyle(0x050b14, 1).fillRoundedRect(boxX, boxY, box, box, 6);
-    g.fillStyle(color, 0.25).fillRoundedRect(boxX, boxY, box, box, 6);
-    g.lineStyle(3, maxed ? GOLD : color, 1).strokeRoundedRect(boxX, boxY, box, box, 6);
-    const iconScale = Math.max(1, Math.floor(((box * 0.97) / META_ITEM_SIZE) * 2) / 2);
+    const boxY = y + pad;
+    g.fillStyle(0x050b14, 1).fillRoundedRect(boxX, boxY, box, box, 14 * s);
+    g.fillStyle(color, 0.25).fillRoundedRect(boxX, boxY, box, box, 14 * s);
+    g.lineStyle(3, maxed ? GOLD : color, 1).strokeRoundedRect(boxX, boxY, box, box, 14 * s);
+    const iconScale = Math.max(1, Math.floor((box * 0.9) / META_ITEM_SIZE));
     this.dynamicObjects.push(this.add.image(boxX + box / 2, boxY + box / 2, META_ITEM_TEXTURE, metaItemFrame(def.id)).setScale(iconScale));
 
-    const textX = boxX + box + pad;
-    const nameSize = Math.max(13, Math.round(4.2 * ui));
-    const bodySize = Math.max(10, Math.round(3.2 * ui));
-    const now = level > 0 ? `Ahora: ${def.effect(level)}\n` : '';
-    const next = maxed ? 'Rango máximo' : `Próximo rango: ${def.effect(level + 1)}`;
-    const rightReserve = portrait ? 0 : Math.max(150, w * 0.26);
-    const textW = x + w - pad - textX - rightReserve;
-    const title = this.add.text(textX, boxY, `${def.name.toUpperCase()}   ${level}/${def.maxLevel}`, textStyle(nameSize, css(color))).setOrigin(0, 0);
-    const body = this.add
-      .text(textX, boxY + title.height + 3, `${now}${next}`, { ...textStyle(bodySize, '#d7e6ef'), strokeThickness: 0, lineSpacing: 3 })
-      .setOrigin(0, 0)
-      .setWordWrapWidth(Math.max(60, textW));
-    this.dynamicObjects.push(title, body);
+    const textX = boxX + box + 18 * s;
+    const textW = x + w - pad - textX;
+    this.text(textX, boxY - 2 * s, `NIVEL ${level} DE ${def.maxLevel}`, 11 * s, maxed ? GOLD_COLOR : '#7f97c0', { bold: true }).setLetterSpacing(2 * s);
+    this.text(textX, boxY + 16 * s, def.name.toUpperCase(), 34 * s, '#ffffff', { title: true, wrap: textW }).setLetterSpacing(1 * s);
 
-    // Precio y botón de comprar.
-    const buttonSize = Math.max(12, Math.round(4 * ui));
-    const button = new UiButton(this, maxed ? 'MÁXIMO' : 'COMPRAR', buttonSize, () => this.buySelected(), [], true);
-    button.setEnabled(canBuy);
-    button.setAlpha(canBuy || maxed ? 1 : 0.55);
-    const priceSize = Math.max(13, Math.round(4.4 * ui));
-    const priceY = portrait ? y + h - pad - button.height / 2 : y + h / 2 - button.height * 0.75;
-    const buttonX = x + w - pad - button.width / 2;
-    const buttonY = portrait ? priceY : y + h / 2 + button.height * 0.75;
-    button.setPosition(buttonX, buttonY);
-    this.dynamicObjects.push(button);
-    if (!maxed) {
-      const coin = this.add.graphics();
-      const coinR = priceSize * 0.5;
-      const price = this.add.text(0, 0, String(cost), textStyle(priceSize, canBuy ? GOLD_COLOR : '#ff8a8a')).setOrigin(1, 0.5);
-      const priceX = portrait ? buttonX - button.width / 2 - pad - coinR * 2.6 : x + w - pad;
-      price.setPosition(priceX, portrait ? priceY : priceY);
-      coin.fillStyle(GOLD, 1).fillCircle(price.x - price.width - coinR * 1.4, price.y, coinR);
-      coin.lineStyle(2, 0x8a6400, 1).strokeCircle(price.x - price.width - coinR * 1.4, price.y, coinR);
-      this.dynamicObjects.push(coin, price);
+    // Rangos con el color de la mejora.
+    const pips = this.add.graphics();
+    const pipW = Math.min(24 * s, (textW - 4 * s * (def.maxLevel - 1)) / def.maxLevel);
+    for (let i = 0; i < def.maxLevel; i++) {
+      pips.fillStyle(i < level ? (maxed ? GOLD : color) : 0x1b2433, 1).fillRoundedRect(textX + i * (pipW + 4 * s), boxY + box - 8 * s, pipW, 8 * s, 3 * s);
     }
-  }
+    this.dynamicObjects.push(pips);
 
-  /** Fila de abajo: reembolso y volver. */
-  private layoutBottomBar(width: number, height: number, ui: number): void {
-    const size = Math.max(12, Math.round(3.6 * ui));
+    let ty = boxY + box + 22 * s;
+    if (level > 0) {
+      this.text(x + pad, ty, 'AHORA', 10 * s, '#7f97c0').setLetterSpacing(2 * s);
+      const now = this.text(x + pad, ty + 16 * s, def.effect(level), 15 * s, '#eef4ff', { wrap: w - pad * 2 });
+      ty += 16 * s + now.height + 16 * s;
+    }
+    this.text(x + pad, ty, maxed ? 'RANGO MÁXIMO' : 'PRÓXIMO RANGO', 10 * s, maxed ? GOLD_COLOR : '#7f97c0').setLetterSpacing(2 * s);
+    if (!maxed) this.text(x + pad, ty + 16 * s, def.effect(level + 1), 15 * s, '#9ce8ff', { wrap: w - pad * 2 });
+
+    // Precio y botones (abajo).
+    const innerW = w - pad * 2;
     const spent = totalSpentGold();
-    this.refundButton.setLabel(this.refundArmed ? `¿SEGURO? +${spent}` : 'REEMBOLSAR');
+    this.refundButton.setLabel(this.refundArmed ? `¿SEGURO? +${spent}` : 'REEMBOLSAR').setBox(innerW * 0.46, 46 * s, 13 * s).setPosition(x + pad + (innerW * 0.46) / 2, y + h - pad - 23 * s);
     this.refundButton.setEnabled(spent > 0).setAlpha(spent > 0 ? 1 : 0.45);
-
-    this.heroButton.setLabel(`HÉROE: ${this.heroName()} [H]`);
-    const buttons = [this.heroButton, this.refundButton, this.backButton];
-    for (const button of buttons) button.setFontSize(size);
-    const gap = Math.round(size * 0.8);
-    const total = buttons.reduce((sum, button) => sum + button.width, 0) + gap * (buttons.length - 1);
-    let x = width / 2 - total / 2;
-    for (const button of buttons) {
-      button.setPosition(x + button.width / 2, height * 0.94);
-      x += button.width + gap;
+    const buyW = innerW * 0.5;
+    this.buyButton.setLabel(maxed ? 'MÁXIMO' : 'COMPRAR').setBox(buyW, 56 * s, 26 * s).setPosition(x + w - pad - buyW / 2, y + h - pad - 28 * s);
+    this.buyButton.setEnabled(canBuy).setAlpha(canBuy || maxed ? 1 : 0.55);
+    if (!maxed) {
+      const price = this.text(x + w - pad, y + h - pad - 56 * s - 14 * s, String(cost), 26 * s, canBuy ? GOLD_COLOR : '#ff8a8a', { title: true, origin: [1, 0.5] });
+      const coin = this.add.graphics();
+      const r = 9 * s;
+      coin.fillStyle(GOLD, 1).fillCircle(price.x - price.width - r * 1.8, price.y, r);
+      coin.lineStyle(2, 0xb78700, 1).strokeCircle(price.x - price.width - r * 1.8, price.y, r);
+      this.dynamicObjects.push(coin);
     }
   }
 
-  /** Primer toque: pide confirmar; segundo toque: devuelve todo el oro gastado. */
+  /** Primer toque: pide confirmar; segundo toque: devuelve todo el oro gastado en este héroe. */
   private refund(): void {
     if (totalSpentGold() <= 0) return;
     if (!this.refundArmed) {
@@ -269,21 +267,17 @@ export class ShopScene extends Phaser.Scene {
     this.render();
   }
 
-  private heroName(): string {
-    return (CHARACTER_REGISTRY[saveData.selectedCharacter]?.definition.displayName ?? saveData.selectedCharacter).toUpperCase();
-  }
-
-  /** Pasa al siguiente héroe desbloqueado (queda como el elegido para jugar). */
-  private nextHero(): void {
-    const owned = Object.keys(CHARACTER_REGISTRY).filter((id) => saveData.isUnlocked(id));
-    if (owned.length < 2) return;
-    saveData.select(owned[(owned.indexOf(saveData.selectedCharacter) + 1) % owned.length]);
+  private select(id: string): void {
+    this.selectedId = id;
     this.refundArmed = false;
     this.render();
   }
 
-  private select(id: string): void {
-    this.selectedId = id;
+  /** Pasa al siguiente héroe reclutado (queda como el elegido para jugar). */
+  private nextHero(): void {
+    const owned = Object.keys(CHARACTER_REGISTRY).filter((id) => saveData.isUnlocked(id));
+    if (owned.length < 2) return;
+    saveData.select(owned[(owned.indexOf(saveData.selectedCharacter) + 1) % owned.length]);
     this.refundArmed = false;
     this.render();
   }

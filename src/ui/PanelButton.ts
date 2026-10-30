@@ -95,6 +95,7 @@ export class PanelButton extends Phaser.GameObjects.Container {
   setEnabled(enabled: boolean): this {
     this.enabled = enabled;
     if (!enabled) this.disableInteractive();
+    else if (this.input) this.input.enabled = true;
     if (!enabled) this.hovered = false;
     this.redraw();
     return this;
