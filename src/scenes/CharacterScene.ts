@@ -7,15 +7,16 @@ import { TEXTURES } from '../config/assetKeys';
 import { computeZoom } from '../config/cameraConfig';
 import { HERO_SHOP } from '../config/gameplayConfig';
 
-const RANDOM_HERO_PRICE = 2000;
-const RARITY_CHANCES: Record<Rarity, number> = { common: 80.5, rare: 15, epic: 4, legendary: 0.5 };
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { saveData } from '../meta/saveData';
 import { drawHeroCard } from '../ui/heroCard';
 import { UiButton } from '../ui/UiButton';
 import { textStyle, uiScale } from '../ui/uiLayout';
 
-/** Elegir con qué héroe jugar y comprar los que faltan con oro (tocar dos veces para confirmar la compra). */
+const RANDOM_HERO_PRICE = 2000;
+const RARITY_CHANCES: Record<Rarity, number> = { common: 80.5, rare: 15, epic: 4, legendary: 0.5 };
+
+/** Elegir héroes, comprarlos individualmente o reclutar uno aleatorio según su rareza. */
 export class CharacterScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.TileSprite;
   private shade!: Phaser.GameObjects.Graphics;
