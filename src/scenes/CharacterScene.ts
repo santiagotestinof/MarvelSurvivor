@@ -319,7 +319,7 @@ export class CharacterScene extends Phaser.Scene {
     if (!owned) img.setTintFill(0x000000).setAlpha(0.55);
     this.dynamicObjects.push(img);
 
-    this.text(x + w / 2, y + h - 48 * s, def.displayName.toUpperCase().replace('CAPITÁN AMÉRICA', 'CAPITÁN').replace('DOCTOR STRANGE', 'DR. STRANGE'), 18 * s, '#ffffff', { title: true, origin: [0.5, 0] }).setLetterSpacing(1 * s);
+    this.text(x + w / 2, y + h - 48 * s, owned ? def.displayName.toUpperCase().replace('CAPITÁN AMÉRICA', 'CAPITÁN').replace('DOCTOR STRANGE', 'DR. STRANGE') : '???', 18 * s, '#ffffff', { title: true, origin: [0.5, 0] }).setLetterSpacing(1 * s);
     this.text(x + w / 2, y + h - 12 * s, rarity.label, 9 * s, rarity.css, { origin: [0.5, 1] }).setLetterSpacing(2 * s);
 
     if (!owned) {
@@ -359,7 +359,7 @@ export class CharacterScene extends Phaser.Scene {
     let y = 0;
     this.text(0, y, rarity.label, 11 * s, rarity.css, { into }).setLetterSpacing(3 * s);
     y += 18 * s;
-    const name = this.text(0, y, def.displayName.toUpperCase(), 48 * s, '#ffffff', { title: true, into, wrap: w });
+    const name = this.text(0, y, saveData.isUnlocked(def.id) ? def.displayName.toUpperCase() : '???', 48 * s, '#ffffff', { title: true, into, wrap: w });
     name.setLetterSpacing(1.5 * s);
     y += name.height + 14 * s;
 
