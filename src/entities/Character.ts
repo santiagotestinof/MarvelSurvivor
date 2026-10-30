@@ -33,6 +33,12 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   private visualAction: CharacterAction | null = null;
   private visualDirection = Direction.Down;
   private visualUntil = 0;
+  private locomotionAction: CharacterAction | null = null;
+
+  /** Pose sostenida de una habilidad; conserva la orientación y el movimiento normal. */
+  setLocomotionAction(action: CharacterAction | null): void {
+    this.locomotionAction = action && this.definition.sheets[action] ? action : null;
+  }
 
   /** Solo presenta el ataque existente; no agrega controles ni cambia su daño/cadencia. */
   animateAction(action: CharacterAction, dx: number, dy: number, durationMs: number, initialFrame?: number): void {
@@ -139,7 +145,7 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     // Al detenerse no se toca `facing`: conserva la última orientación.
     if (moving) this.facing = directionFromVector(moveIntent.x, moveIntent.y);
 
-    this.action = moving ? 'walk' : 'idle';
+    this.action = this.locomotionAction ?? (moving ? 'walk' : 'idle');
     if (this.visualAction && this.scene.time.now < this.visualUntil) {
       this.action = this.visualAction;
       this.animator.play(this.action, this.visualDirection);

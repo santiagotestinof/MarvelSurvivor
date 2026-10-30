@@ -81,12 +81,13 @@ export class MenuScene extends Phaser.Scene {
     // El héroe que se muestra es el elegido en PERSONAJES.
     const entry = CHARACTER_REGISTRY[saveData.selectedCharacter] ?? CHARACTER_REGISTRY[STARTER_ID];
     const def = entry.definition;
+    const imported = ['ironman', 'capitan', 'thor', 'strange', 'hulk'].includes(def.id);
     this.hero = this.add
-      .sprite(0, 0, def.id === 'ironman' || def.id === 'capitan' ? `${def.id}-menu` : def.sheets.idle.textureKey, 0)
+      .sprite(0, 0, imported ? `${def.id}-menu` : def.sheets.idle.textureKey, 0)
       // Eje del casco y del torso en el retrato de 52 px: x = 23.5.
       // Alinearlo con el aro; el escudo queda a un costado del cuerpo.
-      .setOrigin(def.id === 'capitan' ? 23.5 / 52 : 0.5, def.id === 'ironman' || def.id === 'capitan' ? 1 : def.origin.y);
-    if (def.id !== 'ironman' && def.id !== 'capitan') this.hero.play(animationKey(def.id, 'idle', Direction.Down));
+      .setOrigin(def.id === 'capitan' ? 23.5 / 52 : 0.5, imported ? 1 : def.origin.y);
+    if (!imported) this.hero.play(animationKey(def.id, 'idle', Direction.Down));
     const { stats } = def;
     this.heroName = this.add.text(0, 0, def.displayName.toUpperCase(), textStyle(16, '#ffffff')).setOrigin(0.5);
     this.heroRarity = this.add.text(0, 0, RARITY_INFO[def.rarity].label, textStyle(11, RARITY_INFO[def.rarity].css)).setOrigin(0.5);
@@ -177,7 +178,7 @@ export class MenuScene extends Phaser.Scene {
     // Pasos de 0.25 permiten aprovechar el espacio también en pantallas bajas.
     this.heroY = height * (portrait ? 0.48 : 0.495);
     const room = this.heroY - (this.tagline.y + this.tagline.height / 2 + 8);
-    const isImported = this.hero.texture.key === 'ironman-menu' || this.hero.texture.key === 'capitan-menu';
+    const isImported = ['ironman-menu', 'capitan-menu', 'thor-menu', 'strange-menu', 'hulk-menu'].includes(this.hero.texture.key);
     const availableScale = room / (this.hero.frame.realHeight * this.hero.originY);
     const desiredScale = Math.max(2, Math.floor(height / (portrait ? 150 : 120)));
     const heroScale = isImported

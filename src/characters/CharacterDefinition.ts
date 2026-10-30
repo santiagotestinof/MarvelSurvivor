@@ -3,7 +3,7 @@
  * (ataque, vuelo, daño, muerte, habilidad...) basta con agregar su nombre acá, dibujar su
  * spritesheet y declararla en `sheets` de la definición del personaje.
  */
-export type CharacterAction = 'idle' | 'walk' | 'attack' | 'beam' | 'hurt' | 'death';
+export type CharacterAction = 'idle' | 'walk' | 'attack' | 'beam' | 'hurt' | 'death' | 'ultimate';
 // Futuras: | 'attack' | 'fly' | 'hurt' | 'death' | 'ability'
 
 /**

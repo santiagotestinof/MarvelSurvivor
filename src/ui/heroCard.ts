@@ -48,7 +48,7 @@ export function drawHeroCard(
   panel.fillStyle(rarity.color, locked ? 0.08 : 0.14).fillRoundedRect(x + 3, y + 3, w - 6, h * 0.46, 6);
   objects.push(panel);
 
-  const imported = def.id === 'ironman' || def.id === 'capitan';
+  const imported = ['ironman', 'capitan', 'thor', 'strange', 'hulk'].includes(def.id);
   // Comparar el dibujo visible: las hojas importadas tienen mucho margen transparente.
   const textureKey = imported ? `${def.id}-menu` : def.sheets.idle.textureKey;
   const portrait = scene.textures.getFrame(textureKey, 0);
