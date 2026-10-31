@@ -20,6 +20,7 @@ import { restoreImportedCapitan } from './imported-capitan.mjs';
 import { restoreImportedThor } from './imported-thor.mjs';
 import { restoreImportedStrange } from './imported-strange.mjs';
 import { restoreImportedHulk } from './imported-hulk.mjs';
+import { restoreImportedSpiderman } from './imported-spiderman.mjs';
 import { CAPITAN_REF } from './hero-trace-capitan.mjs';
 import { THOR_REF } from './hero-trace-thor.mjs';
 import { HULK_REF } from './hero-trace-hulk.mjs';
@@ -2481,6 +2482,10 @@ if (process.argv.includes('--only=hulk')) {
   restoreImportedHulk();
   process.exit(0);
 }
+if (process.argv.includes('--only=spiderman')) {
+  restoreImportedSpiderman();
+  process.exit(0);
+}
 if (process.argv.includes('--only=ironman')) {
   restoreImportedIronMan();
   process.exit(0);
@@ -2593,3 +2598,4 @@ restoreImportedCapitan();
 restoreImportedThor();
 restoreImportedStrange();
 restoreImportedHulk();
+restoreImportedSpiderman();

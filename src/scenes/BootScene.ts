@@ -29,6 +29,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('capitan-menu', `assets/characters/capitan/capitan-menu.png?v=${__BUILD_ID__}`);
     this.load.image('thor-menu', `assets/characters/thor/thor-menu.png?v=${__BUILD_ID__}`);
     this.load.image('strange-menu', `assets/characters/strange/strange-menu.png?v=${__BUILD_ID__}`);
+    this.load.image('spiderman-menu', `assets/characters/spiderman/spiderman-menu.png?v=${__BUILD_ID__}`);
     this.load.image('hulk-menu', `assets/characters/hulk/hulk-menu.png?v=${__BUILD_ID__}`);
     this.load.image(TEXTURES.missile, ASSET_PATHS.missile);
     this.load.image(TEXTURES.shield, ASSET_PATHS.shield);

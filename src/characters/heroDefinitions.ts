@@ -14,14 +14,11 @@ function sheets(id: string): CharacterDefinition['sheets'] {
   return { idle: sheet('idle', 4, 4), walk: sheet('walk', 6, 10) };
 }
 
-/** Todos los héroes usan cuadros de 48×48 con el suelo en (24, 41), igual que Iron Man. */
-const FRAME = { width: 48, height: 48 };
-const ORIGIN = { x: 0.5, y: 41 / 48 };
-const BODY = { width: 10, height: 8, offsetX: 19, offsetY: 37 };
 
 export const CAPITAN_ID = 'capitan';
 export const CAPITAN_SCALE = 2 / 3;
 export const SPIDERMAN_ID = 'spiderman';
+export const SPIDERMAN_SCALE = 2 / 3;
 export const THOR_ID = 'thor';
 export const THOR_SCALE = 2 / 3;
 export const HULK_ID = 'hulk';
@@ -67,9 +64,12 @@ export const spidermanDefinition: CharacterDefinition = {
   displayName: 'Spider-Man',
   rarity: 'rare',
   weaponText: 'Telarañas: disparo rápido que frena un poco a los enemigos',
-  frame: FRAME,
-  origin: ORIGIN,
-  body: BODY,
+  frame: { width: 92, height: 92 },
+  origin: { x: 0.5, y: 77 / 92 },
+  body: {
+    width: 10 / SPIDERMAN_SCALE, height: 8 / SPIDERMAN_SCALE,
+    offsetX: 46 - 5 / SPIDERMAN_SCALE, offsetY: 77 - 4 / SPIDERMAN_SCALE,
+  },
   stats: {
     moveSpeed: HERO_BASE.moveSpeed,
     maxHealth: HERO_BASE.maxHealth,
@@ -85,7 +85,10 @@ export const spidermanDefinition: CharacterDefinition = {
       slowFactor: 0.7,
     },
   },
-  sheets: sheets(SPIDERMAN_ID),
+  sheets: {
+    idle: { ...sheets(SPIDERMAN_ID).idle, frameCount: 1, frameRate: 1 },
+    walk: { ...sheets(SPIDERMAN_ID).walk, frameCount: 8 },
+  },
 };
 
 /** Thor: invoca rayos que caen sobre los enemigos cercanos y dañan en área. */

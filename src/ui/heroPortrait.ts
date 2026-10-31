@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import type { CharacterDefinition } from '../characters/CharacterDefinition';
 
-const IMPORTED_PORTRAITS = ['ironman', 'capitan', 'thor', 'strange', 'hulk'];
+const IMPORTED_PORTRAITS = ['ironman', 'capitan', 'thor', 'strange', 'hulk', 'spiderman'];
 
 /**
  * Textura del retrato de un héroe para los menús. Los héroes con diseño nuevo tienen su `<id>-menu`;
