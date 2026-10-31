@@ -28,12 +28,18 @@ export const HERO_INFO: Record<string, { main: { name: string; text: string }; u
   },
 };
 
+/** Porcentaje con signo de un multiplicador (1,5 → +50; 0,85 → −15). */
+function signed(mult: number): string {
+  const pct = Math.round((mult - 1) * 100);
+  return `${pct >= 0 ? '+' : '−'}${Math.abs(pct)}`;
+}
+
 /** Vida y velocidad finales del héroe (con su bono propio) y el texto de ese bono, si lo tiene. */
 export function heroStatLines(def: CharacterDefinition): { health: number; speed: number; bonus: string } {
   const bonus = def.statBonus ?? {};
   const parts: string[] = [];
-  if (bonus.maxHealthMult) parts.push(`+${Math.round((bonus.maxHealthMult - 1) * 100)} % de vida`);
-  if (bonus.moveSpeedMult) parts.push(`+${Math.round((bonus.moveSpeedMult - 1) * 100)} % de velocidad`);
+  if (bonus.maxHealthMult) parts.push(`${signed(bonus.maxHealthMult)} % de vida`);
+  if (bonus.moveSpeedMult) parts.push(`${signed(bonus.moveSpeedMult)} % de velocidad`);
   if (bonus.areaMult) parts.push(`+${Math.round((bonus.areaMult - 1) * 100)} % de área`);
   if (bonus.regenPerSecond) parts.push(`+${String(bonus.regenPerSecond).replace('.', ',')} de vida por segundo`);
   return {

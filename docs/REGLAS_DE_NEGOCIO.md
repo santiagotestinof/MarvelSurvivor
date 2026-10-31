@@ -129,7 +129,7 @@ Los enemigos también pueden soltar un imán, con una chance muy baja (0,2 %, `E
 
 ## Estadísticas base de los héroes
 - Todos los héroes tienen las **mismas estadísticas base**: vida 120 y velocidad 80 (`HERO_BASE` en `gameplayConfig.ts`). Lo que los diferencia es su arma, su ulti y un bono propio (`statBonus` en `CharacterDefinition`).
-- Bonos propios: **Doctor Strange** +15 % de área (se multiplica con la pasiva Área y la mejora permanente); **Hulk** +0,2 de vida por segundo; **Thor** +15 % de velocidad de movimiento (92 en vez de 80) y +25 % de vida (150 en vez de 120).
+- Bonos propios: **Doctor Strange** +15 % de área (se multiplica con la pasiva Área y la mejora permanente); **Hulk** +50 % de vida (180 en vez de 120: Hulk es el héroe con más vida), −15 % de velocidad de movimiento (68 en vez de 80) y +0,2 de vida por segundo; **Thor** +8 % de velocidad de movimiento (86 en vez de 80) y +25 % de vida (150 en vez de 120); **Spider-Man** +10 % de velocidad (88) y −10 % de vida (108).
 - El daño y la cadencia del ataque principal siguen siendo de cada arma (no son estadísticas del héroe).
 
 ## Oro al perder

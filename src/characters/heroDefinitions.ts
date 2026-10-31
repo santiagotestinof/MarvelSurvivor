@@ -63,7 +63,8 @@ export const spidermanDefinition: CharacterDefinition = {
   id: SPIDERMAN_ID,
   displayName: 'Spider-Man',
   rarity: 'rare',
-  weaponText: 'Telarañas: disparo rápido que frena un poco a los enemigos',
+  statBonus: { moveSpeedMult: 1.1, maxHealthMult: 0.9 },
+  weaponText: 'Telarañas: disparo rápido que frena un poco a los enemigos (+10 % de velocidad, −10 % de vida)',
   frame: { width: 92, height: 92 },
   origin: { x: 0.5, y: 77 / 92 },
   body: {
@@ -96,8 +97,8 @@ export const thorDefinition: CharacterDefinition = {
   id: THOR_ID,
   displayName: 'Thor',
   rarity: 'epic',
-  statBonus: { moveSpeedMult: 1.15, maxHealthMult: 1.25 },
-  weaponText: 'Martillo volador: siempre en el aire, va de enemigo en enemigo sin parar (+15% de velocidad y +25% de vida)',
+  statBonus: { moveSpeedMult: 1.08, maxHealthMult: 1.25 },
+  weaponText: 'Martillo volador: siempre en el aire, va de enemigo en enemigo sin parar (+8% de velocidad y +25% de vida)',
   frame: { width: 92, height: 92 },
   origin: { x: 0.5, y: 77 / 92 },
   body: {
@@ -128,8 +129,8 @@ export const hulkDefinition: CharacterDefinition = {
   id: HULK_ID,
   displayName: 'Hulk',
   rarity: 'legendary',
-  statBonus: { regenPerSecond: 0.2 },
-  weaponText: 'Zarpazo: abanico fino que se ensancha y alarga con mejoras (+0,2 de vida por segundo)',
+  statBonus: { regenPerSecond: 0.2, maxHealthMult: 1.5, moveSpeedMult: 0.85 },
+  weaponText: 'Zarpazo: abanico fino que se ensancha y alarga con mejoras (+50 % de vida, −15 % de velocidad y +0,2 de vida por segundo)',
   frame: { width: 92, height: 92 },
   origin: { x: 0.5, y: 77 / 92 },
   body: {
