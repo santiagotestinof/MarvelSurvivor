@@ -2,24 +2,25 @@ import Phaser from 'phaser';
 import { TEXTURES } from '../config/assetKeys';
 import { createRandom } from '../core/random';
 import { BreakableProp, type BreakableKind } from '../entities/BreakableProp';
-import { buildParkDetails, createParkTrees, PARK_TREE, PARK_PINE } from './ParkDetails';
+import { buildParkDetails } from './ParkDetails';
+import { buildParkEntrance } from './ParkEntrance';
+import { placeCommonBuilding } from './CommonBuildings';
+import { commonBuildingLayout } from './CommonBuildingLayout';
+import { lakePlacementBounds } from './ParkLake';
+import { PARK_TREE, PARK_PINE, PARK_TREE_ORIGIN, PARK_PINE_ORIGIN } from './ParkTrees';
 import { nearParkPath, parkPaths } from './ParkPaths';
-import { buildParkVegetation, createParkGround, PARK_GROUND } from './ParkVegetation';
+import { buildParkVegetation } from './ParkVegetation';
+import { buildParkTerrain } from './ParkTerrain';
 import { drawCityPaving, drawCityCurbs, drawCityCrosswalks } from './CityPaving';
-import { buildCityDetails, drawCityBuilding } from './CityDetails';
+import { buildCityFurniture } from './CityFurniture';
 import { buildParkedVehicles } from './CityVehicles';
-import { buildStreetServices, drawLandmark } from './CityLandmarks';
-import { buildBuildingSidewalks } from './BuildingSidewalks';
+import { drawLandmark } from './CityLandmarks';
 
 const TILE = 16;
 const WIDTH_TILES = 160;
 const HEIGHT_TILES = 240;
 const PARK = { left: 640, right: 1920, top: 640, bottom: 3200 };
 const PATH_ROWS = [80, 120, 160];
-
-// Índices del césped generado para este escenario.
-const GRASS_TILES = Array.from({ length: 16 }, (_, index) => index);
-const STONE_TILES = [16, 17];
 
 type PropKind = 'tree' | 'rock' | 'crate';
 
@@ -53,37 +54,17 @@ export class TestMap {
   build(): void {
     this.buildGround();
     this.buildCity();
-    createParkTrees(this.scene);
     buildParkDetails(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.spawn.x,
       (x, y, w, h) => this.addObstacle(x, y, w, h));
     this.scatterProps();
     buildParkVegetation(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.spawn.x,
-      [...this.propBounds, ...this.obstacles.getChildren().map((object) =>
-        (object as Phaser.GameObjects.Rectangle).getBounds())]);
+      [...this.propBounds, ...this.placementObstacleBounds()]);
+    buildParkEntrance(this.scene, PARK, this.spawn.x,
+      (x, y, w, h) => this.addObstacle(x, y, w, h));
   }
 
   private buildGround(): void {
-    createParkGround(this.scene);
-    const random = createRandom(2024);
-
-    const data: number[][] = [];
-    for (let row = 0; row < HEIGHT_TILES; row++) {
-      const line: number[] = [];
-      for (let col = 0; col < WIDTH_TILES; col++) {
-        const x = col * TILE + TILE / 2;
-        const y = row * TILE + TILE / 2;
-        const onPath = x < PARK.left || x >= PARK.right || y < PARK.top || y >= PARK.bottom;
-        const pool = onPath ? STONE_TILES : GRASS_TILES;
-        line.push(pool[Math.floor(random() * pool.length)]);
-      }
-      data.push(line);
-    }
-
-    const map = this.scene.make.tilemap({ data, tileWidth: TILE, tileHeight: TILE });
-    const tileset = map.addTilesetImage(PARK_GROUND, PARK_GROUND, TILE, TILE, 0, 0);
-    if (!tileset) throw new Error('No se pudo crear el tileset del suelo.');
-    const layer = map.createLayer(0, tileset, 0, 0);
-    layer?.setDepth(-1000);
+    buildParkTerrain(this.scene, this.widthPx, this.heightPx, PARK, this.paths);
   }
 
   private isPromenade(x: number, y: number, clearance = 0): boolean {
@@ -93,30 +74,16 @@ export class TestMap {
   /** Pavimento y señalización no bloquean el movimiento. */
   private buildCity(): void {
     const ground = this.scene.add.graphics().setDepth(-999);
-    ground.fillStyle(0x929b9c);
-    ground.fillRect(0, 0, PARK.left, this.heightPx);
-    ground.fillRect(PARK.right, 0, this.widthPx - PARK.right, this.heightPx);
-    ground.fillRect(PARK.left, 0, PARK.right - PARK.left, PARK.top);
-    ground.fillRect(PARK.left, PARK.bottom, PARK.right - PARK.left, this.heightPx - PARK.bottom);
-
     // Una avenida continua rodea el parque; las esquinas quedan transitables.
     const roadXs = [PARK.left - 400, PARK.right + 112];
     const roadYs = [PARK.top - 400, PARK.bottom + 112];
     drawCityPaving(ground, PARK, this.widthPx, this.heightPx, roadXs, roadYs);
-    for (const x of roadXs) {
-      ground.fillStyle(0xd5d5c4).fillRect(x - 4, 0, 296, this.heightPx);
-      ground.fillStyle(0x424b55).fillRect(x, 0, 288, this.heightPx);
-    }
-    for (const y of roadYs) {
-      ground.fillStyle(0xd5d5c4).fillRect(0, y - 4, this.widthPx, 296);
-      ground.fillStyle(0x424b55).fillRect(0, y, this.widthPx, 288);
-    }
     drawCityCurbs(ground, this.widthPx, this.heightPx, roadXs, roadYs);
     for (const x of roadXs) {
       for (let y = 0; y < this.heightPx; y += 32) {
         if (roadYs.some((roadY) => y >= roadY - 24 && y <= roadY + 312) ||
           this.isPromenade(x, y, 24)) continue;
-        ground.fillStyle(0xdac77a).fillRect(x + 140, y, 3, 16);
+        ground.fillStyle(0x999b97).fillRect(x + 140, y, 3, 16);
         ground.fillRect(x + 149, y, 3, 16);
       }
       for (const row of PATH_ROWS) {
@@ -129,7 +96,7 @@ export class TestMap {
       for (let x = 0; x < this.widthPx; x += 32) {
         if (roadXs.some((roadX) => x >= roadX - 24 && x <= roadX + 312) ||
           Math.abs(x - this.spawn.x) < 72) continue;
-        ground.fillStyle(0xdac77a).fillRect(x, y + 140, 16, 3);
+        ground.fillStyle(0x999b97).fillRect(x, y + 140, 16, 3);
         ground.fillRect(x, y + 149, 16, 3);
       }
       for (let offset = 8; offset < 280; offset += 24) {
@@ -138,36 +105,21 @@ export class TestMap {
     }
 
     drawCityCrosswalks(ground, roadXs, roadYs);
-    buildCityDetails(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.widthPx, this.heightPx,
-      (x, y, w, h) => this.addObstacle(x, y, w, h));
 
-    // Edificios en el borde urbano; vereda continua delante.
-    for (let y = 112; y < this.heightPx - 112; y += 320) {
-      if (roadYs.some((roadY) => y + 68 > roadY - 80 && y - 12 < roadY + 368)) continue;
-      // Las primeras manzanas se reservan para los edificios de referencia.
-      if (y === 112) continue;
-      this.placeFacade(8, y);
-      this.placeFacade(this.widthPx - 112, y);
-    }
-    for (let x = PARK.left; x < PARK.right; x += 256) {
-      if (Math.abs(x + 52 - this.spawn.x) < 144) continue;
-      this.placeFacade(x, 112);
-      this.placeFacade(x, this.heightPx - 80);
+    for (const building of commonBuildingLayout(PARK, this.widthPx, this.heightPx,
+      PATH_ROWS.map((row) => row * TILE))) {
+      placeCommonBuilding(this.scene, building.x, building.baseY, building.kind,
+        (x, y, w, h) => this.addObstacle(x, y, w, h));
     }
     const addCityObstacle = (x: number, y: number, w: number, h: number) => this.addObstacle(x, y, w, h);
     drawLandmark(this.scene, 32, 216, 'avengers', addCityObstacle);
     drawLandmark(this.scene, this.widthPx - 192, 216, 'bugle', addCityObstacle);
     drawLandmark(this.scene, 32, this.heightPx - 24, 'sanctum', addCityObstacle);
     drawLandmark(this.scene, this.widthPx - 192, this.heightPx - 24, 'baxter', addCityObstacle);
-    buildStreetServices(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), addCityObstacle);
-    buildBuildingSidewalks(this.scene, PARK, this.widthPx, this.heightPx, addCityObstacle);
+    buildCityFurniture(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.widthPx, this.heightPx,
+      this.obstacles, addCityObstacle);
     buildParkedVehicles(this.scene, PARK, PATH_ROWS.map((row) => row * TILE), this.widthPx, this.heightPx,
       this.obstacles, (x, y, w, h) => this.addObstacle(x, y, w, h));
-  }
-
-  private placeFacade(x: number, y: number): void {
-    drawCityBuilding(this.scene, x, y + 64);
-    this.addObstacle(x + 52, y + 26, 112, 84);
   }
 
   private addObstacle(x: number, y: number, width: number, height: number): Phaser.GameObjects.Rectangle {
@@ -177,6 +129,15 @@ export class TestMap {
     body.setSize(width, height);
     body.updateFromGameObject();
     return collider;
+  }
+
+  private placementObstacleBounds(): Phaser.Geom.Rectangle[] {
+    return [
+      ...this.obstacles.getChildren()
+        .filter((object) => !(object as Phaser.GameObjects.Rectangle).getData('parkLakeWater'))
+        .map((object) => (object as Phaser.GameObjects.Rectangle).getBounds()),
+      ...lakePlacementBounds(this.spawn.x, PATH_ROWS.map((row) => row * TILE)),
+    ];
   }
 
   private scatterProps(): void {
@@ -208,8 +169,7 @@ export class TestMap {
         const inGrove = [920, 1640].some((gx) => [860, 1530, 2280, 2970].some((gy) =>
           Phaser.Math.Distance.Between(x, y, gx, gy) < 190));
         if (!nearEdge && !inGrove) continue;
-        if (this.obstacles.getChildren().some((object) => {
-          const bounds = (object as Phaser.GameObjects.Rectangle).getBounds();
+        if (this.placementObstacleBounds().some((bounds) => {
           return x > bounds.left - 40 && x < bounds.right + 40 &&
             y > bounds.top - 30 && y < bounds.bottom + 64;
         })) continue;
@@ -229,6 +189,8 @@ export class TestMap {
   private placeProp(kind: PropKind, x: number, y: number): void {
     const texture = kind === 'tree' ? (Math.round(x) % 3 === 0 ? PARK_PINE : PARK_TREE) : TEXTURES[kind];
     const image = this.scene.add.image(x, y, texture).setOrigin(0.5, 1).setDepth(y);
+    if (texture === PARK_TREE) image.setOrigin(PARK_TREE_ORIGIN.x, PARK_TREE_ORIGIN.y);
+    if (texture === PARK_PINE) image.setOrigin(PARK_PINE_ORIGIN.x, PARK_PINE_ORIGIN.y);
     this.propBounds.push(image.getBounds());
 
     const { width, height } = PROP_BODY[kind];

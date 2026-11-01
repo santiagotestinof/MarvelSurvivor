@@ -2,10 +2,21 @@ export type ParkBounds = { left: number; right: number; top: number; bottom: num
 export type ParkPoint = { x: number; y: number };
 export const PARK_PATH_WIDTH = 44;
 
+/** Tramos rectos unidos por curvas con tangentes horizontales en ambos extremos. */
+function curvedOffset(t: number, stops: readonly (readonly [number, number])[]): number {
+  for (let i = 1; i < stops.length; i++) {
+    const [end, value] = stops[i];
+    const [start, previous] = stops[i - 1];
+    if (t > end) continue;
+    const u = Math.max(0, Math.min(1, (t - start) / (end - start)));
+    return previous + (value - previous) * u * u * (3 - 2 * u);
+  }
+  return stops[stops.length - 1][1];
+}
+
 export function parkCrossPathOffset(t: number, index: number): number {
-  // Transición suave a un tramo perpendicular a la vereda en ambos extremos.
-  const bend = Math.sin(t * Math.PI * 2) * Math.sin(t * Math.PI);
-  return (index === 1 ? 100 : 76) * bend;
+  const bend = index === 1 ? -40 : 40;
+  return curvedOffset(t, [[0, 0], [0.18, 0], [0.34, bend], [0.66, bend], [0.82, 0], [1, 0]]);
 }
 
 /** Una única geometría para dibujar senderos y reservar sus márgenes. */
@@ -13,7 +24,9 @@ export function parkPaths(park: ParkBounds, rows: number[], cx: number): ParkPoi
   const vertical: ParkPoint[] = [];
   for (let y = park.top; y <= park.bottom; y += 8) {
     const t = (y - park.top) / (park.bottom - park.top);
-    vertical.push({ x: cx + 105 * Math.sin(t * Math.PI * 4) * Math.sin(t * Math.PI), y });
+    const offset = curvedOffset(t, [[0, 0], [0.12, 0], [0.20, -48], [0.36, -48],
+      [0.44, 0], [0.56, 0], [0.64, 48], [0.80, 48], [0.88, 0], [1, 0]]);
+    vertical.push({ x: cx + offset, y });
   }
   return [vertical, ...rows.map((row, index) => {
     const points: ParkPoint[] = [];

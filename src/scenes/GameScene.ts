@@ -20,6 +20,7 @@ import { EVOLUTIONS, passiveTypesTaken, passivesTaken, pickUpgradeChoices, type 
 import { AutoAttackSystem } from '../systems/AutoAttackSystem';
 import { BossAttackSystem } from '../systems/BossAttackSystem';
 import { CameraRig } from '../systems/CameraRig';
+import { dryEnemySpawn } from '../systems/DryEnemySpawn';
 import { HERO_WEAPONS, type HeroWeapon } from '../systems/HeroWeapons';
 import { MissileWeapon } from '../systems/MissileWeapon';
 import { ObstacleAvoidance } from '../systems/ObstacleAvoidance';
@@ -234,10 +235,17 @@ export class GameScene extends Phaser.Scene {
       () => this.clock < this.ironManFlyingUntil,
     );
 
+    const lakeWater = (map.obstacles.getChildren() as Phaser.GameObjects.Rectangle[])
+      .filter((object) => object.getData('parkLakeWater'))
+      .map((object) => {
+        const body = object.body as Phaser.Physics.Arcade.StaticBody;
+        return { x: body.x, y: body.y, width: body.width, height: body.height };
+      });
     this.waves = new WaveSystem(this, this.enemies, this.player, this.worldRect, (e) => {
       this.dropLoot(e);
       this.round.onEnemyKilled(e);
-    }, this.stats, doombotTest);
+    }, this.stats, doombotTest, (kind, x, y) =>
+      dryEnemySpawn(kind, x, y, this.worldRect, lakeWater, this.cameras.main.worldView));
     this.bossAttacks = new BossAttackSystem(
       this,
       this.player,

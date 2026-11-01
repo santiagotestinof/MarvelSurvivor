@@ -7,6 +7,24 @@ import { loadEnemyAssets, registerEnemyAnimations } from '../enemies/enemyKinds'
 import { loadCharacterAssets, registerCharacterAnimations } from '../systems/AnimationSystem';
 import { loadMetaItemIcons } from '../ui/metaItemIcons';
 import { loadImageIcons, registerUpgradeIcons } from '../ui/upgradeIcons';
+import { PARK_NATURAL_SOURCE, PARK_GRASS_SOURCE } from '../world/ParkTerrain';
+import { CITY_SOURCE } from '../world/CityPaving';
+import { MANHATTAN_SIDEWALK, MANHATTAN_SIDEWALK_WORN } from '../world/ManhattanSidewalk';
+import { MANHATTAN_ASPHALT } from '../world/ManhattanAsphalt';
+import { COMMON_BUILDINGS } from '../world/CommonBuildings';
+import { DAILY_BUGLE } from '../world/DailyBugle';
+import { BAXTER_BUILDING } from '../world/BaxterBuilding';
+import { AVENGERS_TOWER } from '../world/AvengersTower';
+import { SANCTUM } from '../world/Sanctum';
+import { CITY_CARS } from '../world/CityCars';
+import { CITY_FURNITURE } from '../world/CityFurniture';
+import { PARK_TREE, PARK_PINE } from '../world/ParkTrees';
+import { PARK_TALL_GRASS, PARK_BUSH, PARK_FLOWERS } from '../world/ParkVegetation';
+import { PARK_FOUNTAIN } from '../world/ParkFountain';
+import { PARK_PLAZA } from '../world/ParkPlaza';
+import { PARK_LAMP, PARK_BIN, PARK_BENCH } from '../world/ParkFurniture';
+import { PARK_LAKE } from '../world/ParkLake';
+import { PARK_ENTRY_GATE } from '../world/ParkEntrance';
 
 declare const __BUILD_ID__: string;
 
@@ -20,6 +38,39 @@ export class BootScene extends Phaser.Scene {
     this.load.setPath(import.meta.env.BASE_URL);
 
     this.load.image(TEXTURES.ground, `${ASSET_PATHS.ground}?v=${__BUILD_ID__}`);
+    this.load.image(PARK_GRASS_SOURCE, `assets/tiles/park-wang-gravel.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_NATURAL_SOURCE, `assets/tiles/park-natural-wang.png?v=${__BUILD_ID__}`);
+    this.load.image(CITY_SOURCE, `assets/tiles/city-pixellab.png?v=${__BUILD_ID__}`);
+    this.load.image(MANHATTAN_SIDEWALK, `assets/tiles/manhattan-sidewalk.png?v=${__BUILD_ID__}`);
+    this.load.image(MANHATTAN_SIDEWALK_WORN, `assets/tiles/manhattan-sidewalk-worn.png?v=${__BUILD_ID__}`);
+    this.load.image(MANHATTAN_ASPHALT, `assets/tiles/manhattan-asphalt.png?v=${__BUILD_ID__}`);
+    for (const building of Object.values(COMMON_BUILDINGS)) {
+      this.load.image(building.texture, `${building.path}?v=${__BUILD_ID__}`);
+    }
+    this.load.image(DAILY_BUGLE, `assets/props/daily-bugle.png?v=${__BUILD_ID__}`);
+    this.load.image(BAXTER_BUILDING, `assets/props/baxter-building.png?v=${__BUILD_ID__}`);
+    this.load.image(AVENGERS_TOWER, `assets/props/avengers-tower.png?v=${__BUILD_ID__}`);
+    this.load.image(SANCTUM, `assets/props/sanctum.png?v=${__BUILD_ID__}`);
+    for (const car of Object.values(CITY_CARS)) {
+      for (const asset of [car.horizontal, car.vertical]) {
+        this.load.image(asset.texture, `${asset.path}?v=${__BUILD_ID__}`);
+      }
+    }
+    for (const asset of Object.values(CITY_FURNITURE)) {
+      this.load.image(asset.texture, `${asset.path}?v=${__BUILD_ID__}`);
+    }
+    this.load.image(PARK_TREE, `assets/props/park-main-tree.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_PINE, `assets/props/park-pine.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_TALL_GRASS, `assets/props/park-tall-grass.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_BUSH, `assets/props/park-bush.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_FLOWERS, `assets/props/park-flowers.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_FOUNTAIN, `assets/props/park-fountain.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_PLAZA, `assets/tiles/bethesda-plaza.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_LAMP, `assets/props/park-lamp.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_BIN, `assets/props/park-bin.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_BENCH, `assets/props/park-bench.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_LAKE, `assets/props/park-lake.png?v=${__BUILD_ID__}`);
+    this.load.image(PARK_ENTRY_GATE, `assets/props/park-entry-gate.png?v=${__BUILD_ID__}`);
     this.load.image(TEXTURES.tree, `${ASSET_PATHS.tree}?v=${__BUILD_ID__}`);
     this.load.spritesheet(TEXTURES.rock, `${ASSET_PATHS.rock}?v=${__BUILD_ID__}`, { frameWidth: 16, frameHeight: 12 });
     this.load.spritesheet(TEXTURES.crate, `${ASSET_PATHS.crate}?v=${__BUILD_ID__}`, { frameWidth: 16, frameHeight: 16 });

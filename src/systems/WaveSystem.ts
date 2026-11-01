@@ -26,6 +26,8 @@ export class WaveSystem {
     private readonly onEnemyDied: (enemy: Enemy) => void,
     private readonly stats: PlayerStats,
     private readonly forceDoombots = false,
+    private readonly resolveSpawnPoint: (kind: EnemyKind, x: number, y: number) => { x: number; y: number } =
+      (_kind, x, y) => ({ x, y }),
   ) {}
 
   /** Multiplicadores de vida y velocidad según el progreso del tiempo (`0` al inicio, `1` al llegar al jefe y sigue subiendo). */
@@ -167,10 +169,13 @@ export class WaveSystem {
 
   
   private spawnEnemyAt(kind: EnemyKind, scaling: EnemyScaling, x: number, y: number, clampToWorld = true): Enemy {
+    const point = this.resolveSpawnPoint(kind,
+      clampToWorld ? Phaser.Math.Clamp(x, this.world.x + 10, this.world.x + this.world.width - 10) : x,
+      clampToWorld ? Phaser.Math.Clamp(y, this.world.y + 10, this.world.y + this.world.height - 10) : y);
     const enemy = new Enemy(
       this.scene,
-      clampToWorld ? Phaser.Math.Clamp(x, this.world.x + 10, this.world.x + this.world.width - 10) : x,
-      clampToWorld ? Phaser.Math.Clamp(y, this.world.y + 10, this.world.y + this.world.height - 10) : y,
+      point.x,
+      point.y,
       kind,
       scaling,
     );
@@ -187,11 +192,7 @@ export class WaveSystem {
 
   spawnEnemy(kind: EnemyKind, scaling: EnemyScaling): Enemy {
     const { x, y } = this.pickSpawnPoint();
-    const enemy = new Enemy(this.scene, x, y, kind, scaling);
-    if (kind.spawn && Math.random() < this.stats.defangChance) enemy.defang();
-    this.enemies.add(enemy);
-    enemy.once('died', this.onEnemyDied);
-    return enemy;
+    return this.spawnEnemyAt(kind, scaling, x, y);
   }
 
   aliveCount(): number {
@@ -228,7 +229,8 @@ export class WaveSystem {
       if (moved >= WAVES.relocatePerCheck) break;
       if (!enemy.active || enemy.dying || enemy.isStampeding || enemy.frozen || !enemy.kind.spawn || enemy.kind.id === MINIBOSS.id) continue;
       if (Math.hypot(enemy.x - view.centerX, enemy.y - view.centerY) < far) continue;
-      const { x, y } = this.pickSpawnPoint();
+      const point = this.pickSpawnPoint();
+      const { x, y } = this.resolveSpawnPoint(enemy.kind, point.x, point.y);
       enemy.setPosition(x, y);
       enemy.setVelocity(0, 0);
       moved++;
