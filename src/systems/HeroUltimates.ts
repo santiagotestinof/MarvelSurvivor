@@ -135,10 +135,9 @@ export class WebSwing extends TimedUltimate {
   private anchorObstacle: Phaser.GameObjects.Rectangle | null = null;
   private startAngle = 0;
   private lastTickAt = 0;
-  private nextHitAt = 0;
   private readonly swingSpeed = 380;
   private line: Phaser.GameObjects.Graphics | null = null;
-  private readonly lastHitAt = new Map<Enemy, number>();
+  private readonly touchingEnemies = new Set<Enemy>();
 
   protected onStart(now: number): void {
     const { scene, player, anchors } = this.deps;
@@ -157,8 +156,8 @@ export class WebSwing extends TimedUltimate {
     this.radius = Math.max(8, target.distance);
     this.startAngle = Math.atan2(player.y - this.anchorY, player.x - this.anchorX);
     this.lastTickAt = now;
-    this.nextHitAt = now;
-    this.lastHitAt.clear();
+    this.touchingEnemies.clear();
+    player.setDamageImmune(true);
     this.line?.destroy();
     this.line = scene.add.graphics().setDepth(999_989);
     this.drawWeb(player.x, player.y);
@@ -168,7 +167,7 @@ export class WebSwing extends TimedUltimate {
   cancel(_now: number): boolean { return this.finishEarly(); }
 
   protected onTick(now: number): void {
-    const { player, enemies, stats } = this.deps;
+    const { player, enemies } = this.deps;
     const delta = Math.max(0, now - this.lastTickAt);
     this.lastTickAt = now;
     // La velocidad tangencial se mantiene constante, independientemente del radio.
@@ -194,15 +193,24 @@ export class WebSwing extends TimedUltimate {
     (player.body as Phaser.Physics.Arcade.Body).updateFromGameObject();
     this.drawWeb(x, y);
 
-    if (now < this.nextHitAt) return;
-    this.nextHitAt = now + 300;
+    const webSegment = new Phaser.Geom.Line(this.anchorX, this.anchorY, x, y);
+    const touchingNow = new Set<Enemy>();
     for (const enemy of activeEnemies(enemies)) {
-      if (enemy.dying || Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y) > 28) continue;
-      const previousHit = this.lastHitAt.get(enemy) ?? 0;
-      if (now - previousHit < 600) continue;
-      enemy.takeDamage(6 * stats.damageMult);
-      this.lastHitAt.set(enemy, now);
+      if (enemy.dying) continue;
+      const enemyBody = enemy.body as Phaser.Physics.Arcade.Body;
+      if (!enemyBody?.enable) continue;
+      const hitbox = new Phaser.Geom.Rectangle(
+        enemyBody.x - 3,
+        enemyBody.y - 3,
+        enemyBody.width + 6,
+        enemyBody.height + 6,
+      );
+      if (!Phaser.Geom.Intersects.LineToRectangle(webSegment, hitbox)) continue;
+      touchingNow.add(enemy);
+      if (!this.touchingEnemies.has(enemy)) enemy.takeDamage(10);
     }
+    this.touchingEnemies.clear();
+    for (const enemy of touchingNow) this.touchingEnemies.add(enemy);
   }
 
   protected onEnd(): void {
@@ -210,7 +218,8 @@ export class WebSwing extends TimedUltimate {
     this.line = null;
     this.anchorObstacle = null;
     this.deps.player.setVelocity(0, 0);
-    this.lastHitAt.clear();
+    this.deps.player.setDamageImmune(false);
+    this.touchingEnemies.clear();
   }
 
   private drawWeb(x: number, y: number): void {
