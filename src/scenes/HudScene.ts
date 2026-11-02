@@ -6,7 +6,7 @@ import { HERO_WEAPON_MAX_LEVEL } from '../systems/HeroWeapons';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { ResultOverlay } from '../ui/ResultOverlay';
 import { UpgradeMenu, type UpgradePrompt } from '../ui/UpgradeMenu';
-import { formatTime, textStyle, uiScale, UI_FONT } from '../ui/uiLayout';
+import { TITLE_FONT, formatTime, textStyle, uiScale, UI_FONT } from '../ui/uiLayout';
 import { UPGRADE_ICON_SIZE, setUpgradeIcon, upgradeIconKey } from '../ui/upgradeIcons';
 import type { GameScene, HudSnapshot } from './GameScene';
 
@@ -38,6 +38,7 @@ export class HudScene extends Phaser.Scene {
   private weaponIcons: Phaser.GameObjects.Image[] = [];
   private weaponLevels: Phaser.GameObjects.Text[] = [];
   private ultimateButton!: Phaser.GameObjects.Rectangle;
+  private ultimateGfx!: Phaser.GameObjects.Graphics;
   private ultimateText!: Phaser.GameObjects.Text;
   private upgradeMenu!: UpgradeMenu;
   private result!: ResultOverlay;
@@ -61,9 +62,11 @@ export class HudScene extends Phaser.Scene {
 
     this.bars = this.add.graphics().setDepth(1);
     this.healthText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
-    this.timerText = this.add.text(0, 0, '', textStyle(24)).setOrigin(0.5, 0).setDepth(2);
+    this.timerText = this.add.text(0, 0, '', { fontFamily: TITLE_FONT, fontSize: '24px', color: '#ffffff', stroke: '#050b16', strokeThickness: 3 }).setOrigin(0.5, 0).setDepth(2);
+    this.timerText.setLetterSpacing(2);
     this.killsText = this.add.text(0, 0, '', textStyle(14)).setOrigin(1, 0).setDepth(2);
-    this.bossText = this.add.text(0, 0, 'CRÁNEO ROJO', textStyle(12, '#ffd9d9')).setOrigin(0.5).setDepth(2).setVisible(false);
+    this.bossText = this.add.text(0, 0, 'CRÁNEO ROJO', { fontFamily: TITLE_FONT, fontSize: '12px', color: '#ffe0e0', stroke: '#2a0508', strokeThickness: 3 }).setOrigin(0.5).setDepth(2).setVisible(false);
+    this.bossText.setLetterSpacing(2);
     this.bossArmorText = this.add.text(0, 0, '', textStyle(10, '#ffd36b')).setOrigin(0.5, 0).setDepth(2).setVisible(false);
 
     this.levelText = this.add.text(0, 0, '', textStyle(12)).setOrigin(0.5).setDepth(2);
@@ -89,11 +92,12 @@ export class HudScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     this.joystick = new VirtualJoystick(this, Math.max(40, 16 * uiScale(width, height)));
-    this.ultimateButton = this.add.rectangle(0, 0, 76, 34, 0x16445b, 0.95)
-      .setStrokeStyle(2, 0x75e6ff)
+    // El botón se dibuja en `ultimateGfx` (esquinas redondeadas); el rectángulo solo recibe el toque.
+    this.ultimateGfx = this.add.graphics().setDepth(9);
+    this.ultimateButton = this.add.rectangle(0, 0, 76, 34, 0x000000, 0.001)
       .setDepth(10)
       .setInteractive({ useHandCursor: true });
-    this.ultimateText = this.add.text(0, 0, 'ULT E', textStyle(12, '#ffffff'))
+    this.ultimateText = this.add.text(0, 0, 'ULT E', { fontFamily: UI_FONT, fontStyle: 'bold', fontSize: '12px', color: '#ffffff' })
       .setOrigin(0.5)
       .setDepth(11);
     this.ultimateButton.on(Phaser.Input.Events.POINTER_UP, () => {
@@ -161,14 +165,25 @@ export class HudScene extends Phaser.Scene {
     const playerHasUltimate = this.gameScene.hasUltimate();
     this.ultimateButton.setVisible(playerHasUltimate);
     this.ultimateText.setVisible(playerHasUltimate);
+    this.ultimateGfx.clear();
     if (playerHasUltimate) {
       const label = ultimate.active
         ? `${ultimate.activeLabel} ${Math.ceil(ultimate.activeRemainingMs / 1000)}s`
         : ultimate.remainingMs > 0
           ? `ULT ${Math.ceil(ultimate.remainingMs / 1000)}s`
           : 'ULT E';
-      this.ultimateText.setText(label);
-      this.ultimateButton.setFillStyle(ultimate.active ? 0x176b84 : ultimate.remainingMs > 0 ? 0x333b43 : 0x16445b, 0.95);
+      this.ultimateText.setText(label).setColor(ultimate.remainingMs > 0 && !ultimate.active ? '#7d8a9a' : '#ffffff');
+      const ready = !ultimate.active && ultimate.remainingMs <= 0;
+      const bw = this.ultimateButton.width;
+      const bh = this.ultimateButton.height;
+      const bx = this.ultimateButton.x - bw / 2;
+      const by = this.ultimateButton.y - bh / 2;
+      const r = bh * 0.3;
+      const gfx = this.ultimateGfx;
+      if (ready) gfx.fillStyle(0x2fb7ff, 0.22).fillRoundedRect(bx - 3, by - 2, bw + 6, bh + 8, r + 3);
+      gfx.fillStyle(0x000000, 0.35).fillRoundedRect(bx, by + 3, bw, bh, r);
+      gfx.fillStyle(ultimate.active ? 0x1d7aa0 : ready ? 0x0e3550 : 0x121a28, 0.96).fillRoundedRect(bx, by, bw, bh, r);
+      gfx.lineStyle(2, ultimate.active ? 0x8defff : ready ? 0x3dd9ff : 0x4a5667, ready || ultimate.active ? 0.95 : 0.6).strokeRoundedRect(bx, by, bw, bh, r);
     }
     this.latest = state;
     this.drawState(state);
@@ -198,13 +213,15 @@ export class HudScene extends Phaser.Scene {
     this.timerText.setFontSize(Math.max(18, Math.round(7 * ui))).setPosition(width / 2, this.margin);
     const xpBarHeight = Math.max(8, Math.round(2.5 * ui));
     this.ultimateButton.setPosition(width - this.margin - 42, height - xpBarHeight - 27);
+    this.ultimateButton.setSize(Math.max(76, Math.round(18 * ui)), Math.max(34, Math.round(8.5 * ui)));
+    (this.ultimateButton.input?.hitArea as Phaser.Geom.Rectangle | undefined)?.setTo(0, 0, this.ultimateButton.width, this.ultimateButton.height);
     this.ultimateText.setPosition(this.ultimateButton.x, this.ultimateButton.y);
-    this.killsText.setFontSize(Math.max(12, Math.round(3.5 * ui))).setPosition(width - this.margin, this.margin);
+    this.killsText.setFontSize(Math.max(12, Math.round(3.5 * ui))).setPosition(width - this.margin - Math.round(this.killsText.height * 0.6), this.margin);
     this.healthText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));
     this.bossText.setFontSize(Math.max(10, Math.round(this.barHeight * 0.8)));
 
     this.goldText.setFontSize(Math.max(11, Math.round(3.4 * ui)));
-    this.goldText.setPosition(this.margin, this.margin + this.barHeight + 8);
+    this.goldText.setPosition(this.margin + Math.round((this.goldText.height + 8) * 0.95), this.margin + this.barHeight + 12);
     this.upgradeMenu.layout(ui);
     this.result.layout(ui, width, height);
     this.pause.layout(ui, width, height, this.margin);
@@ -224,28 +241,53 @@ export class HudScene extends Phaser.Scene {
     const g = this.bars;
     g.clear();
 
-    // Vida del jugador
+    const pill = (x: number, y: number, w: number, h: number, border = 0x37d5ff): void => {
+      g.fillStyle(0x000000, 0.3).fillRoundedRect(x, y + 2, w, h, h / 2);
+      g.fillStyle(0x0a1224, 0.8).fillRoundedRect(x, y, w, h, h / 2);
+      g.lineStyle(1.5, border, 0.35).strokeRoundedRect(x, y, w, h, h / 2);
+    };
+
+    // Vida del jugador: barra redondeada de vidrio con relleno verde (rojo cuando queda poca).
     const ratio = Phaser.Math.Clamp(state.health / state.maxHealth, 0, 1);
-    g.fillStyle(0x000000, 0.6).fillRect(m - 2, m - 2, barW + 4, barH + 4);
-    g.fillStyle(ratio > 0.35 ? 0x3ddc84 : 0xff4d4d, 1).fillRect(m, m, barW * ratio, barH);
+    pill(m - 2, m - 2, barW + 4, barH + 4, ratio > 0.35 ? 0x3ddc84 : 0xff4d4d);
+    if (ratio > 0) {
+      const fillW = Math.max(barH, barW * ratio);
+      g.fillStyle(ratio > 0.35 ? 0x2fbf72 : 0xe23b3b, 1).fillRoundedRect(m, m, fillW, barH, barH / 2);
+      g.fillStyle(0xffffff, 0.22).fillRoundedRect(m + 2, m + 1, Math.max(0, fillW - 4), barH * 0.38, barH / 4);
+    }
     this.healthText.setText(`${Math.ceil(state.health)} / ${state.maxHealth}`).setPosition(m + barW / 2, m + barH / 2);
 
     // Tiempo (o aviso de jefe, solo si el jefe llegó a aparecer: perder en las oleadas deja el reloj)
     const bossAppeared = state.bossMaxHealth > 0;
     this.timerText.setText(bossAppeared ? '¡JEFE!' : formatTime(state.remainingMs));
     this.timerText.setColor(bossAppeared ? '#ff8a8a' : '#ffffff');
-    this.killsText.setText(`Derrotados: ${state.kills}`);
-    this.goldText.setText(`ORO ${state.gold}`);
+    this.killsText.setText(`DERROTADOS  ${state.kills}`);
+    this.goldText.setText(`${state.gold}`);
+    pill(width / 2 - this.timerText.width / 2 - 16, m - 5, this.timerText.width + 32, this.timerText.height + 10, bossAppeared ? 0xff5a6e : 0x37d5ff);
+    const killsPad = Math.round(this.killsText.height * 0.6);
+    pill(width - m - this.killsText.width - killsPad * 2, m - 3, this.killsText.width + killsPad * 2, this.killsText.height + 6);
+    // Oro: moneda dorada y número dentro de una pastilla, debajo de la vida.
+    const chipH = this.goldText.height + 8;
+    const coin = chipH * 0.62;
+    pill(m - 2, m + barH + 8, coin * 2 + this.goldText.width + chipH * 0.7, chipH, 0xffcf4a);
+    g.fillStyle(0xffcf4a, 1).fillCircle(m + chipH * 0.45, m + barH + 8 + chipH / 2, coin * 0.62);
+    g.lineStyle(2, 0xb78700, 1).strokeCircle(m + chipH * 0.45, m + barH + 8 + chipH / 2, coin * 0.62);
+    g.fillStyle(0xfff0a8, 0.9).fillCircle(m + chipH * 0.38, m + barH + 8 + chipH / 2 - coin * 0.18, coin * 0.16);
 
-    // Experiencia (barra fina abajo de todo)
+    // Experiencia: barra fina abajo de todo con el nivel en una pastilla al centro.
     const xpH = Math.max(8, Math.round(2.5 * this.ui));
     const { height } = this.scale;
-    g.fillStyle(0x000000, 0.6).fillRect(0, height - xpH, width, xpH);
+    g.fillStyle(0x050b16, 0.8).fillRect(0, height - xpH, width, xpH);
     g.fillStyle(0x37d5ff, 1).fillRect(0, height - xpH, width * Phaser.Math.Clamp(state.xp / state.xpToNext, 0, 1), xpH);
+    g.fillStyle(0xffffff, 0.25).fillRect(0, height - xpH, width * Phaser.Math.Clamp(state.xp / state.xpToNext, 0, 1), Math.max(1, xpH * 0.3));
+    g.lineStyle(1, 0x37d5ff, 0.5).lineBetween(0, height - xpH, width, height - xpH);
     this.levelText
       .setFontSize(Math.max(10, Math.round(xpH * 0.9)))
       .setText(`NV ${state.level}`)
       .setPosition(width / 2, height - xpH / 2);
+    const lvW = this.levelText.width + 22;
+    const lvH = xpH + 8;
+    pill(width / 2 - lvW / 2, height - lvH - 1, lvW, lvH);
 
     this.drawPassives(state, g, xpH);
     this.drawWeapons(state, g, xpH);
@@ -259,8 +301,12 @@ export class HudScene extends Phaser.Scene {
       const bossX = (width - bossW) / 2;
       const bossY = this.margin + this.timerText.height + 6;
       const bossRatio = Phaser.Math.Clamp(state.bossHealth / state.bossMaxHealth, 0, 1);
-      g.fillStyle(0x000000, 0.6).fillRect(bossX - 2, bossY - 2, bossW + 4, barH + 4);
-      g.fillStyle(0xc82828, 1).fillRect(bossX, bossY, bossW * bossRatio, barH);
+      pill(bossX - 3, bossY - 3, bossW + 6, barH + 6, 0xff5a6e);
+      if (bossRatio > 0) {
+        const fillW = Math.max(barH, bossW * bossRatio);
+        g.fillStyle(0xd02a3a, 1).fillRoundedRect(bossX, bossY, fillW, barH, barH / 2);
+        g.fillStyle(0xffffff, 0.2).fillRoundedRect(bossX + 2, bossY + 1, Math.max(0, fillW - 4), barH * 0.38, barH / 4);
+      }
       this.bossText.setPosition(width / 2, bossY + barH / 2);
       this.bossArmorText
         .setFontSize(Math.max(9, Math.round(this.barHeight * 0.7)))
@@ -278,8 +324,8 @@ export class HudScene extends Phaser.Scene {
     for (let i = 0; i < this.passiveIcons.length; i++) {
       const x = this.margin + i * (slot + gap);
       const item = state.passives[i];
-      g.fillStyle(0x000000, 0.55).fillRoundedRect(x, y, slot, slot, 5);
-      g.lineStyle(2, item ? 0xf5c518 : 0xffffff, item ? 0.85 : 0.2).strokeRoundedRect(x, y, slot, slot, 5);
+      g.fillStyle(0x0a1224, 0.85).fillRoundedRect(x, y, slot, slot, 8);
+      g.lineStyle(2, item ? 0xf5c518 : 0xffffff, item ? 0.85 : 0.2).strokeRoundedRect(x, y, slot, slot, 8);
       const icon = this.passiveIcons[i];
       const count = this.passiveCounts[i];
       icon.setVisible(!!item);
@@ -305,8 +351,8 @@ export class HudScene extends Phaser.Scene {
       const item = state.weapons[i];
       const owned = !!item && item.level > 0;
       const maxed = owned && item.level >= HERO_WEAPON_MAX_LEVEL;
-      g.fillStyle(0x000000, 0.55).fillRoundedRect(x, y, slot, slot, 5);
-      g.lineStyle(2, maxed ? 0xffe272 : owned ? 0x37d5ff : 0xffffff, owned ? 0.9 : 0.2).strokeRoundedRect(x, y, slot, slot, 5);
+      g.fillStyle(0x0a1224, 0.85).fillRoundedRect(x, y, slot, slot, 8);
+      g.lineStyle(2, maxed ? 0xffe272 : owned ? 0x37d5ff : 0xffffff, owned ? 0.9 : 0.2).strokeRoundedRect(x, y, slot, slot, 8);
       const icon = this.weaponIcons[i];
       const level = this.weaponLevels[i];
       icon.setVisible(owned);
