@@ -332,6 +332,7 @@ export class GameScene extends Phaser.Scene {
       }
       if (this.clock < this.ultimateReadyAt) return;
       this.heroUltimate.start(this.clock);
+      audio.playSfx('ultimate');
       return;
     }
     if (this.timeStop) {
@@ -606,8 +607,12 @@ export class GameScene extends Phaser.Scene {
       }
       if (pickup.isMagnetized && pickup.moveToward(this.player.x, targetY, delta)) {
         if (pickup.kind === 'xp') this.progression.addXp(pickup.value * this.stats.xpMult);
-        else if (pickup.kind === 'gold') this.gold += pickup.value * this.stats.goldMult;
+        else if (pickup.kind === 'gold') {
+          this.gold += pickup.value * this.stats.goldMult;
+          audio.playSfx('coin');
+        }
         else if (pickup.kind === 'chest') {
+          audio.playSfx('chest');
           this.progression.pendingLevelUps += MINIBOSS_CONFIG.chestLevels;
           this.events.emit('special-wave', '¡COFRE!');
         } else if (pickup.kind === 'fruit') this.player.heal(Math.max(FRUIT.minHeal, Math.round(this.player.maxHealth * FRUIT.healFraction)));
@@ -670,6 +675,7 @@ export class GameScene extends Phaser.Scene {
   private offerUpgrades(): void {
     const ctx = this.upgradeContext();
     const stats = this.stats;
+    audio.playSfx('levelup');
     this.hud.showUpgrades({
       level: this.progression.level,
       choices: pickUpgradeChoices(PROGRESSION.upgradeChoices, ctx, this.banished),

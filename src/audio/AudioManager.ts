@@ -1,11 +1,24 @@
+declare const __BUILD_ID__: string;
+
 /**
- * Música y efectos de sonido, generados con Web Audio (no hay archivos de audio ni material de terceros).
+ * Música y efectos de sonido. Por defecto se generan con Web Audio (sin archivos ni material de terceros), pero si hay
+ * archivos de audio listados en `public/assets/audio/manifest.json` se usan esos (ver `public/assets/audio/README.md`):
+ * la música por tema (`music.menu`, `music.game`, en loop) y los efectos (`sfx.hit`, `sfx.kill`, `sfx.levelup`, `sfx.coin`,
+ * `sfx.chest`, `sfx.ultimate`). Lo que no esté en el manifiesto sigue sonando como antes (los efectos nuevos, sin archivo, no suenan).
  * - Música: un secuenciador chico con bajo, arpegio, melodía y batería. Hay dos temas: `menu` (tranquilo) y `game` (acción).
  * - Efecto de golpe a un enemigo: `playEnemyHit` (al jugador no le suena nada cuando lo golpean).
  * - Volúmenes: `masterVolume` (todo el sonido) y `musicVolume` (solo la música), de 0 a 1; se guardan en el navegador y se cambian desde `SoundPanel`.
  * Los navegadores no dejan sonar nada hasta que el jugador toca o aprieta algo, así que el audio arranca en la primera interacción.
  */
 export type Track = 'menu' | 'game';
+/** Efectos con archivo: `hit` y `kill` reemplazan al golpe generado; el resto solo suena si hay archivo. */
+export type Sfx = 'hit' | 'kill' | 'levelup' | 'coin' | 'chest' | 'ultimate';
+
+interface AudioManifest {
+  music?: Partial<Record<Track, string>>;
+  sfx?: Partial<Record<Sfx, string>>;
+}
+const AUDIO_DIR = 'assets/audio/';
 
 const VOLUME_KEY = 'marvel-survivors-volume';
 const MUSIC_VOLUME = 0.22;
@@ -53,6 +66,11 @@ class AudioManager {
   private master01 = 1;
   private music01 = 1;
   private lastHitAt = 0;
+  private musicBuffers: Partial<Record<Track, AudioBuffer>> = {};
+  private sfxBuffers: Partial<Record<Sfx, AudioBuffer>> = {};
+  private fileMusic: { source: AudioBufferSourceNode; gain: GainNode } | null = null;
+  private filesRequested = false;
+  private lastSfxAt: Partial<Record<Sfx, number>> = {};
 
   constructor() {
     try {
@@ -93,6 +111,59 @@ class AudioManager {
     if (this.ctx && this.ctx.state === 'running') this.start(track);
   }
 
+  /** Efecto con archivo (si no hay archivo para `name`, no suena). Se limita la frecuencia para que no se vuelva un zumbido. */
+  playSfx(name: Sfx, volume = 1): void {
+    const ctx = this.ctx;
+    const buffer = this.sfxBuffers[name];
+    if (!ctx || !this.master || !buffer || ctx.state !== 'running' || this.master01 <= 0) return;
+    const t = ctx.currentTime;
+    if (t - (this.lastSfxAt[name] ?? -1) < (name === 'hit' || name === 'kill' ? 0.045 : 0.06)) return;
+    this.lastSfxAt[name] = t;
+    const source = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = 0.94 + Math.random() * 0.12;
+    gain.gain.value = SFX_VOLUME * volume;
+    source.connect(gain).connect(this.master);
+    source.start(t);
+  }
+
+  /** Carga el manifiesto y los archivos que liste (si no hay manifiesto, o falla algo, queda el sonido generado). */
+  private async loadFiles(): Promise<void> {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const response = await fetch(`${AUDIO_DIR}manifest.json?v=${__BUILD_ID__}`);
+      if (!response.ok) return;
+      const manifest = (await response.json()) as AudioManifest;
+      const load = async (file: string): Promise<AudioBuffer | null> => {
+        try {
+          const data = await (await fetch(`${AUDIO_DIR}${file}?v=${__BUILD_ID__}`)).arrayBuffer();
+          return await ctx.decodeAudioData(data);
+        } catch {
+          return null; // archivo faltante o que el navegador no entiende: se usa el sonido generado
+        }
+      };
+      await Promise.all([
+        ...(Object.entries(manifest.music ?? {}) as [Track, string][]).map(async ([track, file]) => {
+          const buffer = file ? await load(file) : null;
+          if (buffer) this.musicBuffers[track] = buffer;
+        }),
+        ...(Object.entries(manifest.sfx ?? {}) as [Sfx, string][]).map(async ([name, file]) => {
+          const buffer = file ? await load(file) : null;
+          if (buffer) this.sfxBuffers[name] = buffer;
+        }),
+      ]);
+      // Si ya sonaba el tema generado y llegó su archivo, se cambia.
+      if (this.wanted && this.musicBuffers[this.wanted] && !this.fileMusic) {
+        this.track = null;
+        this.start(this.wanted);
+      }
+    } catch {
+      /* sin archivos de audio */
+    }
+  }
+
   private save(): void {
     try {
       window.localStorage.setItem(VOLUME_KEY, JSON.stringify({ master: this.master01, music: this.music01 }));
@@ -111,6 +182,10 @@ class AudioManager {
   playEnemyHit(kill = false): void {
     const ctx = this.ctx;
     if (!ctx || !this.master || ctx.state !== 'running' || this.master01 <= 0) return;
+    if (this.sfxBuffers.hit || (kill && this.sfxBuffers.kill)) {
+      this.playSfx(kill && this.sfxBuffers.kill ? 'kill' : 'hit', 0.9);
+      return;
+    }
     const t = ctx.currentTime;
     if (t - this.lastHitAt < 0.045) return; // aura y tormentas pegan muchas veces por segundo: no se vuelve un zumbido
     this.lastHitAt = t;
@@ -176,21 +251,52 @@ class AudioManager {
     }
     void this.ctx.resume().then(() => {
       if (this.wanted) this.start(this.wanted);
+      if (!this.filesRequested) {
+        this.filesRequested = true;
+        void this.loadFiles();
+      }
     });
   }
 
   private start(track: Track): void {
-    if (this.track === track && this.timer !== null) return;
+    if (this.track === track && (this.timer !== null || this.fileMusic)) return;
     this.track = track;
+    this.stopFileMusic();
+    const buffer = this.musicBuffers[track];
+    const ctx = this.ctx;
+    if (buffer && ctx && this.musicBus) {
+      // Tema con archivo: en loop, con entrada suave. El generador queda en pausa.
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      source.buffer = buffer;
+      source.loop = true;
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.4);
+      source.connect(gain).connect(this.musicBus);
+      source.start();
+      this.fileMusic = { source, gain };
+      return;
+    }
     this.step = 0;
     this.nextTime = (this.ctx?.currentTime ?? 0) + 0.08;
     if (this.timer === null) this.timer = window.setInterval(() => this.schedule(), 30);
   }
 
+  private stopFileMusic(): void {
+    const current = this.fileMusic;
+    const ctx = this.ctx;
+    this.fileMusic = null;
+    if (!current || !ctx) return;
+    current.gain.gain.cancelScheduledValues(ctx.currentTime);
+    current.gain.gain.setValueAtTime(current.gain.gain.value, ctx.currentTime);
+    current.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+    current.source.stop(ctx.currentTime + 0.35);
+  }
+
   /** Programa las notas de los próximos ~150 ms. */
   private schedule(): void {
     const ctx = this.ctx;
-    if (!ctx || !this.track || ctx.state !== 'running') return;
+    if (!ctx || !this.track || this.fileMusic || ctx.state !== 'running') return;
     const settings = TRACKS[this.track];
     const stepLen = 60 / settings.bpm / 4;
     while (this.nextTime < ctx.currentTime + 0.15) {
