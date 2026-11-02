@@ -1,0 +1,111 @@
+{
+  "group_id": "4597ea01-8178-4d50-93d8-4dc07475d08a",
+  "states": [
+    {
+      "character": {
+        "id": "13e122c1-9ba1-4872-a668-7e46e96ae099",
+        "name": "Ultron Bot Pasivo",
+        "prompt": "Create a highly detailed pixel art enemy character based on an Ultron Sentry from Avengers: Age of Ultron (2015).\n\nThis is an autonomous skeletal combat robot, NOT a human wearing powered armor.\n\nIts appearance must be distinctly robotic, with a narrow elongated angular head, exposed mechanical jaw, menacing glowing red eyes, and an irregular metallic face.\n\nThe torso is slim and skeletal, built from overlapping dark silver mechanical plates with visible internal machinery, exposed cables, and a narrow mechanical waist. No circular chest reactor or superhero-style chest armor.\n\nLong mechanical arms with exposed joints, angular forearms, and articulated robotic fingers. Thin segmented legs with visible pistons, mechanical knees, and angular feet.\n\nMain colors: weathered silver, dark gunmetal gray, charcoal black, and subtle red illuminated accents.\n\nThe character should look like a mass-produced hostile robot from Ultron's army, slightly damaged and intimidating, but not bulky.\n\nHigh-quality pixel art matching a detailed 2D action RPG. Three-quarter top-down perspective, approximately 35\u201345 degrees, with the top of the head and shoulders visible.\n\nFull body, centered, clear silhouette, crisp pixel clusters, consistent pixel size, transparent background.\n\nAvoid Iron Man armor, superhero proportions, gold armor, rounded helmet, circular chest reactor, human facial features, and oversized shoulders.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "high top-down",
+        "created_at": "2026-11-02T13:39:22.554240+00:00"
+      },
+      "folder": "Ultron_Bot_Pasivo",
+      "frames": {
+        "rotations": {
+          "south": "Ultron_Bot_Pasivo/rotations/south.png",
+          "south-east": "Ultron_Bot_Pasivo/rotations/south-east.png",
+          "east": "Ultron_Bot_Pasivo/rotations/east.png",
+          "north-east": "Ultron_Bot_Pasivo/rotations/north-east.png",
+          "north": "Ultron_Bot_Pasivo/rotations/north.png",
+          "north-west": "Ultron_Bot_Pasivo/rotations/north-west.png",
+          "west": "Ultron_Bot_Pasivo/rotations/west.png",
+          "south-west": "Ultron_Bot_Pasivo/rotations/south-west.png"
+        },
+        "animations": {
+          "Create_a_seamless_6-frame_walking_animation_for_an": {
+            "south-east": [
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-east/frame_000.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-east/frame_001.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-east/frame_002.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-east/frame_003.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-east/frame_004.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-east/frame_005.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-east/frame_006.png"
+            ],
+            "north-east": [
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-east/frame_000.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-east/frame_001.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-east/frame_002.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-east/frame_003.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-east/frame_004.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-east/frame_005.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-east/frame_006.png"
+            ],
+            "north-west": [
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-west/frame_000.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-west/frame_001.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-west/frame_002.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-west/frame_003.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-west/frame_004.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-west/frame_005.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north-west/frame_006.png"
+            ],
+            "west": [
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/west/frame_000.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/west/frame_001.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/west/frame_002.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/west/frame_003.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/west/frame_004.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/west/frame_005.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/west/frame_006.png"
+            ],
+            "east": [
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/east/frame_000.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/east/frame_001.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/east/frame_002.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/east/frame_003.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/east/frame_004.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/east/frame_005.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/east/frame_006.png"
+            ],
+            "south-west": [
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-west/frame_000.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-west/frame_001.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-west/frame_002.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-west/frame_003.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-west/frame_004.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-west/frame_005.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south-west/frame_006.png"
+            ],
+            "south": [
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south/frame_000.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south/frame_001.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south/frame_002.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south/frame_003.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south/frame_004.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south/frame_005.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/south/frame_006.png"
+            ],
+            "north": [
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north/frame_000.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north/frame_001.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north/frame_002.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north/frame_003.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north/frame_004.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north/frame_005.png",
+              "Ultron_Bot_Pasivo/animations/Create_a_seamless_6-frame_walking_animation_for_an/north/frame_006.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-02T14:14:53.217967"
+}
