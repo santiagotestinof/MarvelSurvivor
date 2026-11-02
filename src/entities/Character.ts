@@ -26,6 +26,7 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
   private action: CharacterAction = 'idle';
   private currentHealth: number;
   private invulnerableUntil = 0;
+  private damageImmune = false;
   /** Embestida (ulti del Capitán): mientras existe, la velocidad la fija ella y no el teclado. */
   private dash: { vx: number; vy: number } | null = null;
   private speed: number;
@@ -174,10 +175,15 @@ export class Character extends Phaser.Physics.Arcade.Sprite {
     this.invulnerableUntil = Math.max(this.invulnerableUntil, until);
   }
 
+  /** Activa o desactiva la inmunidad completa al daño durante una habilidad. */
+  setDamageImmune(immune: boolean): void {
+    this.damageImmune = immune;
+  }
+
   /** Aplica daño (no hay inmunidad tras un golpe; solo la protección al revivir). Devuelve true si lo recibió. */
   takeDamage(amount: number): boolean {
     const now = this.scene.time.now;
-    if (this.isDead || now < this.invulnerableUntil) return false;
+    if (this.isDead || this.damageImmune || now < this.invulnerableUntil) return false;
 
     const dealt = Math.max(1, amount - this.armor);
     this.currentHealth = Math.max(0, this.currentHealth - dealt);
