@@ -1,30 +1,98 @@
 import Phaser from 'phaser';
 import { createRandom } from '../core/random';
 import { nearParkPath, parkPaths, type ParkBounds } from './ParkPaths';
+import { PARK_TREE, PARK_PINE } from './ParkTrees';
 
-export const PARK_GROUND = 'park-living-ground';
+export const PARK_TALL_GRASS = 'park-tall-grass';
+export const PARK_BUSH = 'park-bush';
+export const PARK_FLOWERS = 'park-flowers';
 
-/** Césped original con variantes sutiles que no forman un tablero de verdes. */
-export function createParkGround(scene: Phaser.Scene): void {
-  if (scene.textures.exists(PARK_GROUND)) return;
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  const random = createRandom(512);
-  for (let tile = 0; tile < 18; tile++) {
-    const ox = tile * 16;
-    g.fillStyle(tile < 16 ? 0x416f37 : 0x969d91).fillRect(ox, 0, 16, 16);
-    for (let i = 0; i < 25; i++) {
-      const x = ox + Math.floor(random() * 16);
-      const y = Math.floor(random() * 16);
-      g.fillStyle([0x386331, 0x48783c, 0x3d6933, 0x507c3e][i % 4]).fillRect(x, y, i % 4 === 0 ? 2 : 1, 1);
-    }
-    if (tile % 5 === 1) {
-      g.fillStyle(0x355d2e).fillRect(4, 11, 7, 2);
-      g.fillStyle(0x2c5229).fillRect(5, 8, 1, 4).fillRect(8, 7, 1, 5);
-      g.fillStyle(0x648a46).fillRect(10, 9, 1, 3);
-    }
+/** Grupos pequeños de flores originales, espaciados y sin desplazar otras plantas. */
+function buildFlowers(scene: Phaser.Scene, occupied: Phaser.Geom.Rectangle[],
+  sites: Array<{ x: number; y: number }>): void {
+  const plants = scene.children.getChildren().filter((object): object is Phaser.GameObjects.Image =>
+    object instanceof Phaser.GameObjects.Image && [PARK_TALL_GRASS, PARK_BUSH].includes(object.texture.key));
+  const placed: Array<{ x: number; y: number }> = [];
+  for (const { x, y } of sites) {
+    if (placed.length >= 64) break;
+    if (placed.some((p) => Math.hypot(p.x - x, p.y - y) < 84)) continue;
+    const bounds = new Phaser.Geom.Rectangle(x - 10, y - 22, 20, 23);
+    if (occupied.some((other) => Phaser.Geom.Intersects.RectangleToRectangle(bounds, other))) continue;
+    if (plants.some((plant) => Phaser.Geom.Intersects.RectangleToRectangle(bounds, plant.getBounds()))) continue;
+    scene.add.image(x, y, PARK_FLOWERS).setScale(0.375).setOrigin(46 / 96, 77 / 96).setDepth(-997);
+    placed.push({ x, y });
   }
-  g.generateTexture(PARK_GROUND, 288, 16);
-  g.destroy();
+}
+
+/** Reemplaza los arbustos anteriores en sitios despejados, sin mover las demás plantas. */
+function buildBushes(scene: Phaser.Scene, paths: ReturnType<typeof parkPaths>,
+  occupied: Phaser.Geom.Rectangle[], sites: Array<{ x: number; y: number }>): void {
+  const images = scene.children.getChildren().filter((object): object is Phaser.GameObjects.Image =>
+    object instanceof Phaser.GameObjects.Image);
+  const trees = images.filter((image) => [PARK_TREE, PARK_PINE].includes(image.texture.key));
+  const grass = images.filter((image) => image.texture.key === PARK_TALL_GRASS);
+  const placed: Array<{ x: number; y: number }> = [];
+  for (const { x, y } of sites) {
+    if (placed.length >= 28) break;
+    const nearTree = trees.some((tree) => Math.hypot(tree.x - x, tree.y - y) < 140);
+    if (!nearTree && !nearParkPath(paths, x, y, 120)) continue;
+    if (nearParkPath(paths, x, y, 36)) continue;
+    const bounds = new Phaser.Geom.Rectangle(x - 23, y - 35, 46, 36);
+    if (occupied.some((other) => Phaser.Geom.Intersects.RectangleToRectangle(bounds, other))) continue;
+    if (grass.some((image) => Phaser.Geom.Intersects.RectangleToRectangle(bounds, image.getBounds()))) continue;
+    if (placed.some((p) => Math.hypot(p.x - x, p.y - y) < 110)) continue;
+    scene.add.image(x, y, PARK_BUSH).setScale(0.625).setOrigin(0.5, 78 / 96).setDepth(-997);
+    placed.push({ x, y });
+  }
+}
+
+/** Matas originales de PixelLab a media escala, con separación y sin cuerpos físicos. */
+function buildTallGrass(scene: Phaser.Scene, park: ParkBounds, paths: ReturnType<typeof parkPaths>,
+  rows: number[], occupied: Phaser.Geom.Rectangle[], plants: Array<{ x: number; y: number }>): void {
+  const random = createRandom(8451);
+  const trees = scene.children.getChildren().filter((object): object is Phaser.GameObjects.Image =>
+    object instanceof Phaser.GameObjects.Image && [PARK_TREE, PARK_PINE].includes(object.texture.key));
+  const placed: Array<{ x: number; y: number }> = [];
+  const cx = (park.left + park.right) / 2;
+  const cy = (park.top + park.bottom) / 2;
+  for (let attempt = 0; attempt < 1200 && placed.length < 72; attempt++) {
+    let x: number;
+    let y: number;
+    if (trees.length > 0 && random() < 0.6) {
+      const tree = trees[Math.floor(random() * trees.length)];
+      const angle = random() * Math.PI;
+      const radius = 44 + random() * 36;
+      x = tree.x + Math.cos(angle) * radius;
+      y = tree.y + 14 + Math.sin(angle) * radius * 0.65;
+    } else {
+      const path = paths[Math.floor(random() * paths.length)];
+      const index = 1 + Math.floor(random() * (path.length - 2));
+      const before = path[index - 1];
+      const after = path[index + 1];
+      const dx = after.x - before.x;
+      const dy = after.y - before.y;
+      const length = Math.hypot(dx, dy);
+      const side = random() < 0.5 ? -1 : 1;
+      const offset = side * (74 + random() * 36);
+      x = path[index].x - dy / length * offset;
+      y = path[index].y + dx / length * offset;
+    }
+    x = Math.round(x / 2) * 2;
+    y = Math.round(y / 2) * 2;
+    if (x < park.left + 24 || x > park.right - 24 || y < park.top + 36 || y > park.bottom - 8) continue;
+    if (nearParkPath(paths, x, y, 32)) continue;
+    if (((x - cx) / 250) ** 2 + ((y - cy) / 210) ** 2 < 1) continue;
+    // El rectángulo mide únicamente la parte visible del PNG a escala 0,5.
+    const bounds = new Phaser.Geom.Rectangle(x - 17, y - 31, 34, 32);
+    if (occupied.some((other) => Phaser.Geom.Intersects.RectangleToRectangle(bounds, other))) continue;
+    if (plants.some((p) => Math.hypot(p.x - x, p.y - y) < 38)) continue;
+    if (placed.some((p) => Math.hypot(p.x - x, p.y - y) < 64)) continue;
+    // Evitar también el agua de los dos estanques y su borde de piedra.
+    if ([[cx - 330, rows[0] - 270], [cx + 330, rows[2] + 270]].some(([px, py]) =>
+      Math.abs(x - px) < 164 && Math.abs(y - py) < 132)) continue;
+    scene.add.image(x, y, PARK_TALL_GRASS).setScale(0.5).setOrigin(0.5, 76 / 96).setDepth(-997);
+    placed.push({ x, y });
+  }
 }
 
 /** Plantas bajas transitables: no se añaden cuerpos físicos ni se tapan personajes. */
@@ -33,9 +101,9 @@ export function buildParkVegetation(scene: Phaser.Scene, park: ParkBounds, rows:
   const random = createRandom(7134);
   const paths = parkPaths(park, rows, cx);
   const cy = (park.top + park.bottom) / 2;
-  const g = scene.add.graphics().setDepth(-997);
-  const colors = [0xe9a2bf, 0xf1d169, 0xd4e5ed, 0xb9a0db, 0xed897d];
   const placed: Array<{ x: number; y: number }> = [];
+  const bushSites: Array<{ x: number; y: number }> = [];
+  const flowerSites: Array<{ x: number; y: number }> = [];
   for (let i = 0; i < 650; i++) {
     const x = Math.floor((park.left + 32 + random() * (park.right - park.left - 64)) / 2) * 2;
     const y = Math.floor((park.top + 32 + random() * (park.bottom - park.top - 64)) / 2) * 2;
@@ -48,40 +116,18 @@ export function buildParkVegetation(scene: Phaser.Scene, park: ParkBounds, rows:
     if (placed.some((p) => Math.hypot(p.x - x, p.y - y) < 44)) continue;
     placed.push({ x, y });
     if (i % 4 === 1) {
-      // Matas compactas: hojas finas con puntas inclinadas y nervaduras.
-      g.fillStyle(0x2c502b).fillRect(x - 10, y - 1, 20, 3);
-      for (let blade = 0; blade < 6; blade++) {
-        const bx = x - 8 + blade * 3;
-        const height = 7 + Math.floor(random() * 5) * 2;
-        const lean = blade < 3 ? -1 : 1;
-        g.fillStyle(0x1e4429).fillRect(bx - 1, y - height + 3, 3, height - 2);
-        g.fillStyle(blade % 2 === 0 ? 0x648f48 : 0x497b39).fillRect(bx, y - height + 2, 1, height - 2);
-        g.fillStyle(0x7ca358).fillRect(bx + lean, y - height, 1, 3);
-        g.fillStyle(0x527e3e).fillRect(bx + lean * 2, y - height + 4, 2, 1);
-      }
+      // Conservar la secuencia aleatoria mantiene intactas las flores y los arbustos.
+      for (let blade = 0; blade < 6; blade++) random();
       continue;
     }
     const bush = i % 3 === 0;
-    const flowerColor = colors[i % colors.length];
     if (bush) {
-      // Contorno escalonado, follaje a tres tonos y pequeñas flores.
-      g.fillStyle(0x2d6945).fillRect(x - 12, y - 2, 24, 4);
-      g.fillStyle(0x214b37).fillRect(x - 14, y - 12, 28, 10).fillRect(x - 10, y - 20, 20, 20);
-      g.fillStyle(0x387447).fillRect(x - 12, y - 12, 24, 8).fillRect(x - 8, y - 18, 16, 14);
-      g.fillStyle(0x579252).fillRect(x - 8, y - 16, 10, 4).fillRect(x - 10, y - 8, 4, 3);
-      g.fillStyle(0x74a765).fillRect(x - 6, y - 16, 4, 2).fillRect(x + 4, y - 12, 3, 2);
+      bushSites.push({ x, y });
+      continue;
     }
-    // Sitios separados: cada flor conserva su silueta y su centro.
-    const flowerSites = bush ? [[-8, -10], [0, -16], [8, -8]] : [[-8, -8], [0, -14], [8, -6]];
-    for (const [dx, dy] of flowerSites) {
-      const fx = x + dx;
-      const fy = y + dy;
-      if (!bush) {
-        g.fillStyle(0x39783c).fillRect(fx, fy, 2, y - fy);
-        g.fillStyle(0x5a933f).fillRect(fx - 2, fy + 4, 3, 2).fillRect(fx + 1, fy + 6, 3, 2);
-      }
-      g.fillStyle(flowerColor).fillRect(fx - 2, fy, 6, 2).fillRect(fx, fy - 2, 2, 6);
-      g.fillStyle(0xffecac).fillRect(fx, fy, 2, 2);
-    }
+    flowerSites.push({ x, y });
   }
+  buildTallGrass(scene, park, paths, rows, occupied, placed);
+  buildBushes(scene, paths, occupied, bushSites);
+  buildFlowers(scene, occupied, flowerSites);
 }
