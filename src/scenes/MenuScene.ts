@@ -194,6 +194,7 @@ export class MenuScene extends Phaser.Scene {
   private drawCard(def: CharacterDefinition, x: number, y: number, w: number, s: number): void {
     const info = HERO_INFO[def.id];
     const stats = heroStatLines(def);
+    stats.health += saveData.levelOf('max-health', def.id) * 10;
     const exclusive = HERO_WEAPONS[def.id];
     const pad = 22 * s;
     const inner = w - pad * 2;
