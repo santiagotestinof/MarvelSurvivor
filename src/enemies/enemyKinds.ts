@@ -108,16 +108,19 @@ export interface EnemyKind {
   spawn?: { fromProgress: number; weight: number; maxAlive?: number };
 }
 
+/** Ultron bot: caminata importada de siete cuadros en cada una de las ocho direcciones. */
 export const DRONE: EnemyKind = {
   id: 'drone',
   texture: 'enemy-drone',
   path: 'assets/enemies/drone.png',
-  frame: { width: 32, height: 32 },
-  frameCount: 4,
+  frame: { width: 84, height: 84 },
+  frameCount: 7,
   frameRate: 7,
   directional: true,
-  origin: { x: 0.5, y: 0.94 },
-  body: { width: 14, height: 12, offsetX: 9, offsetY: 18 },
+  scale: 0.5,
+  origin: { x: 0.5, y: 70 / 84 },
+  // La caminata agrega 10 px de margen: en el mundo conserva la caja de 14×12.
+  body: { width: 28, height: 24, offsetX: 28, offsetY: 46 },
   health: 9,
   healthRamp: 4.3,
   speed: 41.8,
